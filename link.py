@@ -54,7 +54,7 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
 
     """
 
-    # Connect to the OR
+    # [1] Connect to the OR
     socket = stem.socket.RelaySocket(address, port)
 
     # [1:2] Send a VERSIONS cell to begin with.
@@ -70,13 +70,13 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
         socket.close()
         return None, None # (abort if we get no answer to our first cell)
 
-    # We'll only care about v2 & higher here (hence link_protocol=2 above)
+    # [4] We'll only care about v2 & higher here (hence link_protocol=2 above)
     #
     # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L285
     #
     versions_rcell, answer = stem.client.cell.Cell.pop(answer, 2)
 
-    # We compute the set of common versions between the two VERSIONS cell.
+    # [4] We compute the set of common versions between the two VERSIONS cell.
     #
     common = set(versions)
     common = common.intersection(versions_rcell.versions)
@@ -84,12 +84,12 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
         socket.close()
         return None, None # (abort if no common versions found)
 
-    # We keep the maximal common version
+    # [4] We keep the maximal common version
     version = max(common)
     if version < 3:
         return None, None # (let's say that we don't support v2-or-lower links)
 
-    # We expect CERTS, AUTH_CHALLENGE, NETINFO cells as part of the handshake
+    # [3:4] We also expect CERTS, AUTH_CHALLENGE, NETINFO cells afterwards
     if sanity:
         certs_rcell, answer = stem.client.cell.Cell.pop(answer, version)
         assert isinstance(certs_rcell, stem.client.cell.CertsCell)
@@ -100,7 +100,7 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
         netinfo_rcell, answer = stem.client.cell.Cell.pop(answer, version)
         assert isinstance(netinfo_rcell, stem.client.cell.NetinfoCell)
 
-    # We send the required NETINFO cell to finish the handshake (without auth)
+    # [5:6] We send the required NETINFO cell to finish the handshake
     #
     # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L518
     #
