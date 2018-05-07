@@ -109,3 +109,7 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
 
     socket.send(netinfo_scell.pack(version)) # (use negotiated version)
     return (socket, version)
+
+if __name__ == "__main__":
+    link = establish()
+    print('Link v{} established – {}'.format(link[1], link[0]))
