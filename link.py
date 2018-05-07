@@ -27,14 +27,14 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
                |             OP don't need to
         Link   |               authenticate
       Protocol |
-        >= 3   |   [4] :-------- NETINFO ----------> [5]
+        >= 3   |   [5] :-------- NETINFO ----------> [6]
                |
                |          [alt: OR connects to OR]
                |
                |
                | (          Client authenticate          )
                | (                                       )
-               | ( [4] :--------- CERTS -----------> [5] )
+               | ( [5] :--------- CERTS -----------> [6] )
                | (     :------ AUTHENTICATE ------->     )
                | (             ^                         )
                | (            (answers AUTH_CHALLENGE)   )
@@ -86,6 +86,8 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
 
     # We keep the maximal common version
     version = max(common)
+    if version < 3:
+        return None, None # (let's say that we don't support v2-or-lower links)
 
     # We expect CERTS, AUTH_CHALLENGE, NETINFO cells as part of the handshake
     if sanity:
