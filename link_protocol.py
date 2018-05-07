@@ -3,16 +3,16 @@ import stem.client.cell
 import stem.client.datatype
 import stem.socket
 
-def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
+def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     """
     We replicate here a link "in-protocol" (v3) handshake:
      - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L257
 
     The expected transcript from the point of view of a "client" is:
 
-             (... establish a proper TLS/SSLv3 handshake link here ...)
+         (... establish a proper TLS/SSLv3 handshake link here ...)
 
-               Onion Proxy (client)              Onion Router (server)
+           Onion Proxy (client)              Onion Router (server)
 
                /   [1] :-------- VERSIONS ---------> [2]
                |   [4] <-------- VERSIONS ---------: [3]
@@ -29,18 +29,16 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
       Protocol |
         >= 3   |   [5] :-------- NETINFO ----------> [6]
                |
-               |          [alt: OR connects to OR]
                |
-               |
-               | (          Client authenticate          )
+               | Alternative:
+               | (          We (OR) authenticate         )
                | (                                       )
                | ( [5] :--------- CERTS -----------> [6] )
                | (     :------ AUTHENTICATE ------->     )
                | (             ^                         )
                | (            (answers AUTH_CHALLENGE)   )
                | (                                       )
-               |
-               \\
+               \
 
     After establishing a link via such "in-protocol" handshake, we can perform
     further operations (for example, establishing a circuit).
@@ -111,5 +109,5 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     return (socket, version)
 
 if __name__ == "__main__":
-    link = establish()
+    link = handshake()
     print('Link v{} established – {}'.format(link[1], link[0]))

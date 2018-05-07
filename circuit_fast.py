@@ -4,24 +4,22 @@ import stem
 import stem.client.cell
 import stem.client.datatype
 
-def create_fast(link, circuits=[], sanity=True):
+def create(link, circuits=[], sanity=True):
     """
     We replicate here a one-hop circuit creation with CREATE_FAST:
      - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1129
 
     The expected transcript from the point of view of a "client" is:
 
-                   (... perform a proper link handshake here ...)
+              (... perform a proper link handshake here ...)
 
-               Onion Proxy (client)              Onion Router (server)
+           Onion Proxy (client)              Onion Router (server)
 
-
-               /   [7] :------ CREATE_FAST¹ -------> [ 8]
-               |   [9] <------ CREATED_FAST -------: [10]
+               /  [ 7] :------ CREATE_FAST¹ -------> [8]
+               |  [10] <------ CREATED_FAST -------: [9]
                |
                |      Shared circuit key (via KDF-TOR²)
-               |
-               \\
+               \
 
     ¹The initiator picks an available circuit ID (also called CircID) with its
      most significant bit equal to:
@@ -64,22 +62,21 @@ def create_fast(link, circuits=[], sanity=True):
     :returns: a tuple (circuit ID, circuit shared keys)
 
     """
-
     link_socket, link_version = link
-    circuit_id = 0x80000000 if link_version > 3 else 0x0001 # handle MSB (see¹)
 
-    # [8] Pick an available ID
+    # [7] Pick an available ID
+    circuit_id = 0x80000000 if link_version > 3 else 0x0001 # handle MSB (see¹)
     while circuit_id in circuits:
         circuit_id += 1
 
-    # [8] Extra sanity checks – bound checks on unlikely invalid values.
+    # [7] Extra sanity checks – bound checks on unlikely invalid values.
     if sanity:
         if link_version > 3 and not (0x100000000 > circuit_id > 0):
             return None, None
         if link_version < 4 and not (0x10000 > circuit_id > 0):
             return None, None
 
-    # [8:9] Send CREATE_FAST cell – contains OP's randomness (key material).
+    # [7:8] Send CREATE_FAST cell – contains OP's randomness (key material).
     create_scell = stem.client.cell.CreateFastCell(circuit_id)
     link_socket.send(create_scell.pack(link_version))
 
@@ -128,13 +125,13 @@ def create_fast(link, circuits=[], sanity=True):
     return (circuit_id, key_material)
 
 if __name__ == "__main__":
-    link = link_protocol.establish()
+    link = link_protocol.handshake()
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     print('\nCreating 10 one-hop circuits with CREATED_FAST cells:')
     circuits = []
     for i in range(10):
-        circuit = create_fast(link, [c[0] for c in circuits])
+        circuit = create(link, [c[0] for c in circuits])
         print(' {:2}. Circuit {} created – Key hash: {}'.format(i + 1,
             circuit[0], circuit[1].key_hash.hex()))
 
