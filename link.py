@@ -1,0 +1,109 @@
+import stem
+import stem.client.cell
+import stem.client.datatype
+import stem.socket
+
+def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
+    """
+    We replicate here a link "in-protocol" (v3) handshake:
+     - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L257
+
+    The expected transcript from the point of view of a "client" is:
+
+             (... establish a proper TLS/SSLv3 handshake link here ...)
+
+               Onion Proxy (client)              Onion Router (server)
+
+               /   [1] :-------- VERSIONS ---------> [2]
+               |   [4] <-------- VERSIONS ---------: [3]
+               |
+               |           Negotiated Version
+               |                  >= 3
+               |
+               |   [4] <--------- CERTS -----------: [3]
+               |       <----- AUTH_CHALLENGE ------:
+               |       <-------- NETINFO ----------:
+               |
+               |             OP don't need to
+        Link   |               authenticate
+      Protocol |
+        >= 3   |   [4] :-------- NETINFO ----------> [5]
+               |
+               |          [alt: OR connects to OR]
+               |
+               |
+               | (          Client authenticate          )
+               | (                                       )
+               | ( [4] :--------- CERTS -----------> [5] )
+               | (     :------ AUTHENTICATE ------->     )
+               | (             ^                         )
+               | (            (answers AUTH_CHALLENGE)   )
+               | (                                       )
+               |
+               \\
+
+    After establishing a link via such "in-protocol" handshake, we can perform
+    further operations (for example, establishing a circuit).
+
+    :param str address: remote relay address (default: 127.0.0.1).
+    :param int port: remote relay ORPort (default: 9050).
+    :param list versions: target link versions (default: [3, 4, 5]).
+    :param bool sanity: checks v3 handshake compliance (default: False).
+
+    :returns: a tuple (link socket, link version)
+
+    """
+
+    # Connect to the OR
+    socket = stem.socket.RelaySocket(address, port)
+
+    # [1:2] Send a VERSIONS cell to begin with.
+    #
+    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L553
+    #
+    versions_scell = stem.client.cell.VersionsCell(versions)
+    socket.send(versions_scell.pack())
+
+    # [3:4] Receive a VERSIONS cell from the OR.
+    answer = socket.recv()
+    if not answer:
+        socket.close()
+        return None, None # (abort if we get no answer to our first cell)
+
+    # We'll only care about v2 & higher here (hence link_protocol=2 above)
+    #
+    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L285
+    #
+    versions_rcell, answer = stem.client.cell.Cell.pop(answer, 2)
+
+    # We compute the set of common versions between the two VERSIONS cell.
+    #
+    common = set(versions)
+    common = common.intersection(versions_rcell.versions)
+    if len(common) < 1:
+        socket.close()
+        return None, None # (abort if no common versions found)
+
+    # We keep the maximal common version
+    version = max(common)
+
+    # We expect CERTS, AUTH_CHALLENGE, NETINFO cells as part of the handshake
+    if sanity:
+        certs_rcell, answer = stem.client.cell.Cell.pop(answer, version)
+        assert certs_rcell.NAME == 'CERTS'
+
+        auth_chall_rcell, answer = stem.client.cell.Cell.pop(answer, version)
+        assert auth_chall_rcell.NAME == 'AUTH_CHALLENGE'
+
+        netinfo_rcell, answer = stem.client.cell.Cell.pop(answer, version)
+        assert netinfo_rcell.NAME == 'NETINFO'
+
+    # We send the required NETINFO cell to finish the handshake (without auth)
+    #
+    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L518
+    #
+    address_packable = stem.client.datatype.Address(address) # stem's datatype
+    netinfo_scell = stem.client.cell.NetinfoCell(address_packable, [])
+
+    socket.send(netinfo_scell.pack(version)) # (use negotiated version)
+    return (socket, final_version)
