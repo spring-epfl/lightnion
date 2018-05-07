@@ -92,13 +92,13 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     # We expect CERTS, AUTH_CHALLENGE, NETINFO cells as part of the handshake
     if sanity:
         certs_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert certs_rcell.NAME == 'CERTS'
+        assert isinstance(certs_rcell, stem.client.cell.CertsCell)
 
-        auth_chall_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert auth_chall_rcell.NAME == 'AUTH_CHALLENGE'
+        auth_rcell, answer = stem.client.cell.Cell.pop(answer, version)
+        assert isinstance(auth_rcell, stem.client.cell.AuthChallengeCell)
 
         netinfo_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert netinfo_rcell.NAME == 'NETINFO'
+        assert isinstance(netinfo_rcell, stem.client.cell.NetinfoCell)
 
     # We send the required NETINFO cell to finish the handshake (without auth)
     #
@@ -108,4 +108,4 @@ def establish(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     netinfo_scell = stem.client.cell.NetinfoCell(address_packable, [])
 
     socket.send(netinfo_scell.pack(version)) # (use negotiated version)
-    return (socket, final_version)
+    return (socket, version)
