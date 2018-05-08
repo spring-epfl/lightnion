@@ -69,7 +69,7 @@ def create(link, circuits=[], sanity=True):
     while circuit_id in circuits:
         circuit_id += 1
 
-    # [7] Extra sanity checks – bound checks on unlikely invalid values.
+    # [7] Extra sanity checks – bound checking with unlikely invalid values.
     if sanity:
         if link_version > 3 and not (0x100000000 > circuit_id > 0):
             return None, None
