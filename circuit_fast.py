@@ -1,5 +1,3 @@
-import link_protocol
-
 import stem
 import stem.client.cell
 import stem.client.datatype
@@ -125,6 +123,8 @@ def create(link, circuits=[], sanity=True):
     return (circuit_id, key_material)
 
 if __name__ == "__main__":
+    import link_protocol
+
     link = link_protocol.handshake()
     print('Link v{} established – {}'.format(link[1], link[0]))
 
