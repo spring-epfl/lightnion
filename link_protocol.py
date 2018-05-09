@@ -68,9 +68,10 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
         socket.close()
         return None, None # (abort if we get no answer to our first cell)
 
-    # [4] We'll only care about v2 & higher here (hence link_protocol=2 above)
+    # [4] We need to have a circuit_id of 2 bytes for VERSIONS cell, hence we
+    #     explicitly require here to use an older link_protocol version (< v4).
     #
-    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L285
+    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L438
     #
     versions_rcell, answer = stem.client.cell.Cell.pop(answer, 2)
 
