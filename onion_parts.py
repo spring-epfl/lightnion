@@ -461,7 +461,7 @@ if __name__ == "__main__":
     )) + '\r\n\r\n'
 
     print('[stream_id=1] Sending a RELAY_DATA to HTTP GET the consensus...')
-    endpoint, answers = single_send(
+    endpoint, _ = single_send(
         endpoint, 'RELAY_DATA', http_request, stream_id=1)
 
     print('[stream_id=1] Receiving now...')
