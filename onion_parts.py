@@ -433,6 +433,7 @@ if __name__ == "__main__":
     #   6. Receive the answer to our request
     #   7. Send few dummies on our circuit (RELAY_DROP)
     #   8. Close a stream (RELAY_END)
+    #
 
     link = link_protocol.handshake()
     print('Link v{} established – {}'.format(link[1], link[0]))
