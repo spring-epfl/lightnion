@@ -359,6 +359,11 @@ def single_recv(state, sanity=True):
 
     plains = []
     while len(answer) > 0:
+        if answer[4] != stem.client.cell.RelayCell.VALUE:
+            rcell, answer = stem.client.cell.Cell.pop(answer, link_version)
+            plains.append(rcell)
+            continue
+
         rcell, answer = stem.client.cell.Cell.pop(
             answer, link_version, is_encrypted=True)
 
