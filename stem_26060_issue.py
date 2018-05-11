@@ -58,20 +58,25 @@ if __name__ == "__main__":
         create.key_material + created.key_material)
     assert key_material.key_hash == created.derivative_key
 
+    # Compute forward digest (with zeroed digest field)
     fwdigest = hashlib.sha1(key_material.forward_digest)
     raw_cell = stem.client.cell.RelayCell(circ_id, 'RELAY_BEGIN_DIR', '', 0, 1)
     fwdigest.update(raw_cell.pack(version)[header_size:])
 
+    # Pack RELAY_BEGIN_DIR cell afterwards (with the correct digest)
     raw_cell.digest = int.from_bytes(fwdigest.digest()[:4], byteorder="big")
     raw_data = raw_cell.pack(version)
 
+    # Build the forward encryptor
     zeroed_ctr = modes.CTR(b'\x00' * (algorithms.AES.block_size // 8))
     fw_encrypt = Cipher(algorithms.AES(key_material.forward_key), zeroed_ctr,
         default_backend()).encryptor()
 
+    # Encrypt the RELAY_BEGIN_DIR cell
     ciphertext = fw_encrypt.update(raw_data[header_size:])
     socket.send(raw_data[:header_size] + ciphertext)
 
+    # We receive a encrypted answer
     relay_cell = socket.recv()
     print('Before repacking:')
     print('\tCell headers:')
@@ -84,9 +89,14 @@ if __name__ == "__main__":
     print('\t - digest:\t{}'.format(relay_cell[10:14].hex()))
     print('\t - length:\t{}'.format(relay_cell[14:16].hex()), end='\n\n')
 
+    # We emulate stem.client's behavior here (repacking):
+    #  https://gitweb.torproject.org/stem.git/tree/stem/client/__init__.py#n250
+    #
     unpacked, _ = stem.client.cell.Cell.pop(relay_cell, version)
     repacked = unpacked.pack(version)
 
+    # The "Length" field is now corrupted!
+    #
     print('After repacking:')
     print('\tCell headers:')
     print('\t - circ_id:\t{}'.format(repacked[:4].hex()))
@@ -99,10 +109,12 @@ if __name__ == "__main__":
     print('\t - length:\t{}'.format(repacked[14:16].hex()), end='\t')
     print('\t !! corrupted !!', end='\n\n')
 
+    # Decrypting the cell
     bw_encrypt = Cipher(algorithms.AES(key_material.backward_key), zeroed_ctr,
         default_backend()).decryptor()
     plain = repacked[:header_size] + bw_encrypt.update(repacked[header_size:])
 
+    # The cell "Length" field remains corrupted!
     print('After decryption:')
     print('\tCell headers:')
     print('\t - circ_id:\t{}'.format(plain[:4].hex()))
@@ -115,19 +127,24 @@ if __name__ == "__main__":
     print('\t - length:\t{}'.format(plain[14:16].hex()), end='\t')
     print('\t !! corrupted !!', end='\n\n')
 
+    # Reading the cell's "Digest" field
     relay_digest = plain[10:14]
     print('Digest (from the RELAY cell):\t{}'.format(relay_digest.hex()))
 
+    # Computing the cell "real" backward digest (with "Length" corrupted)
     bwdigest = hashlib.sha1(key_material.backward_digest)
     plain = plain[:10] + b'\x00' * 4 + plain[14:]
     bwdigest.update(plain[header_size:])
 
+    # (oops, mismatch)
     print('Digest (computed length):\t{}'.format(bwdigest.digest()[:4].hex()))
 
+    # Computing the cell backward digest with the "Length" field guessed.
     bwdigest = hashlib.sha1(key_material.backward_digest)
     plain = plain[:10] + b'\x00' * 6 + plain[16:]
     bwdigest.update(plain[header_size:])
 
+    # (now, it's matching)
     print('Digest (expected length):\t{}'.format(bwdigest.digest()[:4].hex()))
     print('\n')
 
