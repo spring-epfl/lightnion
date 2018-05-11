@@ -58,12 +58,12 @@ if __name__ == "__main__":
         create.key_material + created.key_material)
     assert key_material.key_hash == created.derivative_key
 
-    # Compute forward digest (with zeroed digest field)
+    # Compute forward digest (with a zeroed digest field)
     fwdigest = hashlib.sha1(key_material.forward_digest)
     raw_cell = stem.client.cell.RelayCell(circ_id, 'RELAY_BEGIN_DIR', '', 0, 1)
     fwdigest.update(raw_cell.pack(version)[header_size:])
 
-    # Pack RELAY_BEGIN_DIR cell afterwards (with the correct digest)
+    # Pack the cell afterwards (with an updated digest field)
     raw_cell.digest = int.from_bytes(fwdigest.digest()[:4], byteorder="big")
     raw_data = raw_cell.pack(version)
 
@@ -72,11 +72,11 @@ if __name__ == "__main__":
     fw_encrypt = Cipher(algorithms.AES(key_material.forward_key), zeroed_ctr,
         default_backend()).encryptor()
 
-    # Encrypt the RELAY_BEGIN_DIR cell
+    # Encrypt the cell
     ciphertext = fw_encrypt.update(raw_data[header_size:])
     socket.send(raw_data[:header_size] + ciphertext)
 
-    # We receive a encrypted answer
+    # We receive an encrypted answer
     relay_cell = socket.recv()
     print('Before repacking:')
     print('\tCell headers:')
