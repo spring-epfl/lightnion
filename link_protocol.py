@@ -109,6 +109,15 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     socket.send(netinfo_scell.pack(version)) # (use negotiated version)
     return (socket, version)
 
+def keepalive(link):
+    """
+    Send a keepalive through a given link.
+
+    :params tuple link: a tuple (link socket, link version)
+    """
+    link_socket, link_version = link
+    link_socket.send(stem.client.cell.PaddingCell().pack(link_version))
+
 if __name__ == "__main__":
     link = handshake()
     print('Link v{} established – {}'.format(link[1], link[0]))
