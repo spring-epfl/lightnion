@@ -134,8 +134,9 @@ if __name__ == "__main__":
     assert len(answers) == 1
 
     # handmade HTTP request FTW
-    http_request = '\r\n'.join((
-      'GET /tor/status-vote/current/consensus HTTP/1.0', # retrieve consensus
+    http_request = '\r\n'.join(('GET ' # retrieve consensus micro-descriptors
+    + '/tor/status-vote/current/consensus-microdesc' # (the one we need)
+    + ' HTTP/1.0',
       'Accept-Encoding: identity', # no compression
     )) + '\r\n\r\n'
 
@@ -163,6 +164,6 @@ if __name__ == "__main__":
     print('[stream_id=1] Closing the stream...')
     endpoint, _ = single_send(endpoint, 'RELAY_END', stream_id=1)
 
-    print('\nNote: consensus written to ./consensus')
-    with open('consensus', 'wb') as f:
+    print('\nNote: micro-descriptors written to ./consensus-microdesc')
+    with open('consensus-microdesc', 'wb') as f:
         f.write(full_answer)
