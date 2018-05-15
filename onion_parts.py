@@ -8,21 +8,17 @@ import stem.client.cell
 class state:
     """
     We aim here at building "onions" with several layers. Note that handling
-    such layer can not be performed "stateless-ly" – as for example a stream
-    cipher is used.
+    such layer can not be performed in a stateless fashion due to cryptography
+    and this "state" class captures such cryptographic stateful-ness.
 
-    This "state" class captures the stateful nature of onion-layer handling in
-    two ways:
+    This "cryptographic state" of the onion-layer handling is made of two parts:
      - a "digest state" that captures the integrity check made on the content
        of the RELAY cells passing along the circuit (see state.reset_digest)
      - a "encryption state" that captures the stream cipher (AES counter mode
        with a zeroed IV) used to cipher the cells (see state.reset_encryption)
 
-    Each one of these state have a "forward" and "backward" part used during
-    the bidirectional communications (see state.reset_encryption for a recap.).
-
-    Note that here, we only aim at encapsulating RELAY cells within a given
-    circuit, as these cells are the one designed to be "relayed".
+    Each one of these states have a "forward" and "backward" part used during
+    the bidirectional communications (see state.reset_encryption method).
     """
 
     def __init__(self, link, circuit):
@@ -37,14 +33,68 @@ class state:
         self.reset_digest() # define forward_digest, backward_digest
         self.reset_encryption() # define forward_encryptor, backward_decryptor
 
+    def reset_encryption(self, sanity=True):
+        """
+        This method initialize the "encryption state" of a given layer, it must
+        be only called once (via __init__) and will fail unless otherwise
+        specified (via sanity parameter).
+
+        See comments within the method for further details on the "forward" and
+        "backward" cryptographic materials.
+
+        :params bool sanity: enable extra sanity checks
+        """
+        _, key_material = self.circuit
+
+        # (extra sanity checks)
+        if sanity:
+            if self.__sane != 1:
+                raise RuntimeError('Unsafe! Please do not reset counter mode!')
+            self.__sane += 1
+
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.ciphers import (
+            algorithms, modes, Cipher
+        )
+
+        # We use AES-CTR with an IV (or nonce) of all 0 bytes as stream cipher.
+        #
+        # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L77
+        #
+        nonce_size = algorithms.AES.block_size // 8
+        zeroed_ctr = modes.CTR(b'\x00' * nonce_size)
+
+        # We have a "forward key" and a "backward key", respectively used to
+        # encrypt the "forward traffic" (same direction as a CREATE cell) and
+        # to decrypt the "backward traffic" (opposite direction).
+        #
+        # From our point of view (as OP), we use the forward key to encrypt and
+        # the backward key to decrypt.
+        #
+        # From the point of view of an OR, it uses the forward key to decrypt
+        # and the backward key to encrypt.
+        #
+        # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1360
+        #
+        self.forward_encryptor = Cipher(algorithms.AES(
+                key_material.forward_key), zeroed_ctr, default_backend()
+            ).encryptor()
+
+        self.backward_decryptor = Cipher(algorithms.AES(
+                key_material.backward_key), zeroed_ctr, default_backend()
+            ).decryptor()
+
     def reset_digest(self, sanity=True):
         """
         This method initialize the "digest state" of a given layer, it should
         be only called once (via __init__) and will fail unless otherwise
         specified (via sanity parameter).
 
-        Now, a bit of rationale around "How do we check RELAY cells integrity
-        in an end-to-end fashion?"
+        The "digest state" handled here is used to check for traffic integrity
+        within a circuit.
+
+        Now, here is a bit of details around "How do we check RELAY cells
+        integrity in an end-to-end fashion?" within such circuit.
 
         :- Introducing the 'recognized' field
 
@@ -52,13 +102,14 @@ class state:
           https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1416
 
         The recognized field is used to check if a given RELAY cell content is
-        still encrypted or not – the recognized field of an unencrypted RELAY
-        cell content is zeroed:
+        still encrypted or not – the recognized field is zeroed iff the RELAY
+        cell is fully decrypted (no more layers):
           https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1446
 
         Whenever a relay receive a RELAY cell, it will decrypt the payload
-        and will be able to check if the cell needs to be relayed or not – as
-        cells "to be relayed" remain encrypted after a first decryption:
+        and use the 'recognized field' to check if the cell needs to be relayed
+        or not – as cells "to be relayed" remain "not fully decrypted" (with
+        still more layers):
           https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1450
 
         :- Distinguishing recognized & unrecognized RELAY cells
@@ -75,6 +126,13 @@ class state:
          - If we're the last hop and we receive an unrecognized cell from a
            circuit, this is an unrecoverable error and thus we tear down the
            circuit.
+         - If we got a recognized cell, we can further process its content as
+           receiver this cell.
+
+        These behaviors can be respectively associated with:
+         - an OR relaying encrypted traffic.
+         - an OR/OP receiving corrupted traffic at the end of a circuit.
+         - an OR/OR receiving well-formed traffic.
 
         See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1369
 
@@ -86,8 +144,8 @@ class state:
             See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1455
 
         Note that this "running hash" do not includes forwarded data – as
-        such relayed cell are deemed as "unrecognized" and thus not included
-        in the "recognized traffic":
+        such relayed cell are deemed as _unrecognized_ and thus not included
+        in the _recognized_ traffic":
           https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1465
 
         This "running" hash can be described with the following pseudocode:
@@ -102,9 +160,9 @@ class state:
             (where + denotes the concatenation)
             (where "seed" is "key_material.forward_digest" (resp. backward))
 
-        Note that we implicitly require here that when we're not the last hop,
-        the recognized field is equal to zero and the digest is invalid – thus
-        the cell unrecognized – we still forward the cell.
+        Note that we implicitly require here that we still forward the cell
+        when we're not the last hop, the recognized field is equal to zero and
+        the digest is invalid – thus unrecognized.
 
         :- Distinguishing header & content of RELAY cells
 
@@ -163,56 +221,6 @@ class state:
         # Seed the "running digests" for both directions
         self.forward_digest = hashlib.sha1(key_material.forward_digest)
         self.backward_digest = hashlib.sha1(key_material.backward_digest)
-
-    def reset_encryption(self, sanity=True):
-        """
-        This method initialize the "encryption state" of a given layer, it must
-        be only called once (via __init__) and will fail unless otherwise
-        specified (via sanity parameter).
-
-        See comments within the method for further details.
-
-        :params bool sanity: enable extra sanity checks
-        """
-        _, key_material = self.circuit
-
-        # (extra sanity checks)
-        if sanity:
-            if self.__sane != 1:
-                raise RuntimeError('Unsafe! Please do not reset counter mode!')
-            self.__sane += 1
-
-        from cryptography.hazmat.backends import default_backend
-        from cryptography.hazmat.primitives.ciphers import (
-            algorithms, modes, Cipher
-        )
-
-        # We use AES-CTR with an IV (or nonce) of all 0 bytes as stream cipher.
-        #
-        # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L77
-        #
-        nonce_size = algorithms.AES.block_size // 8
-        zeroed_ctr = modes.CTR(b'\x00' * nonce_size)
-
-        # We have a "forward key" and a "backward key", respectively used to
-        # encrypt the "forward traffic" (same direction as a CREATE cell) and
-        # to decrypt the "backward traffic" (opposite direction).
-        #
-        # From our point of view (as OP), we use the forward key to encrypt and
-        # the backward key to decrypt.
-        #
-        # From the point of view of an OR, it use the forward key to decrypt
-        # and the backward key to encrypt.
-        #
-        # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1360
-        #
-        self.forward_encryptor = Cipher(algorithms.AES(
-                key_material.forward_key), zeroed_ctr, default_backend()
-            ).encryptor()
-
-        self.backward_decryptor = Cipher(algorithms.AES(
-                key_material.backward_key), zeroed_ctr, default_backend()
-            ).decryptor()
 
     def clone(self):
         child = state(self.link, self.circuit)
