@@ -22,7 +22,10 @@ function cleanup()
 }
 trap cleanup EXIT
 
-tmpdir="$(mktemp -d "$PWD/local-relay-XXXXXXXX")"
+tmpdir="${TOR_TMPDIR:-$(mktemp -d "$PWD/local-relay-XXXXXXXX")}"
+(ps -p "$(cat "$tmpdir/.pid")" | grep -v PID) 2> /dev/null && exit 1
+
+rm -f "$tmpdir/.pid" "$tmpdir/.options"
 (
     echo "PublishServerDescriptor 0"        # do not publish our descriptor
     echo "AssumeReachable 1"                # do not test if were reachable
