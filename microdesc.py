@@ -84,7 +84,7 @@ def consume_http(consensus):
         if keyword[-1:] == ':':
             fields['headers'][keyword[:-1]] = content
 
-def consume_consensus_headers(consensus, sanity=True):
+def consume_headers(consensus, flavor=None, sanity=True):
     whitelist = [
         b'network-status-version', b'vote-status', b'consensus-method',
         b'valid-after', b'fresh-until', b'valid-until', b'voting-delay',
@@ -318,7 +318,7 @@ def consume_routers(consensus, sanity=True):
 
     return consensus, fields
 
-def jsonify(consensus, encode=True, sanity=True):
+def jsonify(consensus, flavor=None, encode=True, sanity=True):
     fields = dict()
 
     consensus, http = consume_http(consensus)
@@ -328,9 +328,9 @@ def jsonify(consensus, encode=True, sanity=True):
             assert http['headers']['Content-Encoding'] == 'identity'
         fields['http'] = http
 
-    consensus, consensus_headers = consume_consensus_headers(consensus, sanity)
-    if consensus_headers is not None:
-        fields['headers'] = consensus_headers
+    consensus, headers = consume_headers(consensus, flavor, sanity)
+    if headers is not None:
+        fields['headers'] = headers
 
     if sanity:
         assert 'headers' in fields
