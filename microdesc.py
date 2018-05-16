@@ -1,5 +1,8 @@
-import datetime
 from base64 import b64encode, b64decode
+import datetime
+import binascii
+import time
+import json
 
 def scrap(consensus, end_of_field=None):
     if b'\n' not in consensus:
@@ -33,7 +36,6 @@ def parse_params(params):
     return content
 
 def parse_base64(payload, level=0):
-    import binascii
     if level < 2:
         try:
             return str(b64encode(b64decode(payload)), 'utf8')
@@ -51,7 +53,7 @@ def consume_http(consensus):
     def end_of_field(line):
         return line[-1:] != b'\r'
 
-    fields = dict(raw=b'', headers=dict())
+    fields = dict(headers=dict())
     valid = False
     while True:
         consensus, header = scrap(consensus, end_of_field)
@@ -59,7 +61,6 @@ def consume_http(consensus):
             return consensus, fields if valid else None
 
         valid = True
-        fields['raw'] += header
         if b' ' not in header:
             continue
 
@@ -311,7 +312,7 @@ def consume_routers(consensus, sanity=True):
 
     return consensus, fields
 
-def jsonify(consensus, sanity=True):
+def jsonify(consensus, encode=True, sanity=True):
     fields = dict()
 
     consensus, http = consume_http(consensus)
@@ -342,6 +343,8 @@ def jsonify(consensus, sanity=True):
     if sanity:
         assert 'routers' in fields
 
+    if encode:
+        return json.dumps(fields), consensus
     return fields, consensus
 
 if __name__ == "__main__":
