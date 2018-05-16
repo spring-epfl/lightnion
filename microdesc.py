@@ -13,16 +13,38 @@ def scrap(consensus, end_of_field=None):
         return consensus, None
     return remaining, line
 
+def parse_address(address, sanity=True):
+    address = address.split(':')
+    address, port = ':'.join(address[:-1]), address[-1]
+
+    guessed_type = 4
+    if address.startswith('['):
+        address = address[1:]
+        guessed_type = 6
+    if address.endswith(']') or (sanity and guessed_type == 6):
+        if sanity:
+            assert address.endswith(']')
+        address = address[:-1]
+        guessed_type = 6
+    if address.count(':') > 3:
+        if sanity:
+            assert guessed_type == 6
+        guessed_type = 6
+
+    return address, port, guessed_type
+
 def parse_range_once(value, expand=True):
     value = value.split(',')
     subvalues = []
     for subvalue in value:
         if '-' in subvalue:
-            low, high = subvalue.split('-')
+            low, high = [int(v) for v in subvalue.split('-')]
             if expand:
-                subvalues += list(range(int(low), int(high) + 1))
+                subvalues += list(range(low, high + 1))
+            elif low == high - 1:
+                subvalues += [low, high]
             else:
-                subvalues += [(int(low), int(high))]
+                subvalues += [(low, high)]
         else:
             subvalues += [int(subvalue)]
     return subvalues
@@ -41,13 +63,19 @@ def parse_params(params):
         content[key] = int(value)
     return content
 
-def parse_base64(payload, level=0):
+def parse_base64(payload, sanity=True, level=0):
     if level < 2:
         try:
-            return str(b64encode(b64decode(payload)), 'utf8')
+            value = str(b64encode(b64decode(payload)), 'utf8')
         except binascii.Error:
-            return parse_base64(payload + '=', level + 1)
-    return str(b64encode(b64decode(payload)), 'utf8')
+            value = parse_base64(payload + '=', level + 1)
+    else:
+        value = str(b64encode(b64decode(payload)), 'utf8')
+
+    if sanity and level == 0:
+        assert value.split('=')[0] == payload.split('=')[0]
+
+    return value
 
 def parse_time(timedate):
     date, time = timedate.split(' ', 1)
@@ -84,7 +112,11 @@ def consume_http(consensus):
         if keyword[-1:] == ':':
             fields['headers'][keyword[:-1]] = content
 
-def consume_headers(consensus, flavor=None, sanity=True):
+def consume_headers(consensus, flavor='unflavored', sanity=True):
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
     whitelist = [
         b'network-status-version', b'vote-status', b'consensus-method',
         b'valid-after', b'fresh-until', b'valid-until', b'voting-delay',
@@ -116,13 +148,16 @@ def consume_headers(consensus, flavor=None, sanity=True):
 
         keyword, content = header.split(' ', 1)
         if keyword == 'network-status-version':
-            version, variant = content.split(' ', 2)
+            content = content.split(' ', 1)
+            if len(content) == 1:
+                content.append('unflavored')
+            version, variant = content
             content = dict(version=int(version), flavor=variant)
 
             if sanity:
                 assert len(fields) == 0 # first field
                 assert content['version'] >= 3
-                assert content['flavor'] == 'microdesc'
+                assert content['flavor'] == flavor
 
         if keyword == 'consensus-method':
             content = int(content)
@@ -161,12 +196,11 @@ def consume_headers(consensus, flavor=None, sanity=True):
         if keyword.startswith('shared-rand'):
             reveals, value = content.split(' ')
 
-            value = parse_base64(value)
+            value = parse_base64(value, sanity)
             content = {'NumReveals': int(reveals), 'Value': value}
 
             if sanity:
                 assert content['NumReveals'] > 0
-                assert value.split('=')[0] == content['Value'].split('=')[0]
 
         fields[keyword] = content
 
@@ -237,9 +271,18 @@ def consume_dir_sources(consensus, sanity=True):
 
     return consensus, fields
 
-def consume_routers(consensus, sanity=True):
-    whitelist = [b'r', b'm', b's', b'v', b'pr', b'w']
-    aliases = dict(m='digest', pr='protocols', s='flags', v='version')
+def consume_routers(consensus, flavor='unflavored', sanity=True):
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    if flavor == 'unflavored':
+        whitelist = [b'r', b'm', b's', b'v', b'pr', b'w', b'p', b'a']
+    elif flavor == 'microdesc':
+        whitelist = [b'r', b'm', b's', b'v', b'pr', b'w']
+
+    aliases = dict(m='digest', pr='protocols', s='flags', v='version',
+        p='exit-policy', a='extra-address')
     def end_of_field(line):
         if b' ' not in line:
             return True
@@ -266,10 +309,7 @@ def consume_routers(consensus, sanity=True):
 
         keyword, content = header.split(' ', 1)
         if keyword == 'm':
-            value = parse_base64(content)
-            if sanity:
-                assert value.split('=')[0] == content.split('=')[0]
-            content = value
+            content = parse_base64(content, sanity)
 
         if keyword == 's':
             content = content.split(' ')
@@ -280,16 +320,38 @@ def consume_routers(consensus, sanity=True):
         if keyword == 'w':
             content = parse_params(content)
 
-        if keyword == 'r':
+        if keyword == 'p':
+            policy_type, portlist = content.split(' ')
+            portlist = parse_range_once(portlist, expand=False)
+            content = {'type': policy_type, 'PortList': portlist}
+
+        if keyword == 'a':
+            address, port, guessed_type = parse_address(content, sanity)
+            content = [{'ip': address, 'port': port, 'guess': guessed_type}]
+
+        if keyword == 'r' and flavor == 'unflavored':
+            (nickname, identity, digest, date, time, address, orport,
+                dirport) = content.split(' ', 7)
+
+            digest = parse_base64(digest, sanity)
+            identity = parse_base64(identity, sanity)
+            date, time, when = parse_time(' '.join([date, time]))
+
+            content = dict(nickname=nickname, identity=identity, digest=digest,
+                date=date, time=time, stamp=when.timestamp(), address=address,
+                dirport=int(dirport), orport=int(orport))
+
+            if sanity:
+                assert 0 < content['orport'] < 65536
+                assert 0 <= content['dirport'] < 65536
+
+        if keyword == 'r' and flavor == 'microdesc':
             nickname, identity, date, time, address, orport, dirport = (
                 content.split(' ', 6))
 
-            value = parse_base64(identity)
-            if sanity:
-                assert value.split('=')[0] == identity.split('=')[0]
-            identity = value
-
+            identity = parse_base64(identity, sanity)
             date, time, when = parse_time(date + ' ' + time)
+
             content = dict(nickname=nickname, identity=identity, date=date,
                 time=time, stamp=when.timestamp(), address=address,
                 dirport=int(dirport), orport=int(orport))
@@ -301,6 +363,11 @@ def consume_routers(consensus, sanity=True):
         if keyword != 'r' and fields[-1][0] == 'r':
             if keyword in aliases:
                 keyword = aliases[keyword]
+
+            if keyword == 'extra-address' and keyword in fields[-1][1]:
+                content[0]['ignored'] = True
+                fields[-1][1]['extra-address'] += content
+                continue
 
             if sanity:
                 assert keyword not in fields[-1][1]
@@ -318,7 +385,7 @@ def consume_routers(consensus, sanity=True):
 
     return consensus, fields
 
-def jsonify(consensus, flavor=None, encode=True, sanity=True):
+def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
     fields = dict()
 
     consensus, http = consume_http(consensus)
@@ -342,7 +409,7 @@ def jsonify(consensus, flavor=None, encode=True, sanity=True):
     if sanity:
         assert 'dir-sources' in fields
 
-    consensus, routers = consume_routers(consensus, sanity)
+    consensus, routers = consume_routers(consensus, flavor, sanity)
     if routers is not None:
         fields['routers'] = routers
 
@@ -354,6 +421,12 @@ def jsonify(consensus, flavor=None, encode=True, sanity=True):
     return fields, consensus
 
 if __name__ == "__main__":
+    with open('consensus', 'rb') as f:
+        content = f.read()
+    ans = jsonify(content)
+    print(ans[0], len(ans[1]))
+
     with open('consensus-microdesc', 'rb') as f:
         content = f.read()
-    print(jsonify(content))
+    ans = jsonify(content, flavor='microdesc')
+    print(ans[0], len(ans[1]))
