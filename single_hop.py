@@ -112,6 +112,7 @@ if __name__ == "__main__":
     #   6. Receive the answer to our request
     #   7. Send few dummies on our circuit (RELAY_DROP)
     #   8. Close a stream (RELAY_END)
+    #   9. Repeat with another stream
     #
 
     link = link_protocol.handshake()
@@ -134,9 +135,8 @@ if __name__ == "__main__":
     assert len(answers) == 1
 
     # handmade HTTP request FTW
-    http_request = '\r\n'.join(('GET ' # retrieve consensus micro-descriptors
-    + '/tor/status-vote/current/consensus-microdesc' # (the one we need)
-    + ' HTTP/1.0',
+    http_request = '\r\n'.join((
+      'GET /tor/status-vote/current/consensus HTTP/1.0', # regular consensus
       'Accept-Encoding: identity', # no compression
     )) + '\r\n\r\n'
 
@@ -158,12 +158,61 @@ if __name__ == "__main__":
     assert all([cell.command == 'RELAY_DATA' for cell in answers])
     full_answer += b''.join([cell.data for cell in answers])
 
-    print('[stream_id=1] Sending a RELAY_DROP for fun...')
+    print('[stream_id=0] Sending a RELAY_DROP for fun...')
     endpoint, _ = single_send(endpoint, 'RELAY_DROP', stream_id=0)
 
     print('[stream_id=1] Closing the stream...')
     endpoint, _ = single_send(endpoint, 'RELAY_END', stream_id=1)
 
-    print('\nNote: micro-descriptors written to ./consensus-microdesc')
+    print('\nNote: consensus written to ./consensus\n')
+    with open('consensus', 'wb') as f:
+        f.write(full_answer)
+
+    #
+    # second run
+    #
+    print('[stream_id=2] Sending RELAY_BEGIN_DIR...')
+    endpoint, _ = single_send(endpoint, 'RELAY_BEGIN_DIR', stream_id=2)
+
+    print('[stream_id=2] Receiving now...')
+    endpoint, answers = single_recv(endpoint)
+
+    print('[stream_id=2] Success! (with {})'.format(answers[0].command))
+    assert len(answers) == 1
+
+    # handmade HTTP request FTW
+    http_request = '\r\n'.join(('GET ' # retrieve consensus micro-descriptors
+    + '/tor/status-vote/current/consensus-microdesc' # (the one we need)
+    + ' HTTP/1.0',
+      'Accept-Encoding: identity', # no compression
+    )) + '\r\n\r\n'
+
+    print('[stream_id=2] Sending a RELAY_DATA to HTTP GET the',
+        'micro-descriptor consensus...')
+    endpoint, _ = single_send(
+        endpoint, 'RELAY_DATA', http_request, stream_id=2)
+
+    print('[stream_id=2] Receiving now...')
+    endpoint, answers = single_recv(endpoint)
+
+    print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
+    assert all([cell.command == 'RELAY_DATA' for cell in answers])
+    full_answer = b''.join([cell.data for cell in answers])
+
+    print('[stream_id=2] Receiving again...')
+    endpoint, answers = single_recv(endpoint)
+
+    print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
+    assert all([cell.command == 'RELAY_DATA' for cell in answers])
+    full_answer += b''.join([cell.data for cell in answers])
+
+    print('[stream_id=0] Sending a RELAY_DROP for fun...')
+    endpoint, _ = single_send(endpoint, 'RELAY_DROP', stream_id=0)
+
+    print('[stream_id=2] Closing the stream...')
+    endpoint, _ = single_send(endpoint, 'RELAY_END', stream_id=2)
+
+    print('\nNote: micro-descriptor consensus',
+        'written to ./consensus-microdesc\n')
     with open('consensus-microdesc', 'wb') as f:
         f.write(full_answer)
