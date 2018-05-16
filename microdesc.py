@@ -13,19 +13,25 @@ def scrap(consensus, end_of_field=None):
         return consensus, None
     return remaining, line
 
-def parse_version_ranges(ranges):
+def parse_range_once(value, expand=True):
+    value = value.split(',')
+    subvalues = []
+    for subvalue in value:
+        if '-' in subvalue:
+            low, high = subvalue.split('-')
+            if expand:
+                subvalues += list(range(int(low), int(high) + 1))
+            else:
+                subvalues += [(int(low), int(high))]
+        else:
+            subvalues += [int(subvalue)]
+    return subvalues
+
+def parse_ranges(ranges, expand=True):
     pairs = ranges.split(' ')
     content = {}
     for key, value in [pair.split('=') for pair in pairs if '=' in pair]:
-        value = value.split(',')
-        subvalues = []
-        for subvalue in value:
-            if '-' in subvalue:
-                low, high = subvalue.split('-')
-                subvalues += list(range(int(low), int(high) + 1))
-            else:
-                subvalues += [int(subvalue)]
-        content[key] = subvalues
+        content[key] = parse_range_once(value, expand)
     return content
 
 def parse_params(params):
@@ -147,7 +153,7 @@ def consume_consensus_headers(consensus, sanity=True):
             content = content.split(' ')
 
         if keyword.startswith(('recommended', 'required')):
-            content = parse_version_ranges(content)
+            content = parse_ranges(content)
 
         if keyword == 'params':
             pairs = parse_params(content)
@@ -269,7 +275,7 @@ def consume_routers(consensus, sanity=True):
             content = content.split(' ')
 
         if keyword == 'pr':
-            content = parse_version_ranges(content)
+            content = parse_ranges(content)
 
         if keyword == 'w':
             content = parse_params(content)
