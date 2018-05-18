@@ -1,0 +1,4 @@
+ - how digests are computed
+    - it's only on onion-encrypted data
+ - which timezone is used
+    - as expected, UTC (but unspecified)
