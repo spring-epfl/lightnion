@@ -281,7 +281,7 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
     elif flavor == 'microdesc':
         whitelist = [b'r', b'm', b's', b'v', b'pr', b'w']
 
-    aliases = dict(m='digest', pr='protocols', s='flags', v='version',
+    aliases = dict(m='micro-digest', pr='protocols', s='flags', v='version',
         p='exit-policy', a='extra-address')
     def end_of_field(line):
         if b' ' not in line:
