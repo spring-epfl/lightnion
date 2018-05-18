@@ -425,12 +425,12 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
     return fields, consensus
 
 if __name__ == "__main__":
-    with open('consensus', 'rb') as f:
+    with open('./descriptors/consensus', 'rb') as f:
         content = f.read()
     ans = jsonify(content)
     print(ans[0], len(ans[1]))
 
-    with open('consensus-microdesc', 'rb') as f:
+    with open('./descriptors/consensus-microdesc', 'rb') as f:
         content = f.read()
     ans = jsonify(content, flavor='microdesc')
     print(ans[0], len(ans[1]))
