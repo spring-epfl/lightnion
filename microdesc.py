@@ -72,8 +72,12 @@ def parse_base64(payload, sanity=True, level=0):
     else:
         value = str(b64encode(b64decode(payload)), 'utf8')
 
-    if sanity and level == 0:
-        assert value.split('=')[0] == payload.split('=')[0]
+    if level == 0:
+        if not payload[-2:].count('=') == value[-2:].count('='):
+            value = value.rstrip('=') + '=' * payload[-2:].count('=')
+
+        if sanity:
+            assert value == payload
 
     return value
 
