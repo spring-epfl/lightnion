@@ -1,7 +1,11 @@
+import zlib
+
 import stem
 import stem.client.cell
 
 import onion_parts
+import circuit_fast
+import link_protocol
 
 def recv(state, sanity=True):
     """
@@ -98,6 +102,118 @@ def send(state, command, payload='', stream_id=0):
     link_socket.send(packed_cell)
     return rollback, len(packed_cell)
 
+directory_request_format = '\r\n'.join((
+      'GET {query} HTTP/1.0',
+      'Accept-Encoding: {compression}',
+    )) + '\r\n\r\n'
+
+def directory_query(
+        state=None,
+        query=None,
+        last_stream_id=0,
+        compression='deflate',
+        sanity=True,
+        **kwargs):
+
+    if state is None:
+        port = kwargs.get('port', 9050)
+        address = kwargs.get('address', '127.0.0.1')
+        versions = kwargs.get('versions', [4])
+        link = link_protocol.handshake(address, port, versions, sanity)
+
+        if None in link:
+            return None, None, None
+
+        circuits = kwargs.get('circuits', [])
+        circuit = circuit_fast.create(link, circuits, sanity)
+
+        if None in circuit:
+            return None, None, None
+
+        state = onion_parts.state(link, circuit, sanity)
+    link_socket, link_version = state.link
+    circuit_id, _ = state.circuit
+
+    if last_stream_id is None:
+        last_stream_id = 0
+    last_stream_id += 1
+
+    if query is None:
+        query = '/tor/status-vote/current/consensus'
+    if sanity:
+        assert query.startswith('/tor/')
+        assert not any([c in query for c in ' \r\n'])
+
+    state, nbytes = send(state, 'RELAY_BEGIN_DIR', stream_id=last_stream_id)
+    if nbytes is None:
+        return state, last_stream_id, None
+
+    state, answers = recv(state, sanity)
+    if answers is None or len(answers) < 1:
+        return state, last_stream_id, None
+
+    if sanity:
+        assert len(answers) == 1
+        assert answers[0].command == 'RELAY_CONNECTED'
+
+    if compression not in ['identity', 'deflate', 'gzip']:
+        raise NotImplementedError(
+            'Compression method "{}" not supported.'.format(compression))
+
+    http_request = directory_request_format.format(
+        query=query, compression=compression)
+    state, nbytes = send(state, 'RELAY_DATA', http_request,
+        stream_id=last_stream_id)
+    if nbytes is None:
+        return state, last_stream_id, None
+
+    state, answers = recv(state, sanity)
+    if answers is None or len(answers) < 1:
+        return state, last_stream_id, None
+
+    state, more_answers = recv(state, sanity)
+    if more_answers is None or len(more_answers) < 1:
+        return state, last_stream_id, None
+    answers += more_answers
+
+    state, nbytes = send(state, 'RELAY_END', stream_id=last_stream_id)
+    if sanity:
+        assert all([cell.command == 'RELAY_DATA' for cell in answers])
+        assert nbytes is not None
+
+    content = b''.join([cell.data for cell in answers if (
+        cell.command == 'RELAY_DATA' and cell.stream_id == last_stream_id)])
+
+    if compression in ['deflate', 'gzip']:
+        http_headers, compressed_data = content.split(b'\r\n\r\n', 1)
+        raw_data = zlib_decompress(compressed_data)
+        content = http_headers + b'\r\n\r\n' + raw_data
+
+    if sanity:
+        assert content.startswith(b'HTTP/1.0')
+
+    return state, last_stream_id, content
+
+def zlib_decompress(compressed_data, min_bufsize=32):
+    data = b''
+    buff = b''
+    part = None
+    ilen = len(compressed_data)
+    olen = 0
+    zobj = zlib.decompressobj()
+    while part is None or len(part) > 0:
+        buff = zobj.unconsumed_tail
+        if len(buff) < 1:
+            nlen = max((len(data) + ilen) // 2, min_bufsize)
+            buff = compressed_data[olen:nlen]
+            if len(buff) < 1:
+                break
+
+            olen += len(buff)
+        part = zobj.decompress(buff, zlib.MAX_WBITS | 32)
+        data += part
+    return data
+
 if __name__ == "__main__":
     import link_protocol
     import circuit_fast
@@ -164,55 +280,18 @@ if __name__ == "__main__":
     print('[stream_id=1] Closing the stream...')
     endpoint, _ = send(endpoint, 'RELAY_END', stream_id=1)
 
-    print('\nNote: consensus written to ./descriptors/consensus\n')
+    print('\nNote: consensus written to ./descriptors/consensus')
     with open('./descriptors/consensus', 'wb') as f:
         f.write(full_answer)
 
     #
-    # second run
+    # second run (with compression function)
     #
-    print('[stream_id=2] Sending RELAY_BEGIN_DIR...')
-    endpoint, _ = send(endpoint, 'RELAY_BEGIN_DIR', stream_id=2)
+    endpoint, last_stream_id, full_answer = directory_query(
+        endpoint, '/tor/status-vote/current/consensus-microdesc',
+        last_stream_id=1, compression='gzip')
 
-    print('[stream_id=2] Receiving now...')
-    endpoint, answers = recv(endpoint)
-
-    print('[stream_id=2] Success! (with {})'.format(answers[0].command))
-    assert len(answers) == 1
-
-    # handmade HTTP request FTW
-    http_request = '\r\n'.join(('GET ' # retrieve consensus micro-descriptors
-    + '/tor/status-vote/current/consensus-microdesc' # (the one we need)
-    + ' HTTP/1.0',
-      'Accept-Encoding: identity', # no compression
-    )) + '\r\n\r\n'
-
-    print('[stream_id=2] Sending a RELAY_DATA to HTTP GET the',
-        'micro-descriptor consensus...')
-    endpoint, _ = send(
-        endpoint, 'RELAY_DATA', http_request, stream_id=2)
-
-    print('[stream_id=2] Receiving now...')
-    endpoint, answers = recv(endpoint)
-
-    print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
-    assert all([cell.command == 'RELAY_DATA' for cell in answers])
-    full_answer = b''.join([cell.data for cell in answers])
-
-    print('[stream_id=2] Receiving again...')
-    endpoint, answers = recv(endpoint)
-
-    print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
-    assert all([cell.command == 'RELAY_DATA' for cell in answers])
-    full_answer += b''.join([cell.data for cell in answers])
-
-    print('[stream_id=0] Sending a RELAY_DROP for fun...')
-    endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
-
-    print('[stream_id=2] Closing the stream...')
-    endpoint, _ = send(endpoint, 'RELAY_END', stream_id=2)
-
-    print('\nNote: micro-descriptor consensus',
-        'written to ./descriptors/consensus-microdesc\n')
+    print('Note: micro-descriptor consensus',
+        'written to ./descriptors/consensus-microdesc')
     with open('./descriptors/consensus-microdesc', 'wb') as f:
         f.write(full_answer)
