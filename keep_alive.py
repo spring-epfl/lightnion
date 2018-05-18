@@ -3,6 +3,7 @@ import time
 import link_protocol
 import circuit_fast
 import onion_parts
+import single_hop
 
 """
     We check here how long we can wait before sending data after establishing a
@@ -53,14 +54,14 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         endpoint = onion_parts.state(link, circuit)
 
         log('Link -> Circuit -> Creating stream...')
-        endpoint, res = onion_parts.single_send(
+        endpoint, res = single_hop.send(
             endpoint, 'RELAY_BEGIN_DIR', stream_id=1)
         if res is None:
             log('Unable to send a circuit creation cell...', True)
             continue
 
         log('Link -> Circuit -> Confirming stream...')
-        endpoint, answers = onion_parts.single_recv(endpoint)
+        endpoint, answers = single_hop.recv(endpoint)
         if answers is None or len(answers) < 1:
             log("Unable to receive 'connected' confirmation cell...", True)
             continue
@@ -86,14 +87,14 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         )) + '\r\n\r\n'
 
         log('Link -> Circuit -> Stream -> Is it still alive now? Checking...')
-        endpoint, res = onion_parts.single_send(
+        endpoint, res = single_hop.send(
             endpoint, 'RELAY_DATA', http_request, stream_id=1)
         if res is None:
             log('Unable to send our first data cell...', True)
             continue
 
         log('Link -> Circuit -> Stream -> Is it still alive now? Waiting...')
-        endpoint, answers = onion_parts.single_recv(endpoint)
+        endpoint, answers = single_hop.recv(endpoint)
         if answers is None or len(answers) < 1:
             log("Unable to receive an answer for our request...", True)
             continue

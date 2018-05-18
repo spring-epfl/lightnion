@@ -3,7 +3,7 @@ import stem.client.cell
 
 import onion_parts
 
-def single_recv(state, sanity=True):
+def recv(state, sanity=True):
     """
     Receive one or more RELAY_CELL cells – assuming a v4-or-higher header size
     and that we are on a one-hop circuit.
@@ -71,7 +71,7 @@ def single_recv(state, sanity=True):
             answer += link_socket.recv()
     return rollback, plains
 
-def single_send(state, command, payload='', stream_id=0):
+def send(state, command, payload='', stream_id=0):
     """
     Send one RELAY cell – assuming a v4-or-higher header size and that we are
     on a one-hop circuit.
@@ -126,10 +126,10 @@ if __name__ == "__main__":
     endpoint = onion_parts.state(link, circuit)
 
     print('[stream_id=1] Sending RELAY_BEGIN_DIR...')
-    endpoint, _ = single_send(endpoint, 'RELAY_BEGIN_DIR', stream_id=1)
+    endpoint, _ = send(endpoint, 'RELAY_BEGIN_DIR', stream_id=1)
 
     print('[stream_id=1] Receiving now...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=1] Success! (with {})'.format(answers[0].command))
     assert len(answers) == 1
@@ -141,28 +141,28 @@ if __name__ == "__main__":
     )) + '\r\n\r\n'
 
     print('[stream_id=1] Sending a RELAY_DATA to HTTP GET the consensus...')
-    endpoint, _ = single_send(
+    endpoint, _ = send(
         endpoint, 'RELAY_DATA', http_request, stream_id=1)
 
     print('[stream_id=1] Receiving now...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
     assert all([cell.command == 'RELAY_DATA' for cell in answers])
     full_answer = b''.join([cell.data for cell in answers])
 
     print('[stream_id=1] Receiving again...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
     assert all([cell.command == 'RELAY_DATA' for cell in answers])
     full_answer += b''.join([cell.data for cell in answers])
 
     print('[stream_id=0] Sending a RELAY_DROP for fun...')
-    endpoint, _ = single_send(endpoint, 'RELAY_DROP', stream_id=0)
+    endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
 
     print('[stream_id=1] Closing the stream...')
-    endpoint, _ = single_send(endpoint, 'RELAY_END', stream_id=1)
+    endpoint, _ = send(endpoint, 'RELAY_END', stream_id=1)
 
     print('\nNote: consensus written to ./descriptors/consensus\n')
     with open('./descriptors/consensus', 'wb') as f:
@@ -172,10 +172,10 @@ if __name__ == "__main__":
     # second run
     #
     print('[stream_id=2] Sending RELAY_BEGIN_DIR...')
-    endpoint, _ = single_send(endpoint, 'RELAY_BEGIN_DIR', stream_id=2)
+    endpoint, _ = send(endpoint, 'RELAY_BEGIN_DIR', stream_id=2)
 
     print('[stream_id=2] Receiving now...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=2] Success! (with {})'.format(answers[0].command))
     assert len(answers) == 1
@@ -189,28 +189,28 @@ if __name__ == "__main__":
 
     print('[stream_id=2] Sending a RELAY_DATA to HTTP GET the',
         'micro-descriptor consensus...')
-    endpoint, _ = single_send(
+    endpoint, _ = send(
         endpoint, 'RELAY_DATA', http_request, stream_id=2)
 
     print('[stream_id=2] Receiving now...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
     assert all([cell.command == 'RELAY_DATA' for cell in answers])
     full_answer = b''.join([cell.data for cell in answers])
 
     print('[stream_id=2] Receiving again...')
-    endpoint, answers = single_recv(endpoint)
+    endpoint, answers = recv(endpoint)
 
     print('[stream_id=2] Success! (got {} answers)'.format(len(answers)))
     assert all([cell.command == 'RELAY_DATA' for cell in answers])
     full_answer += b''.join([cell.data for cell in answers])
 
     print('[stream_id=0] Sending a RELAY_DROP for fun...')
-    endpoint, _ = single_send(endpoint, 'RELAY_DROP', stream_id=0)
+    endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
 
     print('[stream_id=2] Closing the stream...')
-    endpoint, _ = single_send(endpoint, 'RELAY_END', stream_id=2)
+    endpoint, _ = send(endpoint, 'RELAY_END', stream_id=2)
 
     print('\nNote: micro-descriptor consensus',
         'written to ./descriptors/consensus-microdesc\n')
