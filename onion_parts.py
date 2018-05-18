@@ -21,7 +21,7 @@ class state:
     the bidirectional communications (see state.reset_encryption method).
     """
 
-    def __init__(self, link, circuit):
+    def __init__(self, link, circuit, sanity=True):
         """
         :params tuple link: a tuple (link socket, link version)
         :params tuple circuit: a tuple (circuit id, key material)
@@ -30,8 +30,8 @@ class state:
         self.link = link
 
         self.__sane = 0
-        self.reset_digest() # define forward_digest, backward_digest
-        self.reset_encryption() # define forward_encryptor, backward_decryptor
+        self.reset_digest(sanity) # define forward_digest, backward_digest
+        self.reset_encryption(sanity) # define fwd encryptor, bckwd decryptor
 
     def reset_encryption(self, sanity=True):
         """
