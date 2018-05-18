@@ -84,8 +84,11 @@ def parse_base64(payload, sanity=True, level=0):
 def parse_time(timedate):
     date, time = timedate.split(' ', 1)
     when = datetime.datetime.strptime(timedate, '%Y-%m-%d %H:%M:%S')
-    return (when.strftime('%Y-%m-%d'), when.strftime('%H:%M:%S'), when)
 
+    # convert to UTC-aware datetime object
+    when = datetime.datetime(*when.timetuple()[:6],
+        tzinfo=datetime.timezone.utc)
+    return (when.strftime('%Y-%m-%d'), when.strftime('%H:%M:%S'), when)
 
 def consume_http(consensus):
     def end_of_field(line):
