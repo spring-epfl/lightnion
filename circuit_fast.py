@@ -124,8 +124,14 @@ def create(link, circuits=[], sanity=True):
 
 if __name__ == "__main__":
     import link_protocol
+    import argparse
 
-    link = link_protocol.handshake()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('addr', nargs='?', default='127.0.0.1')
+    parser.add_argument('port', nargs='?', type=int, default=9050)
+    sys_argv = parser.parse_args()
+
+    link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     print('\nCreating 10 one-hop circuits with CREATED_FAST cells:')

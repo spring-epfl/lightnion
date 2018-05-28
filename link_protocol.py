@@ -119,5 +119,12 @@ def keepalive(link):
     link_socket.send(stem.client.cell.PaddingCell().pack(link_version))
 
 if __name__ == "__main__":
-    link = handshake()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('addr', nargs='?', default='127.0.0.1')
+    parser.add_argument('port', nargs='?', type=int, default=9050)
+    sys_argv = parser.parse_args()
+
+    link = handshake(addr=sys_argv.address, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))

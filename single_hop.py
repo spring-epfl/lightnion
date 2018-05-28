@@ -217,6 +217,12 @@ def zlib_decompress(compressed_data, min_bufsize=32):
 if __name__ == "__main__":
     import link_protocol
     import circuit_fast
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('addr', nargs='?', default='127.0.0.1')
+    parser.add_argument('port', nargs='?', type=int, default=9050)
+    sys_argv = parser.parse_args()
 
     #
     # Here, we showcase how to:
@@ -231,7 +237,7 @@ if __name__ == "__main__":
     #   9. Repeat with another stream
     #
 
-    link = link_protocol.handshake()
+    link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     circuit = circuit_fast.create(link)
