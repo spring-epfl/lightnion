@@ -1,0 +1,13 @@
+diff --git a/torrc_templates/common.i b/torrc_templates/common.i
+index 884878b..76de8c1 100644
+--- a/torrc_templates/common.i
++++ b/torrc_templates/common.i
+@@ -30,7 +30,7 @@ TestingMinExitFlagThreshold 0
+ #Default VoteOnHidServDirectoriesV2 1
+ 
+ ## Options that we always want to test ##
+-Sandbox 1
++Sandbox 0
+ 
+ DataDirectory $dir
+ RunAsDaemon 1
