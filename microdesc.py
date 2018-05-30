@@ -198,7 +198,7 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
             content = parse_ranges(content)
 
         if keyword == 'params':
-            pairs = parse_params(content)
+            content = parse_params(content)
 
         if keyword.startswith('shared-rand'):
             reveals, value = content.split(' ')
