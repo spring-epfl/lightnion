@@ -7,6 +7,8 @@ import onion_parts
 import circuit_fast
 import link_protocol
 
+# TODO: buffered recv (empty queues, validate cells only afterwards)
+#
 def recv(state, sanity=True):
     """
     Receive one or more RELAY_CELL cells – assuming a v4-or-higher header size
@@ -171,14 +173,16 @@ def directory_query(
     if answers is None or len(answers) < 1:
         return state, last_stream_id, None
 
-    state, more_answers = recv(state, sanity)
-    if more_answers is None or len(more_answers) < 1:
-        return state, last_stream_id, None
-    answers += more_answers
+    # only try to receive one more time (if the buffer size was exceeded)
+    if 'RELAY_END' not in [c.command for c in answers]:
+        state, more_answers = recv(state, sanity)
+        if more_answers is None or len(more_answers) < 1:
+            return state, last_stream_id, None
+        answers += more_answers
 
     state, nbytes = send(state, 'RELAY_END', stream_id=last_stream_id)
     if sanity:
-        assert all([cell.command == 'RELAY_DATA' for cell in answers])
+        assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
         assert nbytes is not None
 
     content = b''.join([cell.data for cell in answers if (
@@ -270,15 +274,16 @@ if __name__ == "__main__":
     endpoint, answers = recv(endpoint)
 
     print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
-    assert all([cell.command == 'RELAY_DATA' for cell in answers])
+    assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
     full_answer = b''.join([cell.data for cell in answers])
 
-    print('[stream_id=1] Receiving again...')
-    endpoint, answers = recv(endpoint)
+    if not 'RELAY_END' in [cell.command for cell in answers]:
+        print('[stream_id=1] Receiving again...')
+        endpoint, answers = recv(endpoint)
 
-    print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
-    assert all([cell.command == 'RELAY_DATA' for cell in answers])
-    full_answer += b''.join([cell.data for cell in answers])
+        print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
+        assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
+        full_answer += b''.join([cell.data for cell in answers])
 
     print('[stream_id=0] Sending a RELAY_DROP for fun...')
     endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
