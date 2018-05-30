@@ -126,5 +126,5 @@ if __name__ == "__main__":
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = handshake(addr=sys_argv.address, port=sys_argv.port)
+    link = handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
