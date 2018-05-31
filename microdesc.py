@@ -13,6 +13,20 @@ def scrap(consensus, end_of_field=None):
         return consensus, None
     return remaining, line
 
+def scrap_signature(consensus):
+    if not consensus.startswith(b'-----BEGIN SIGNATURE-----'):
+        return consensus, None
+
+    lines = consensus.split(b'\n', 22) # fits 0-1024o (for 256o sig)
+    try:
+        idx_endsig = lines.index(b'-----END SIGNATURE-----')
+    except ValueError:
+        return consensus, None
+
+    remaining = b'\n'.join(lines[idx_endsig + 1:])
+    content = b''.join(lines[1:idx_endsig])
+    return remaining, content
+
 def parse_address(address, sanity=True):
     address = address.split(':')
     address, port = ':'.join(address[:-1]), address[-1]
@@ -207,7 +221,7 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
             content = {'NumReveals': int(reveals), 'Value': value}
 
             if sanity:
-                assert content['NumReveals'] > 0
+                assert content['NumReveals'] >= 0
 
         fields[keyword] = content
 
@@ -392,36 +406,101 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
     return consensus, fields
 
+def consume_footer(consensus, flavor='unflavored', sanity=True):
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    whitelist = [
+        b'directory-footer', b'bandwidth-weights', b'directory-signature']
+
+    def end_of_field(line):
+        if b'directory-footer' == line:
+            return False
+        if b' ' not in line:
+            return True
+        keyword, _ = line.split(b' ', 1)
+        return keyword not in whitelist
+
+    fields = dict()
+    valid = False
+    while True:
+        consensus, header = scrap(consensus, end_of_field)
+        print(consensus, header)
+        if header is None:
+            return consensus, fields if valid else None
+
+        valid = True
+        if b' ' not in header:
+            continue
+
+        try:
+            header = str(header, 'utf8')
+        except:
+            continue
+
+        keyword, content = header.split(' ', 1)
+        if keyword == 'directory-footer':
+            if sanity:
+                assert len(fields) == 0 # first field
+
+        if keyword == 'bandwidth-weights':
+            content = parse_params(content)
+
+        if keyword == 'directory-signature':
+            content = content.split(' ', 2)
+            if len(content) == 3:
+                algorithm, identity, signing_key_digest = content
+            elif len(content) == 2:
+                algorithm = 'sha1'
+                identity, signing_key_digest = content
+
+            content = {
+                'Algorithm': algorithm,
+                'identity': identity,
+                'signing-key-digest': signing_key_digest}
+
+            consensus, signature = scrap_signature(consensus)
+            if signature is not None:
+                signature = parse_base64(str(signature, 'utf8'))
+                content['signature'] = parse_base64(signature)
+
+            if keyword + 's' not in fields:
+                fields[keyword + 's'] = []
+            fields[keyword + 's'].append(content)
+            continue
+
+        fields[keyword] = content
+    return consensus, fields
+
 def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
     fields = dict()
 
     consensus, http = consume_http(consensus)
     if http is not None:
-        if sanity:
-            assert http['headers']['Content-Type'] == 'text/plain'
-            assert http['headers']['Content-Encoding'] == 'identity'
         fields['http'] = http
 
     consensus, headers = consume_headers(consensus, flavor, sanity)
     if headers is not None:
         fields['headers'] = headers
 
-    if sanity:
-        assert 'headers' in fields
-
     consensus, dir_sources = consume_dir_sources(consensus, sanity)
     if dir_sources is not None:
         fields['dir-sources'] = dir_sources
-
-    if sanity:
-        assert 'dir-sources' in fields
 
     consensus, routers = consume_routers(consensus, flavor, sanity)
     if routers is not None:
         fields['routers'] = routers
 
+    consensus, footer = consume_footer(consensus, flavor, sanity)
+    if footer is not None:
+        fields['footer'] = footer
+
     if sanity:
+        assert 'headers' in fields
+        assert 'dir-sources' in fields
         assert 'routers' in fields
+        assert 'footer' in fields
 
     if encode:
         return json.dumps(fields), consensus
