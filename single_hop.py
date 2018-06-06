@@ -156,6 +156,11 @@ def directory_query(
 
     if sanity:
         assert len(answers) == 1
+        if isinstance(answers[0], stem.client.cell.DestroyCell):
+            raise RuntimeError(('Got DestroyCell (circ_id {}) with reason {} '
+                + '({})! (are you keeping the circuit state updated?)').format(
+                answers[0].circ_id, answers[0].reason_int, answers[0].reason))
+
         assert answers[0].command == 'RELAY_CONNECTED'
 
     if compression not in ['identity', 'deflate', 'gzip']:
