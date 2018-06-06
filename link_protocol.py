@@ -46,7 +46,7 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
     :param str address: remote relay address (default: 127.0.0.1).
     :param int port: remote relay ORPort (default: 9050).
     :param list versions: target link versions (default: [3, 4, 5]).
-    :param bool sanity: checks v3 handshake compliance (default: False).
+    :param bool sanity: enable extra sanity checks (default: True).
 
     :returns: a tuple (link socket, link version)
 
