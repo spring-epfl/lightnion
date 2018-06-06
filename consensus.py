@@ -641,7 +641,7 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
             consensus, signature = scrap_signature(consensus)
             if signature is not None:
                 signature = parse_base64(str(signature, 'utf8'))
-                content['signature'] = parse_base64(signature)
+                content['signature'] = signature
 
             if keyword + 's' not in fields:
                 fields[keyword + 's'] = []
