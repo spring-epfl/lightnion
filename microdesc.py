@@ -4,7 +4,19 @@ import binascii
 import time
 import json
 
-def scrap(consensus, end_of_field=None):
+def scrap(consensus, end_of_field):
+    """
+        Consume lines upon matching a criterion.
+
+        Returns (consensus-without-first-line, first-line)
+            if end_of_field(first-line) returns True,
+            else returns (consensus-with-first-line, None)
+
+        :param bytes consensus: input which first line may be consumed
+        :param function end_of_field: passed a line, returns True when no match
+
+        :returns: a tuple (updated-consensus, next-field-or-None)
+    """
     if b'\n' not in consensus:
         return consensus, None
 
@@ -14,6 +26,13 @@ def scrap(consensus, end_of_field=None):
     return remaining, line
 
 def scrap_signature(consensus):
+    """
+        Consume a signature field if there is one to consume.
+
+        :param bytes consensus: input which may start with a signature.
+
+        :returns: a tuple (updated-consensus, signature-or-None)
+    """
     if not consensus.startswith(b'-----BEGIN SIGNATURE-----'):
         return consensus, None
 
@@ -28,6 +47,16 @@ def scrap_signature(consensus):
     return remaining, content
 
 def parse_address(address, sanity=True):
+    """
+        Take a Tor-formatted v4 or v6 IP address with a port, returns a
+        cleaned-up version.
+
+        :param str address: input address to be processed
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a tuple (address, port, guessed-type) where port is an
+                  integer and guessed-type is 4 or 6 (IPv4 or IPv6).
+    """
     address = address.split(':')
     address, port = ':'.join(address[:-1]), address[-1]
 
@@ -48,6 +77,18 @@ def parse_address(address, sanity=True):
     return address, port, guessed_type
 
 def parse_range_once(value, expand=True):
+    """
+        Take Tor-formatted ranges, then returns it as a list of integers if
+        expanded or a mix of integers and ranges as (low, high) tuples.
+
+        For example, we use it to parse "p" fields:
+            https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2322
+
+        :param str value: input value to be processed
+        :param bool expand: do we expand a range as integers? (default: True)
+
+        :returns: a list of integers or a mix of integers and range tuples
+    """
     value = value.split(',')
     subvalues = []
     for subvalue in value:
@@ -64,6 +105,19 @@ def parse_range_once(value, expand=True):
     return subvalues
 
 def parse_ranges(ranges, expand=True):
+    """
+        Take Tor-formatted named ranges, then returns a keyword-based
+        dictionary of list of integers or mix of integers and range tuples (as
+        returned by parse_range_once), expanded or not.
+
+        For example, we use it to parse "recommended-client-protocols" fields:
+            https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L780
+
+        :param str ranges: input ranges to be processed
+        :param bool expand: do we expand ranges as integers? (default: True)
+
+        :returns: a dictionary with (range-name, range-content) items
+    """
     pairs = ranges.split(' ')
     content = {}
     for key, value in [pair.split('=') for pair in pairs if '=' in pair]:
@@ -71,6 +125,17 @@ def parse_ranges(ranges, expand=True):
     return content
 
 def parse_params(params):
+    """
+        Take Tor-formatted parameters, then returns a keyword-based dictionary
+        of integers.
+
+        For example, we use it to parse "params" fields:
+            https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L1820
+
+        :param str params: input params to be processed
+
+        :returns: a dictionary with (param-name, param-integer-value) items
+    """
     pairs = params.split(' ')
     content = dict()
     for key, value in [pair.split('=') for pair in pairs]:
@@ -78,6 +143,22 @@ def parse_params(params):
     return content
 
 def parse_base64(payload, sanity=True, level=0):
+    """
+        Take an input base64 string, decode it, re-encode it, validate if the
+        result match if sanity is enabled. We use a dirty trick with recursion
+        (level parameter) to add padding if it's missing.
+
+        TODO: better way to handle base64 inputs without padding
+
+        For example, we use it to parse "shared-rand-current-value" fields:
+            https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2069
+
+        :param str payload: input base64-encoded data
+        :param bool sanity: enable extra sanity checks (default: True)
+        :param int level: retry (2 - level) w/padding on failure (default: 0)
+
+        :returns: a base64-encoded string equivalent to the input
+    """
     if level < 2:
         try:
             value = str(b64encode(b64decode(payload)), 'utf8')
@@ -96,7 +177,16 @@ def parse_base64(payload, sanity=True, level=0):
     return value
 
 def parse_time(timedate):
-    date, time = timedate.split(' ', 1)
+    """
+        Take a Tor-formatted (Y-m-d H:M:S) time, parse it, then returns the
+        corresponding date, time and datetime object. This function assumes
+        that the given time uses the UTC timezone – as it's the timezone used
+        into Tor consensuses.
+
+        :param str timedate: input time and date to be parsed
+
+        :returns: a tuple (date-str, time-str, datetime-object)
+    """
     when = datetime.datetime.strptime(timedate, '%Y-%m-%d %H:%M:%S')
 
     # convert to UTC-aware datetime object
@@ -105,6 +195,14 @@ def parse_time(timedate):
     return (when.strftime('%Y-%m-%d'), when.strftime('%H:%M:%S'), when)
 
 def consume_http(consensus):
+    """
+        Consume HTTP headers if present, then returns the remaining input to be
+        further processed and a set of headers (or None, if none present).
+
+        :param str consensus: input to be processed
+
+        :returns: a tuple (remaining-input, headers-or-None)
+    """
     def end_of_field(line):
         return line[-1:] != b'\r'
 
@@ -134,6 +232,36 @@ def consume_http(consensus):
             fields['headers'][keyword[:-1]] = content
 
 def consume_headers(consensus, flavor='unflavored', sanity=True):
+    """
+        Consume consensus headers if present, then returns the remaining input
+        to be further processed and a set of headers (or None, if none
+        present).
+
+        Will consume the following fields:
+            - network-status-version
+            - vote-status
+            - consensus-method
+            - valid-after
+            - fresh-until
+            - valid-until
+            - voting-delay
+            - client-versions
+            - server-versions
+            - known-flags
+            - recommended-client-protocols
+            - recommended-relay-protocols
+            - required-client-protocols
+            - required-relay-protocols
+            - params
+            - shared-rand-previous-value
+            - shared-rand-current-value
+
+        :param str consensus: input to be processed
+        :param str flavor: consensus flavor ('unflavored' or 'microdesc')
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a tuple (remaining-input, headers-or-None)
+    """
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
@@ -226,6 +354,21 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
         fields[keyword] = content
 
 def consume_dir_sources(consensus, sanity=True):
+    """
+        Consume directory source listing if present, then returns the remaining
+        input to be further processed and a set of directory sources (or None,
+        if none present).
+
+        Will consume the following fields:
+            - dir-source
+            - contact
+            - vote-digest
+
+        :param str consensus: input to be processed
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a tuple (remaining-input, headers-or-None)
+    """
     whitelist = [b'dir-source', b'contact', b'vote-digest']
     def end_of_field(line):
         if b' ' not in line:
@@ -293,6 +436,26 @@ def consume_dir_sources(consensus, sanity=True):
     return consensus, fields
 
 def consume_routers(consensus, flavor='unflavored', sanity=True):
+    """
+        Consume router listing if present, then returns the remaining input to
+        be further processed and a set of routers (or None, if none present).
+
+        Will consume the following fields:
+            - r
+            - m
+            - s
+            - v
+            - pr
+            - w
+            - p (unflavored only)
+            - a (unflavored only)
+
+        :param str consensus: input to be processed
+        :param str flavor: consensus flavor ('unflavored' or 'microdesc')
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a tuple (remaining-input, headers-or-None)
+    """
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
@@ -407,6 +570,22 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
     return consensus, fields
 
 def consume_footer(consensus, flavor='unflavored', sanity=True):
+    """
+        Consume consensus footer if present, then returns the remaining input
+        to be further processed and a set of footers (or None, if none
+        present).
+
+        Will consume the following fields:
+            - directory-footer
+            - bandwidth-weights
+            - directory-signature
+
+        :param str consensus: input to be processed
+        :param str flavor: consensus flavor ('unflavored' or 'microdesc')
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a tuple (remaining-input, headers-or-None)
+    """
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
@@ -426,7 +605,6 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
     valid = False
     while True:
         consensus, header = scrap(consensus, end_of_field)
-        print(consensus, header)
         if header is None:
             return consensus, fields if valid else None
 
@@ -474,6 +652,17 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
     return consensus, fields
 
 def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
+    """
+        Parse a raw consensus with the given flavor, then returns a sanitized
+        JSON-ified version (or an equivalent python dictionary if needed).
+
+        :param str consensus: input to be processed
+        :param str flavor: consensus flavor ('unflavored' or 'microdesc')
+        :param bool encode: serialize output dictionary as JSON (default: True)
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: a JSON-encoded dictionary or an equivalent python dictionary
+    """
     fields = dict()
 
     consensus, http = consume_http(consensus)
@@ -509,10 +698,11 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
 if __name__ == "__main__":
     with open('./descriptors/consensus', 'rb') as f:
         content = f.read()
+    print(content[-1])
     ans = jsonify(content)
-    print(ans[0], len(ans[1]))
+    print(len(ans[0]), ans[1])
 
     with open('./descriptors/consensus-microdesc', 'rb') as f:
         content = f.read()
     ans = jsonify(content, flavor='microdesc')
-    print(ans[0], len(ans[1]))
+    print(len(ans[0]), ans[1])
