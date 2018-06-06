@@ -74,7 +74,7 @@ def parse_address(address, sanity=True):
             assert guessed_type == 6
         guessed_type = 6
 
-    return address, port, guessed_type
+    return address, int(port), guessed_type
 
 def parse_range_once(value, expand=True):
     """
