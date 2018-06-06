@@ -506,6 +506,9 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
         if keyword == 'p':
             policy_type, portlist = content.split(' ')
+            if sanity:
+                assert policy_type in ['accept', 'reject']
+
             portlist = parse_range_once(portlist, expand=False)
             content = {'type': policy_type, 'PortList': portlist}
 
