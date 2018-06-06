@@ -25,7 +25,7 @@ def scrap(consensus, end_of_field):
         return consensus, None
     return remaining, line
 
-def scrap_signature(consensus):
+def scrap_signature(consensus, fix=b'SIGNATURE'):
     """
         Consume a signature field if there is one to consume.
 
@@ -33,12 +33,12 @@ def scrap_signature(consensus):
 
         :returns: a tuple (updated-consensus, signature-or-None)
     """
-    if not consensus.startswith(b'-----BEGIN SIGNATURE-----'):
+    if not consensus.startswith(b'-----BEGIN ' + fix + b'-----'):
         return consensus, None
 
     lines = consensus.split(b'\n', 22) # fits 0-1024o (for 256o sig)
     try:
-        idx_endsig = lines.index(b'-----END SIGNATURE-----')
+        idx_endsig = lines.index(b'-----END ' + fix + b'-----')
     except ValueError:
         return consensus, None
 
@@ -663,7 +663,7 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
 
         :returns: a JSON-encoded dictionary or an equivalent python dictionary
     """
-    fields = dict()
+    fields = dict(flavor=flavor)
 
     consensus, http = consume_http(consensus)
     if http is not None:
