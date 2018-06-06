@@ -275,7 +275,13 @@ if __name__ == "__main__":
 
     print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
     assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
-    full_answer = b''.join([cell.data for cell in answers])
+    full_answer = b''.join(
+        [cell.data for cell in answers if cell.command == 'RELAY_DATA'])
+
+    if answers[-1].command == 'RELAY_END':
+        # See:
+        #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1585
+        assert answers[-1].data == b'\x06' # REASON_DONE
 
     if not 'RELAY_END' in [cell.command for cell in answers]:
         print('[stream_id=1] Receiving again...')
@@ -283,7 +289,8 @@ if __name__ == "__main__":
 
         print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
         assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
-        full_answer += b''.join([cell.data for cell in answers])
+        full_answer += b''.join(
+            [cell.data for cell in answers if cell.command == 'RELAY_DATA'])
 
     print('[stream_id=0] Sending a RELAY_DROP for fun...')
     endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
