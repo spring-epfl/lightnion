@@ -724,13 +724,37 @@ def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
     return state, last_stream_id, consensus
 
 if __name__ == "__main__":
-    with open('./descriptors/consensus', 'rb') as f:
-        content = f.read()
-    print(content[-1])
-    ans = jsonify(content)
-    print(len(ans[0]), ans[1])
+    import link_protocol
+    import circuit_fast
+    import onion_parts
+    import argparse
 
-    with open('./descriptors/consensus-microdesc', 'rb') as f:
-        content = f.read()
-    ans = jsonify(content, flavor='microdesc')
-    print(len(ans[0]), ans[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('addr', nargs='?', default='127.0.0.1')
+    parser.add_argument('port', nargs='?', type=int, default=9050)
+    sys_argv = parser.parse_args()
+
+    link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
+    print('Link v{} established – {}'.format(link[1], link[0]))
+
+    circuit = circuit_fast.create(link)
+    print('Circuit {} created – Key hash: {}'.format(circuit[0],
+        circuit[1].key_hash.hex()))
+
+    def pretty_print(consensus):
+        print('Summary for "{}" consensus:'.format(consensus['flavor']))
+        print(' - {} http headers'.format(len(consensus['http']['headers'])))
+        print(' - {} dir. sources'.format(len(consensus['dir-sources'])))
+        print(' - {} nodes listed'.format(len(consensus['routers'])))
+        print(' - {} signatures'.format(
+            len(consensus['footer']['directory-signatures'])), end='\n')
+
+    # downloading unflavored consensus
+    state = onion_parts.state(link, circuit)
+    state, last_stream_id, unflavored = download(state, flavor='unflavored')
+    pretty_print(unflavored)
+
+    # downloading microdesc consensus
+    state, last_stream_id, microdesc = download(state, flavor='microdesc',
+        last_stream_id=last_stream_id)
+    pretty_print(microdesc)
