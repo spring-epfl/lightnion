@@ -144,6 +144,14 @@ def parse_params(params):
         content[key] = int(value)
     return content
 
+def parse_fingerprint(payload, sanity=True):
+    asbytes = bytes.fromhex(payload)
+    fingers = asbytes.hex().upper()
+    fingers = ' '.join([fingers[i:i+4] for i in range(0, len(fingers), 4)])
+    if sanity:
+        assert fingers == payload
+    return fingers
+
 def parse_base64(payload, sanity=True, level=0):
     """
         Take an input base64 string, decode it, re-encode it, validate if the
