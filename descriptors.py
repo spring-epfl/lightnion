@@ -1,4 +1,6 @@
 import json
+
+import single_hop
 import consensus
 
 def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
@@ -97,6 +99,9 @@ def jsonify(descriptors, flavor='microdesc', encode=True, sanity=True):
     return fields, descriptors
 
 def batch_query(items, prefix, separator='-', fixed_max_length=4096):
+    # About batches:
+    #    https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392
+
     query = ''
     for item in items:
         if len(item) + len(query) >= fixed_max_length:
@@ -108,11 +113,45 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096):
         else:
             query += separator + item
 
+    if len(query) != 0:
+        yield query
+
+def download(state, microdesc=None, last_stream_id=0, sanity=True):
+    if microdesc is None:
+        state, last_stream_id, microdesc = consensus.download(state,
+            flavor='microdesc', last_stream_id=last_stream_id, sanity=sanity)
+
+        if microdesc is None:
+            return state, last_stream_id, None
+
+    if sanity:
+        assert isinstance(microdesc, dict)
+
+    digests = [router['micro-digest'] for router in microdesc['routers']]
+
+    # retrieve descriptors via digests
+    descriptors = []
+    for query in batch_query(digests, '/tor/micro/d/', '-'):
+        state, last_stream_id, answer = single_hop.directory_query(
+            state, query, last_stream_id, sanity=sanity)
+
+        if answer is None or len(answer) == 0:
+            continue
+
+        new_batch, remaining = jsonify(answer, encode=False)
+        if sanity:
+            assert new_batch is not None
+            assert remaining is not None and len(remaining) == 0
+
+        if new_batch is not None:
+            descriptors += new_batch['descriptors']
+
+    return state, last_stream_id, descriptors
+
 if __name__ == '__main__':
     import link_protocol
     import circuit_fast
     import onion_parts
-    import single_hop
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -127,23 +166,9 @@ if __name__ == '__main__':
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 
-    # downloading consensus
-    endpoint = onion_parts.state(link, circuit)
-    endpoint, last_stream_id, microdesc = consensus.download(endpoint)
-
-    # get only router listing
-    microdigests = [r['micro-digest'] for r in microdesc['routers']]
-
-    # retrieve microdescriptors (demo API with small batches)
-    #   See https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392
-    #
-    descriptors = []
-    for query in batch_query(microdigests, '/tor/micro/d/', '-', 128):
-        endpoint, last_stream_id, answer = single_hop.directory_query(
-            endpoint, query, last_stream_id)
-
-        new_batch, remaining = jsonify(answer, encode=False)
-        descriptors += new_batch['descriptors']
+    # downloading descriptors
+    state = onion_parts.state(link, circuit)
+    state, last_stream_id, descriptors = download(state)
 
     print('Ready to use {} descriptors!'.format(len(descriptors)))
     for d in descriptors:
