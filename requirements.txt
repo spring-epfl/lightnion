@@ -1,2 +1,1 @@
-zlib
 curve25519-donna
