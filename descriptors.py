@@ -127,13 +127,11 @@ if __name__ == '__main__':
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 
-    # building the endpoint's state
+    # downloading consensus
     endpoint = onion_parts.state(link, circuit)
-    endpoint, last_stream_id, answer = single_hop.directory_query(
-        endpoint, '/tor/status-vote/current/consensus-microdesc')
+    endpoint, last_stream_id, microdesc = consensus.download(endpoint)
 
-    # parsing the microdescriptor consensus
-    microdesc, _ = consensus.jsonify(answer, flavor='microdesc', encode=False)
+    # get only router listing
     microdigests = [r['micro-digest'] for r in microdesc['routers']]
 
     # retrieve microdescriptors (demo API with small batches)

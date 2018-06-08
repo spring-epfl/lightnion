@@ -4,6 +4,8 @@ import binascii
 import time
 import json
 
+import single_hop
+
 def scrap(consensus, end_of_field):
     """
         Consume lines upon matching a criterion.
@@ -697,6 +699,29 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
     if encode:
         return json.dumps(fields), consensus
     return fields, consensus
+
+def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    endpoint = '/tor/status-vote/current/consensus'
+    if flavor == 'microdesc':
+        endpoint += '-microdesc'
+
+    state, last_stream_id, answer = single_hop.directory_query(state, endpoint,
+        sanity=sanity)
+    if answer is None or len(answer) == 0:
+        return state, last_stream_id, None
+
+    consensus, remaining = jsonify(answer, flavor=flavor, encode=False,
+        sanity=sanity)
+
+    if sanity:
+        assert consensus is not None
+        assert remaining is not None and len(remaining) == 0
+
+    return state, last_stream_id, consensus
 
 if __name__ == "__main__":
     with open('./descriptors/consensus', 'rb') as f:
