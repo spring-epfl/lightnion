@@ -170,7 +170,7 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
 
         if keyword in ['router-sig-ed25519', 'router-signature']:
             base = dict()
-            if 'router-signature' in fields[-1]:
+            if 'router-signatures' in fields[-1]:
                 base = fields[-1]['router-signatures']
 
             if keyword == 'router-sig-ed25519':
