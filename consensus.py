@@ -470,7 +470,7 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
         whitelist = [b'r', b'm', b's', b'v', b'pr', b'w']
 
     aliases = dict(m='micro-digest', pr='protocols', s='flags', v='version',
-        p='exit-policy', a='extra-address')
+        p='exit-policy', a='or-address')
     def end_of_field(line):
         if b' ' not in line:
             return True
@@ -518,7 +518,7 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
         if keyword == 'a':
             address, port, guessed_type = parse_address(content, sanity)
-            content = [{'ip': address, 'port': port, 'guess': guessed_type}]
+            content = [{'ip': address, 'port': port, 'type': guessed_type}]
 
         if keyword == 'r' and flavor == 'unflavored':
             (nickname, identity, digest, date, time, address, orport,
@@ -555,9 +555,9 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
             if keyword in aliases:
                 keyword = aliases[keyword]
 
-            if keyword == 'extra-address' and keyword in fields[-1][1]:
+            if keyword == 'or-address' and keyword in fields[-1][1]:
                 content[0]['ignored'] = True
-                fields[-1][1]['extra-address'] += content
+                fields[-1][1]['or-address'] += content
                 continue
 
             if sanity:
