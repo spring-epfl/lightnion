@@ -110,10 +110,8 @@ if __name__ == '__main__':
     state, last_stream_id, consensus = consensus.download(state,
         flavor='unflavored', last_stream_id=last_stream_id)
 
-    entry = None
     for router in consensus['routers']:
         if router['digest'] == authority['digest']:
-            entry = router
             break
 
     # create a single-hop ntor-ish circuit (only do that to showcase CREATE2)
