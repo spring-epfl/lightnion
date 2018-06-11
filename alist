@@ -1,3 +1,5 @@
+ - DIGEST_LEN?
+ - HASH_LEN ambiguous in 5.2.2
  - how digests are computed
     - it's only on onion-encrypted data
  - which timezone is used
