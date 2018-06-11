@@ -1,7 +1,75 @@
 import json
+import base64
+import hashlib
 
 import single_hop
 import consensus
+
+def compute_descriptor_digest(fields, descriptors, entry, flavor, sanity=True):
+    """
+        (details of the parser – private API)
+
+        Plugs into our consumer to compute extra "digest" fields that expose
+        the (micro-)descriptor's (micro-)digest, enabling us to easily fetch
+        associated entries within a consensus.
+
+        :param list fields: "fields" accumulator used by the consumer
+        :param bytes descriptors: remaining input to be parsed by the consumer
+        :param bytes entry: last line being parsed by the consumer
+        :param str flavor: flavor used by the consumer
+        :param bool sanity: enable extra sanity checks (default: True)
+
+        :returns: updated (or not) fields accumulator
+    """
+
+    if flavor == 'unflavored':
+        digest_name = 'digest'
+        pivot_field = 'router'
+        starts_hash = b'router '
+        ends_hasher = b'router-signature'
+        base_offset = 1
+        shalgorithm = hashlib.sha1
+        # https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L602
+    else:
+        digest_name = 'micro-digest'
+        pivot_field = 'onion-key'
+        starts_hash = b'onion-key'
+        ends_hasher = b'id '
+        base_offset = 7 + 1 + 43 + 1 # 'ed25519 [identity]\n'
+        shalgorithm = hashlib.sha256
+        # https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3202
+
+    # 1. check if we're starting to parse a fresh entry before computing digest
+    if digest_name not in fields[-1] or (
+        entry.startswith(starts_hash) and pivot_field in fields[-1]):
+        if pivot_field in fields[-1]:
+            fields.append(dict())
+
+        # 1.5 (extra sanity checks: double-check that we have what we need)
+        if sanity:
+            assert entry.startswith(starts_hash)
+            assert ends_hasher in descriptors
+
+        try:
+            # 2. compute the offset to the ends what goes into the hash
+            sigoffset = descriptors.index(ends_hasher)
+            sigoffset += len(ends_hasher) + base_offset
+
+            # 3. rebuild the original (including its first line being parsed)
+            full_desc = entry + b'\n' + descriptors[:sigoffset]
+
+            # 4. compute the base64-encoded hash with the right algorithm
+            digest = base64.b64encode(shalgorithm(full_desc).digest())
+
+            # 5. strips the trailing '=' as specified
+            fields[-1][digest_name] = str(digest.rstrip(b'='), 'utf8')
+        except ValueError:
+            pass
+
+        if sanity:
+            assert digest_name in fields[-1]
+
+    return fields
 
 def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
     if flavor not in ['microdesc', 'unflavored']:
@@ -35,6 +103,8 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
             if not valid:
                 return descriptors, None
             break
+        fields = compute_descriptor_digest(fields, descriptors, entry, flavor,
+            sanity)
 
         valid = True
         if b' ' not in entry:
@@ -286,8 +356,7 @@ def download(
         separator = '-'
     else:
         digests = [router['digest'] for router in cons['routers']]
-        digests = [
-            consensus.parse_base64(d, sanity, True).hex() for d in digests]
+        digests = [base64.b64decode(d + '====').hex() for d in digests]
         endpoint = '/tor/server/d/'
         separator = '+'
 
@@ -307,6 +376,14 @@ def download(
 
         if new_batch is not None:
             descriptors += new_batch['descriptors']
+
+    if sanity:
+        if flavor == 'microdesc':
+            obtained = [d['micro-digest'] for d in descriptors]
+        else:
+            obtained = [d['digest'] for d in descriptors]
+            obtained = [base64.b64decode(d + '====').hex() for d in obtained]
+        assert sorted(digests) == sorted(obtained)
 
     return state, last_stream_id, descriptors
 
@@ -356,6 +433,9 @@ if __name__ == '__main__':
         for key, value in desc.items():
             if key == 'policy' and udesc[key]['type'] == 'exitpattern':
                 continue # TODO: match exitpatterns against policy summary
+
+            if key in ['micro-digest', 'digest']:
+                continue # TODO: match digests against consensus
 
             if not isinstance(value, dict):
                 assert value == udesc[key]
