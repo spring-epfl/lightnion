@@ -152,37 +152,31 @@ def parse_fingerprint(payload, sanity=True):
         assert fingers == payload
     return fingers
 
-def parse_base64(payload, sanity=True, level=0):
+def parse_base64(payload, sanity=True, decode=False):
     """
         Take an input base64 string, decode it, re-encode it, validate if the
-        result match if sanity is enabled. We use a dirty trick with recursion
-        (level parameter) to add padding if it's missing.
-
-        TODO: better way to handle base64 inputs without padding
+        result match if sanity is enabled.
 
         For example, we use it to parse "shared-rand-current-value" fields:
             https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2069
 
         :param str payload: input base64-encoded data
         :param bool sanity: enable extra sanity checks (default: True)
-        :param int level: retry (2 - level) w/padding on failure (default: 0)
+        :param bool decode: return raw bytes (default: False)
 
         :returns: a base64-encoded string equivalent to the input
     """
-    if level < 2:
-        try:
-            value = str(b64encode(b64decode(payload)), 'utf8')
-        except binascii.Error:
-            value = parse_base64(payload + '=', level + 1)
-    else:
-        value = str(b64encode(b64decode(payload)), 'utf8')
+    decoded = b64decode(payload + '====')
+    value = str(b64encode(decoded), 'utf8')
 
-    if level == 0:
-        if not payload[-2:].count('=') == value[-2:].count('='):
-            value = value.rstrip('=') + '=' * payload[-2:].count('=')
+    if not payload[-2:].count('=') == value[-2:].count('='):
+        value = value.rstrip('=') + '=' * payload[-2:].count('=')
 
-        if sanity:
-            assert value == payload
+    if sanity:
+        assert value == payload
+
+    if decode:
+        return decoded
 
     return value
 
