@@ -352,6 +352,17 @@ if __name__ == '__main__':
                 for skey, svalue in value.items():
                     assert udesc[key][skey] == svalue
 
-    print('Ready to use {} descriptors!'.format(len(descriptors)))
+    print('\nReady to use {} descriptors!'.format(len(descriptors)))
     for d in descriptors:
         print(' - ntor-onion-key: {}'.format(d['ntor-onion-key']))
+
+    # asking politely for our OR's descriptor
+    state, last_stream_id, answer = single_hop.directory_query(state,
+        '/tor/server/authority', last_stream_id=last_stream_id)
+    result, remain = jsonify(answer, flavor='unflavored', encode=False)
+
+    locald = result['descriptors'][0]
+    print('\nWe are connected to the following node:')
+    print(' - ntor-onion-key: {}'.format(locald['ntor-onion-key']))
+    print(' - identity: {} ({})'.format(
+        locald['identity']['master-key'], locald['identity']['type']))
