@@ -27,7 +27,7 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
         keyword, _ = line.split(b' ', 1)
         return keyword not in whitelist
 
-    fields = []
+    fields = [dict()]
     valid = False
     while True:
         descriptors, entry = consensus.scrap(descriptors, end_of_field)
@@ -60,8 +60,6 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
 
         if keyword in ['reject', 'accept']:
             base = dict(type='exitpattern')
-            if len(fields) == 0:
-                fields.append(dict())
             if 'policy' in fields[-1]:
                 base = fields[-1]['policy']
             if sanity:
@@ -75,8 +73,6 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
 
         if keyword == 'or-address':
             base = []
-            if len(fields) == 0:
-                fields.append(dict())
             if 'or-address' in fields[-1]:
                 base = fields[-1]['or-address']
 
@@ -175,7 +171,7 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
 
             if keyword == 'router-sig-ed25519':
                 if sanity:
-                    assert len(fields) > 0 and 'identity' in fields[-1]
+                    assert 'identity' in fields[-1]
                     assert 'cert' in fields[-1]['identity']
                     assert 'router-signatures' not in fields[-1]
                 base['ed25519'] = consensus.parse_base64(content, sanity)
@@ -192,7 +188,7 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
 
         if keyword in ['identity-ed25519', 'master-key-ed25519']:
             base = dict()
-            if len(fields) > 0 and 'identity' in fields[-1]:
+            if 'identity' in fields[-1]:
                 base = fields[-1]['identity']
 
             if 'type' not in base:
@@ -223,7 +219,7 @@ def consume_descriptors(descriptors, flavor='microdesc', sanity=True):
         if keyword in aliases:
             keyword = aliases[keyword]
 
-        if len(fields) == 0 or keyword in fields[-1]:
+        if keyword in fields[-1]:
             fields.append(dict())
 
         fields[-1][keyword] = content
