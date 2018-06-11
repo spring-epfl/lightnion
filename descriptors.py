@@ -314,6 +314,21 @@ def download(
 
     return state, last_stream_id, descriptors
 
+def download_authority(state, last_stream_id=0, sanity=True):
+    state, last_stream_id, answer = single_hop.directory_query(state,
+        '/tor/server/authority', last_stream_id=last_stream_id, sanity=sanity)
+    if answer is None or len(answer) == 0:
+        return state, last_stream_id, None
+
+    result, remain = jsonify(
+        answer, flavor='unflavored', sanity=sanity, encode=False)
+    if sanity:
+        assert len(remain) == 0
+        assert result is not None
+        assert len(result['descriptors']) == 1
+
+    return state, last_stream_id, result['descriptors'][0]
+
 if __name__ == '__main__':
     import link_protocol
     import circuit_fast
@@ -357,12 +372,10 @@ if __name__ == '__main__':
         print(' - ntor-onion-key: {}'.format(d['ntor-onion-key']))
 
     # asking politely for our OR's descriptor
-    state, last_stream_id, answer = single_hop.directory_query(state,
-        '/tor/server/authority', last_stream_id=last_stream_id)
-    result, remain = jsonify(answer, flavor='unflavored', encode=False)
+    state, last_stream_id, authority = download_authority(
+        state, last_stream_id=last_stream_id)
 
-    locald = result['descriptors'][0]
     print('\nWe are connected to the following node:')
-    print(' - ntor-onion-key: {}'.format(locald['ntor-onion-key']))
+    print(' - ntor-onion-key: {}'.format(authority['ntor-onion-key']))
     print(' - identity: {} ({})'.format(
-        locald['identity']['master-key'], locald['identity']['type']))
+        authority['identity']['master-key'], authority['identity']['type']))
