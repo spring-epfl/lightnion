@@ -1,2 +1,3 @@
  - rewrite parsers to make them simpler
- - use collections.namedtuple instead of unnamed tuples
+ - use collections.namedtuple instead of unnamed tuples?
+ - use stem.client.datatype.Address for consensus.parse_address?
