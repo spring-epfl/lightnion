@@ -8,6 +8,25 @@ import curve25519
 import ntor_ref
 import consensus
 
+def refine_key_material(raw_material, sanity=True):
+    if sanity:
+        assert len(raw_material) == (20 + 20 + 16 + 16 + 20)
+
+    # Modernized KDF for ntor handshakes, see:
+    #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1193
+    #
+    # Order of the fields when deriving material, see:
+    #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1210
+    #
+    key_material = stem.client.datatype.KDF(
+        raw_material[72:],      # KH or key_hash / {DIGEST,HASH}_LEN (20) bytes
+        raw_material[:20],      # Df or forward_digest / HASH_LEN (20) bytes
+        raw_material[20:40],    # Db or backward_digest / HASH_LEN (20) bytes
+        raw_material[40:56],    # Kf or forward_key / KEY_LEN (16) bytes
+        raw_material[56:72])    # Kb or backward_key / KEY_LEN (16) bytes
+
+    return key_material
+
 def create(link, identity, onion_key, circuits=[], sanity=True):
 
     # Expect the hash of node's identity as 20 bytes or as some base64
@@ -76,21 +95,9 @@ def create(link, identity, onion_key, circuits=[], sanity=True):
     #   ...enabling us to retrieve shared (derived) key material.
     #
     raw_material = ntor_ref.client_part2(ephemeral_key, created_rcell.data,
-identity, donna_onion_key, keyBytes=92)
+        identity, donna_onion_key, keyBytes=92)
 
-    # Modernized KDF for ntor handshakes, see:
-    #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1193
-    #
-    # Order of the fields when deriving material, see:
-    #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1210
-    #
-    key_material = stem.client.datatype.KDF(
-        raw_material[72:],      # KH or key_hash / {DIGEST,HASH}_LEN (20) bytes
-        raw_material[:20],      # Df or forward_digest / HASH_LEN (20) bytes
-        raw_material[20:40],    # Db or backward_digest / HASH_LEN (20) bytes
-        raw_material[40:56],    # Kf or forward_key / KEY_LEN (16) bytes
-        raw_material[56:72])    # Kb or backward_key / KEY_LEN (16) bytes
-
+    key_material = refine_key_material(raw_material, sanity)
     return (circuit_id, key_material)
 
 if __name__ == '__main__':
