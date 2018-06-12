@@ -21,20 +21,41 @@ class state:
     the bidirectional communications (see state.reset_encryption method).
     """
 
-    def __init__(self, link, circuit, inner=None, sanity=True):
+    def __init__(self, link, circuit, sanity=True):
         """
         :params tuple link: a tuple (link socket, link version)
         :params tuple circuit: a tuple (circuit id, key material)
         :params state inner: inner layer of the onion (default: None)
         """
         self.circuit = circuit
+        self.inner = None
         self.early = 8 # (count the remaining RELAY_EARLY cells to be used)
-        self.inner = inner
         self.link = link
 
         self.__sane = 0
         self.reset_digest(sanity) # define forward_digest, backward_digest
         self.reset_encryption(sanity) # define fwd encryptor, bckwd decryptor
+
+    def wrap(self, inner):
+        if self.inner is None:
+            inner._early = self._early
+            self.inner = inner
+        else:
+            self.inner.wrap(inner)
+
+    @property
+    def early(self):
+        if self.inner is None:
+            return self._early
+        return self.inner.early
+
+    @early.setter
+    def early(self, value):
+        if self.inner is None:
+            self._early = value
+        else:
+            raise RuntimeError(
+                'Unable to set RELAY_EARLY counter from the outer layers!')
 
     def reset_encryption(self, sanity=True):
         """
@@ -237,7 +258,7 @@ class state:
         child.backward_decryptor = copy.copy(self.backward_decryptor)
 
         # Don't forget to propagate the RELAY_EARLY count
-        child.early = self.early
+        child._early = self._early
 
         # (note: we don't recursively clone inner layers of state)
         child.inner = self.inner
