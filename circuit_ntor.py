@@ -49,7 +49,7 @@ def create(link, identity, onion_key, circuits=[], sanity=True):
     create_scell = stem.client.cell.Create2Cell(circuit_id, hdata=payload)
     link_socket.send(create_scell.pack(link_version))
 
-    # Send the cell
+    # Receive answers
     answer = link_socket.recv()
     if not answer:
         return None, None
