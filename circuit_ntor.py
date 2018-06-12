@@ -138,9 +138,10 @@ if __name__ == '__main__':
 
     # Retrieve again first hop's descriptor to check if the circuit works
     state_ntor = onion_parts.state(link, circuit_ntor)
-    state_ntor, lsid, authority = descriptors.download_authority(state_ntor)
+    state_ntor, lsid, authority = descriptors.download(state_ntor,
+        cons=router, flavor='unflavored') # (retrieve only one entry this time)
 
     # It is working!
-    assert authority['digest'] == router['digest']
+    assert authority[0]['digest'] == router['digest']
     print(('\nDirectory successfully reached through ntor-created circuit {}!'
         ).format(circuit_ntor[0]))

@@ -345,6 +345,13 @@ def download(
 
         if cons is None:
             return state, last_stream_id, None
+    elif isinstance(cons, list):
+        cons = dict(routers=cons)
+    elif isinstance(cons, str):
+        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
+        cons = dict(routers={digest_name: cons})
+    elif 'routers' not in cons and 'identity' in cons:
+        cons = dict(routers=[cons])
 
     if sanity:
         assert isinstance(cons, dict)
