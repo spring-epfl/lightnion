@@ -119,11 +119,11 @@ if __name__ == '__main__':
     state, last_stream_id, authority = descriptors.download_authority(state)
 
     # Download an unflavored consensus
-    state, last_stream_id, consensus = consensus.download(state,
+    state, last_stream_id, cons = consensus.download(state,
         flavor='unflavored', last_stream_id=last_stream_id)
 
     # Find our OR into the consensus – TODO: validate all the signatures
-    for router in consensus['routers']:
+    for router in cons['routers']:
         if router['digest'] == authority['digest']:
             break
 
