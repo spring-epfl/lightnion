@@ -27,6 +27,7 @@ class state:
         :params tuple circuit: a tuple (circuit id, key material)
         """
         self.circuit = circuit
+        self.early = 8 # (count the remaining RELAY_EARLY cells to be used)
         self.link = link
 
         self.__sane = 0
@@ -233,6 +234,9 @@ class state:
         child.forward_encryptor = copy.copy(self.forward_encryptor)
         child.backward_decryptor = copy.copy(self.backward_decryptor)
 
+        # Don't forget to propagate the RELAY_EARLY count
+        child.early = self.early
+
         return child
 
 def core(state, command, payload=b'', stream_id=0):
@@ -259,14 +263,20 @@ def core(state, command, payload=b'', stream_id=0):
         return state, None
     header_size = 5
 
+    # Use RELAY_EARLY cells for the first 8 cells used on the circuit
+    relay_cell = stem.client.cell.RelayCell
+    if rollback.early > 0:
+        rollback.early -= 1
+        relay_cell = stem.client.cell.RelayEarlyCell
+
     # Compute the cell with a zeroed 'digest' field.
-    cell_no_digest = stem.client.cell.RelayCell(
+    cell_no_digest = relay_cell(
         circuit_id, command, payload, 0, stream_id) # 0 is the digest part)
     pack_no_digest = cell_no_digest.pack(link_version)
 
     # Update the "running digest", pack the cell with the 'digest' field.
     rollback.forward_digest.update(pack_no_digest[header_size:])
-    cell_with_digest = stem.client.cell.RelayCell( # ^---- without headers!
+    cell_with_digest = relay_cell( #               ^---- without headers!
         circuit_id, command, payload, rollback.forward_digest, stream_id)
 
     # Split the cell between the plain & to-be-encrypted parts.
