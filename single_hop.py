@@ -57,20 +57,12 @@ def recv(state, sanity=True):
         #  but it's more a poor man's trick than a requirement)
         #
         repack = rcell.pack(link_version)
-        header, ciphertext = repack[:header_size], repack[header_size:]
-
-        # Decrypt the cell content
-        plain = rollback.backward_decryptor.update(ciphertext)
-        pcell = stem.client.cell.RelayCell._unpack(
-            plain, rcell.circ_id, link_version)
-
-        # Check for traffic integrity & Update backward_digest
-        rollback, recognized = onion_parts.recognize(rollback, pcell)
-        if not recognized:
+        rollback, peeled_cell = onion_parts.peel(rollback, repack)
+        if not peeled_cell:
             return state, None
 
         # Save the unencrypted cell for later.
-        plains.append(pcell)
+        plains.append(peeled_cell)
 
         # Upon receiving an incomplete RELAY cell, we can expect more data.
         if 514 > len(answer) > 0:
@@ -94,8 +86,8 @@ def send(state, command, payload='', stream_id=0):
     """
     link_socket, _ = state.link
 
-    # We only need to build the inner layer of the onion.
-    rollback, packed_cell = onion_parts.core(
+    # We build our onion
+    rollback, packed_cell = onion_parts.build(
         state, command, payload, stream_id)
     if packed_cell is None:
         return state, None

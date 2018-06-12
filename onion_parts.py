@@ -21,13 +21,15 @@ class state:
     the bidirectional communications (see state.reset_encryption method).
     """
 
-    def __init__(self, link, circuit, sanity=True):
+    def __init__(self, link, circuit, inner=None, sanity=True):
         """
         :params tuple link: a tuple (link socket, link version)
         :params tuple circuit: a tuple (circuit id, key material)
+        :params state inner: inner layer of the onion (default: None)
         """
         self.circuit = circuit
         self.early = 8 # (count the remaining RELAY_EARLY cells to be used)
+        self.inner = inner
         self.link = link
 
         self.__sane = 0
@@ -237,7 +239,15 @@ class state:
         # Don't forget to propagate the RELAY_EARLY count
         child.early = self.early
 
+        # (note: we don't recursively clone inner layers of state)
+        child.inner = self.inner
+
         return child
+
+    def depth(self):
+        if self.inner is None:
+            return 1
+        return self.inner.depth() + 1
 
 def core(state, command, payload=b'', stream_id=0):
     """
@@ -254,7 +264,7 @@ def core(state, command, payload=b'', stream_id=0):
 
     :returns: a tuple (updated state, raw cell)
     """
-    link_socket, link_version = state.link
+    _, link_version = state.link
     circuit_id, _ = state.circuit
     rollback = state.clone()
 
@@ -285,6 +295,29 @@ def core(state, command, payload=b'', stream_id=0):
 
     # Encrypt the to-be-encrypted parts & build final cell
     cell_final = header + rollback.forward_encryptor.update(plaintext)
+    return rollback, cell_final
+
+def build(state, command, payload=b'', stream_id=0):
+    if state.inner is None:
+        return core(state, command, payload, stream_id)
+    rollback = state.clone()
+
+    # (we don't support v3-or-lower with short circIDs)
+    _, link_version = state.link
+    if link_version < 4:
+        return state, None
+    header_size = 5
+
+    # Retrieve the inner layer of the onion
+    inner, inner_cell = build(rollback.inner, command, payload, stream_id)
+    if inner_cell is None:
+        return state, None
+    rollback.inner = inner
+
+    # Wraps the layer with our outer layer of encryption
+    header, inner_layer = inner_cell[:header_size], inner_cell[header_size:]
+    cell_final = header + rollback.forward_encryptor.update(inner_layer)
+
     return rollback, cell_final
 
 def recognize(state, cell, backward=True):
@@ -348,3 +381,29 @@ def recognize(state, cell, backward=True):
     # Update the digest state iff the digests matched
     return rollback, True
 
+def peel(state, raw_cell):
+    _, link_version = state.link
+    rollback = state.clone()
+
+    # (we don't support version different than v4 for now)
+    if link_version < 4:
+        return state, None
+    header_size = 5
+
+    header, ciphertext = raw_cell[:header_size], raw_cell[header_size:]
+    if rollback.inner is None:
+        plain = rollback.backward_decryptor.update(ciphertext)
+        plain_cell, _ = stem.client.cell.Cell.pop(header + plain, link_version)
+
+        rollback, recognized = recognize(rollback, plain_cell)
+        if not recognized:
+            return state, None
+        return rollback, plain_cell
+
+    peeled_cell = header + rollback.backward_decryptor.update(ciphertext)
+    inner, plain_cell = peel(rollback.inner, peeled_cell)
+    if plain_cell is None:
+        return state, None
+
+    rollback.inner = inner
+    return rollback, plain_cell
