@@ -4,3 +4,10 @@
     - it's only on onion-encrypted data
  - which timezone is used
     - as expected, UTC (but unspecified)
+ - source code says:
+    /* We don't currently allow EXTEND2 cells without an IPv4 address */
+    ...but the spec doesn't say that!
+ - source code enforce (in check_extend_cell):  
+    if (tor_digest_is_zero((const char*)cell->node_id))
+    ...implying that an EXTEND2 cell without a Legacy identity is invalid...
+    ...but the spec doesn't say that!
