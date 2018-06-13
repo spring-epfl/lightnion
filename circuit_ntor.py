@@ -27,7 +27,7 @@ def ntor_key_material(raw_material, sanity=True):
 
     return key_material
 
-def create(link, identity, onion_key, circuits=[], sanity=True):
+def ntor(link, identity, onion_key, circuits=[], sanity=True):
 
     # Expect the hash of node's identity as 20 bytes or as some base64
     try:
@@ -45,7 +45,7 @@ def create(link, identity, onion_key, circuits=[], sanity=True):
     except BaseException:
         pass
 
-    # ¹(see create_fast.py for details on redundant parts)
+    # ¹(see create.py for details on redundant parts)
     link_socket, link_version = link
 
     # (pick an available circuit_id)¹
@@ -102,7 +102,7 @@ def create(link, identity, onion_key, circuits=[], sanity=True):
 
 if __name__ == '__main__':
     import link_protocol
-    import circuit_fast
+    import create
     import onion_parts
     import argparse
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     # Create a single-hop fast circuit to access the directory through it
-    circuit = circuit_fast.create(link)
+    circuit = create.create(link)
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 
@@ -135,7 +135,7 @@ if __name__ == '__main__':
             break
 
     # Create a ntor-ish circuit (single-hop, only to showcase the API)
-    circuit_ntor = create(link,
+    circuit_ntor = ntor(link,
         router['identity'], authority['ntor-onion-key'],
         [circuit[0]])
 

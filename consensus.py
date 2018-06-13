@@ -727,7 +727,7 @@ def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
 
 if __name__ == "__main__":
     import link_protocol
-    import circuit_fast
+    import create
     import onion_parts
     import argparse
 
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
-    circuit = circuit_fast.create(link)
+    circuit = create.create(link)
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 

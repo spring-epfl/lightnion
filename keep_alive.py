@@ -1,7 +1,7 @@
 import time
 
 import link_protocol
-import circuit_fast
+import create
 import onion_parts
 import single_hop
 
@@ -47,7 +47,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
             continue
 
         log('Link -> Creating circuit...')
-        circuit = circuit_fast.create(link)
+        circuit = create.create(link)
         if circuit[1] is None:
             log('Unable to establish circuit.', True)
             continue

@@ -4,7 +4,7 @@ import stem
 import stem.client.cell
 
 import onion_parts
-import circuit_fast
+import create
 import link_protocol
 
 # TODO: buffered recv (empty queues, validate cells only afterwards)
@@ -119,7 +119,7 @@ def directory_query(
             return None, None, None
 
         circuits = kwargs.get('circuits', [])
-        circuit = circuit_fast.create(link, circuits, sanity)
+        circuit = create.create(link, circuits, sanity)
 
         if None in circuit:
             return None, None, None
@@ -217,7 +217,7 @@ def zlib_decompress(compressed_data, min_bufsize=32):
 
 if __name__ == "__main__":
     import link_protocol
-    import circuit_fast
+    import create
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
-    circuit = circuit_fast.create(link)
+    circuit = create.create(link)
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 
