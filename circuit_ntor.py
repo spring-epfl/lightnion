@@ -8,7 +8,7 @@ import curve25519
 import ntor_ref
 import consensus
 
-def refine_key_material(raw_material, sanity=True):
+def ntor_key_material(raw_material, sanity=True):
     if sanity:
         assert len(raw_material) == (20 + 20 + 16 + 16 + 20)
 
@@ -97,7 +97,7 @@ def create(link, identity, onion_key, circuits=[], sanity=True):
     raw_material = ntor_ref.client_part2(ephemeral_key, created_rcell.data,
         identity, donna_onion_key, keyBytes=92)
 
-    key_material = refine_key_material(raw_material, sanity)
+    key_material = ntor_key_material(raw_material, sanity)
     return (circuit_id, key_material)
 
 if __name__ == '__main__':
