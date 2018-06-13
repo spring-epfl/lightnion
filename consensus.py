@@ -739,7 +739,7 @@ if __name__ == "__main__":
     link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
-    circuit = create.create(link)
+    circuit = create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 

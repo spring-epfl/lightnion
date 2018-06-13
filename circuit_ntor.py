@@ -117,7 +117,7 @@ if __name__ == '__main__':
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     # Create a single-hop fast circuit to access the directory through it
-    circuit = create.create(link)
+    circuit = create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(circuit[0],
         circuit[1].key_hash.hex()))
 

@@ -9,7 +9,7 @@ def fast_key_material(raw_material, sanity=True):
     key_material = stem.client.datatype.KDF.from_value(raw_material)
     return key_material
 
-def create(link, circuits=[], sanity=True):
+def fast(link, circuits=[], sanity=True):
     """
     We replicate here a one-hop circuit creation with CREATE_FAST:
      - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1129
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     print('\nCreating 10 one-hop circuits with CREATED_FAST cells:')
     circuits = []
     for i in range(10):
-        circuit = create(link, [c[0] for c in circuits])
+        circuit = fast(link, [c[0] for c in circuits])
         print(' {:2}. Circuit {} created – Key hash: {}'.format(i + 1,
             circuit[0], circuit[1].key_hash.hex()))
 

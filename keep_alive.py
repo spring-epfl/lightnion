@@ -47,7 +47,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
             continue
 
         log('Link -> Creating circuit...')
-        circuit = create.create(link)
+        circuit = create.fast(link)
         if circuit[1] is None:
             log('Unable to establish circuit.', True)
             continue
