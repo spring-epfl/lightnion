@@ -4,7 +4,7 @@ import binascii
 import time
 import json
 
-import single_hop
+import hop
 
 def scrap(consensus, end_of_field):
     """
@@ -711,7 +711,7 @@ def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    state, last_stream_id, answer = single_hop.directory_query(state, endpoint,
+    state, last_stream_id, answer = hop.directory_query(state, endpoint,
         sanity=sanity)
     if answer is None or len(answer) == 0:
         return state, last_stream_id, None

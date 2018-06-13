@@ -2,7 +2,7 @@ import json
 import base64
 import hashlib
 
-import single_hop
+import hop
 import consensus
 
 def compute_descriptor_digest(fields, descriptors, entry, flavor, sanity=True):
@@ -370,7 +370,7 @@ def download(
     # retrieve descriptors via digests
     descriptors = []
     for query in batch_query(digests, endpoint, separator):
-        state, last_stream_id, answer = single_hop.directory_query(
+        state, last_stream_id, answer = hop.directory_query(
             state, query, last_stream_id, sanity=sanity)
 
         if answer is None or len(answer) == 0:
@@ -395,7 +395,7 @@ def download(
     return state, last_stream_id, descriptors
 
 def download_authority(state, last_stream_id=0, sanity=True):
-    state, last_stream_id, answer = single_hop.directory_query(state,
+    state, last_stream_id, answer = hop.directory_query(state,
         '/tor/server/authority', last_stream_id=last_stream_id, sanity=sanity)
     if answer is None or len(answer) == 0:
         return state, last_stream_id, None
