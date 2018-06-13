@@ -240,7 +240,7 @@ if __name__ == "__main__":
     if sys_argv.flavor in ['both', 'ntor']:
         import consensus    # (to download the consensus)
         import descriptors  # (to download some descriptors)
-        import onion_parts  # (to handle cryptographic statefulness)
+        import onion        # (to handle cryptographic statefulness)
 
     # First establish a link where we'll build circuits.
     #
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 + 'to retrieve descriptors)')
 
         # Download our OR's descriptor
-        state = onion_parts.state(link, circuits[-1])
+        state = onion.state(link, circuits[-1])
         state, lsid, authority = descriptors.download_authority(state)
 
         # Download an unflavored consensus
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         print('\nChecking if all {} circuits works:'.format(len(circuits)))
         for c in circuits:
             if c[0] != state.circuit[0]:
-                s = onion_parts.state(link, c)
+                s = onion.state(link, c)
             else:
                 s = state
             #   ^

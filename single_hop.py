@@ -3,7 +3,7 @@ import zlib
 import stem
 import stem.client.cell
 
-import onion_parts
+import onion
 import create
 import link_protocol
 
@@ -17,7 +17,7 @@ def recv(state, sanity=True):
     The caller can trust the callee to not tamper with state and to output an
     updated version iff the callee succeeded – or else the unaffected state.
 
-    :param state onion_parts.state: endpoint's cryptographic state
+    :param state onion.state: endpoint's cryptographic state
     :params bool sanity: extra sanity checks
 
     :returns: a tuple (updated state, received RELAY cells list / None)
@@ -57,7 +57,7 @@ def recv(state, sanity=True):
         #  but it's more a poor man's trick than a requirement)
         #
         repack = rcell.pack(link_version)
-        rollback, peeled_cell = onion_parts.peel(rollback, repack)
+        rollback, peeled_cell = onion.peel(rollback, repack)
         if not peeled_cell:
             return state, None
 
@@ -77,7 +77,7 @@ def send(state, command, payload='', stream_id=0):
     The caller can trust the callee to not tamper with state and to output an
     updated version iff the callee succeeded – or else the unaffected state.
 
-    :param state onion_parts.state: endpoint's cryptographic state
+    :param state onion.state: endpoint's cryptographic state
     :param str command: RELAY cell command to send
     :param bytes payload: content of the RELAY cell (default: b'')
     :param int stream_id: stream ID (default: 0)
@@ -87,7 +87,7 @@ def send(state, command, payload='', stream_id=0):
     link_socket, _ = state.link
 
     # We build our onion
-    rollback, packed_cell = onion_parts.build(
+    rollback, packed_cell = onion.build(
         state, command, payload, stream_id)
     if packed_cell is None:
         return state, None
@@ -124,7 +124,7 @@ def directory_query(
         if None in circuit:
             return None, None, None
 
-        state = onion_parts.state(link, circuit, sanity)
+        state = onion.state(link, circuit, sanity)
     link_socket, link_version = state.link
     circuit_id, _ = state.circuit
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         circuit[1].key_hash.hex()))
 
     # building the endpoint's state
-    endpoint = onion_parts.state(link, circuit)
+    endpoint = onion.state(link, circuit)
 
     print('[stream_id=1] Sending RELAY_BEGIN_DIR...')
     endpoint, _ = send(endpoint, 'RELAY_BEGIN_DIR', stream_id=1)

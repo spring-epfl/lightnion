@@ -2,7 +2,7 @@ import time
 
 import link_protocol
 import create
-import onion_parts
+import onion
 import single_hop
 
 """
@@ -51,7 +51,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         if circuit[1] is None:
             log('Unable to establish circuit.', True)
             continue
-        endpoint = onion_parts.state(link, circuit)
+        endpoint = onion.state(link, circuit)
 
         log('Link -> Circuit -> Creating stream...')
         endpoint, res = single_hop.send(

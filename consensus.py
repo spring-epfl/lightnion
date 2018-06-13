@@ -728,7 +728,7 @@ def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
 if __name__ == "__main__":
     import link_protocol
     import create
-    import onion_parts
+    import onion
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -752,7 +752,7 @@ if __name__ == "__main__":
             len(consensus['footer']['directory-signatures'])), end='\n')
 
     # downloading unflavored consensus
-    state = onion_parts.state(link, circuit)
+    state = onion.state(link, circuit)
     state, last_stream_id, unflavored = download(state, flavor='unflavored')
     pretty_print(unflavored)
 

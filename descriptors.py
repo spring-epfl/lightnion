@@ -412,7 +412,7 @@ def download_authority(state, last_stream_id=0, sanity=True):
 if __name__ == '__main__':
     import link_protocol
     import create
-    import onion_parts
+    import onion
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -428,7 +428,7 @@ if __name__ == '__main__':
         circuit[1].key_hash.hex()))
 
     # downloading descriptors
-    state = onion_parts.state(link, circuit)
+    state = onion.state(link, circuit)
     state, last_stream_id, descriptors = download(state) # (microdescriptors)
     state, last_stream_id, undescriptors = download(state, flavor='unflavored')
 
