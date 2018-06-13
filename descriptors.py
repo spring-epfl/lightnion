@@ -410,7 +410,7 @@ def download_authority(state, last_stream_id=0, sanity=True):
     return state, last_stream_id, result['descriptors'][0]
 
 if __name__ == '__main__':
-    import link_protocol
+    import link
     import create
     import onion
     import argparse
@@ -420,7 +420,7 @@ if __name__ == '__main__':
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = link_protocol.handshake(address=sys_argv.addr, port=sys_argv.port)
+    link = link.handshake(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link[1], link[0]))
 
     circuit = create.fast(link)

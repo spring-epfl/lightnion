@@ -1,6 +1,6 @@
 import time
 
-import link_protocol
+import link
 import create
 import onion
 import single_hop
@@ -41,7 +41,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         start = time.time()
 
         log('Connecting...')
-        link = link_protocol.handshake()
+        link = link.handshake()
         if link[0] is None:
             log('Unable to establish link.', True)
             continue
@@ -79,7 +79,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
             if keepalive and (time.time() - start) % (4 * 60) < 0.1:
                 log('Link -> Circuit -> Stream -> [{:5.1f}s remaining]'.format(
                     remaining_seconds) + ' ** keepalive', True)
-                link_protocol.keepalive(link)
+                link.keepalive(link)
 
         http_request = '\r\n'.join((
             'GET /tor/status-vote/current/consensus HTTP/1.0',
