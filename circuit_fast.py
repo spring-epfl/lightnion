@@ -2,6 +2,13 @@ import stem
 import stem.client.cell
 import stem.client.datatype
 
+def fast_key_material(raw_material, sanity=True):
+    if sanity:
+        assert len(raw_material) == (20 + 20)
+
+    key_material = stem.client.datatype.KDF.from_value(raw_material)
+    return key_material
+
 def create(link, circuits=[], sanity=True):
     """
     We replicate here a one-hop circuit creation with CREATE_FAST:
@@ -113,7 +120,7 @@ def create(link, circuits=[], sanity=True):
         created_rcell = created_rcells[0] # (expecting only one CREATED_FAST)
 
     # [10] Here we're using stem's client to do the heavy lifting.
-    key_material = stem.client.datatype.KDF.from_value(
+    key_material = fast_key_material(
         create_scell.key_material + created_rcell.key_material)
 
     # [10] Confirm that key hashes match between us & the OR.
