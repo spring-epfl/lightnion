@@ -1,4 +1,5 @@
  - rewrite parsers to make them simpler
+ - replace python implementation of ntor by a proper one (wrapped ctor?)
  - use collections.namedtuple instead of unnamed tuples?
  - use stem.client.datatype.Address for consensus.parse_address?
  - remove rollback state and make all errors fatal?
