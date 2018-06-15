@@ -295,8 +295,8 @@ if __name__ == "__main__":
     print('[stream_id=1] Closing the stream...')
     endpoint, _ = send(endpoint, 'RELAY_END', stream_id=1)
 
-    print('\nNote: consensus written to ./descriptors/consensus')
-    with open('./descriptors/consensus', 'wb') as f:
+    print('\nNote: consensus written to /tmp/consensus')
+    with open('/tmp/consensus', 'wb') as f:
         f.write(full_answer)
 
     #
@@ -307,6 +307,6 @@ if __name__ == "__main__":
         last_stream_id=1, compression='gzip')
 
     print('Note: micro-descriptor consensus',
-        'written to ./descriptors/consensus-microdesc')
-    with open('./descriptors/consensus-microdesc', 'wb') as f:
+        'written to /tmp/consensus-microdesc')
+    with open('/tmp/consensus-microdesc', 'wb') as f:
         f.write(full_answer)
