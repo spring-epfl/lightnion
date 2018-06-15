@@ -41,17 +41,17 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         start = time.time()
 
         log('Connecting...')
-        link = link.handshake()
-        if link[0] is None:
+        nlink = link.handshake()
+        if nlink[0] is None:
             log('Unable to establish link.', True)
             continue
 
         log('Link -> Creating circuit...')
-        circuit = create.fast(link)
+        circuit = create.fast(nlink)
         if circuit[1] is None:
             log('Unable to establish circuit.', True)
             continue
-        endpoint = onion.state(link, circuit)
+        endpoint = onion.state(nlink, circuit)
 
         log('Link -> Circuit -> Creating stream...')
         endpoint, res = hop.send(
@@ -79,7 +79,7 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
             if keepalive and (time.time() - start) % (4 * 60) < 0.1:
                 log('Link -> Circuit -> Stream -> [{:5.1f}s remaining]'.format(
                     remaining_seconds) + ' ** keepalive', True)
-                link.keepalive(link)
+                link.keepalive(nlink)
 
         http_request = '\r\n'.join((
             'GET /tor/status-vote/current/consensus HTTP/1.0',
@@ -110,10 +110,10 @@ def stepwise_expiracy_check(step_start, step_size, step_end, keepalive=False):
         log('Link -> Circuit -> Stream -> Still working after {:5.1f}s'.format(
             life), True)
 
-        link_socket, _ = link
+        link_socket, _ = nlink
         link_socket.close()
 
-        link, circuit, endpoint = None, None, None
+        nlink, circuit, endpoint = None, None, None
         step += 1
 
 if __name__ == "__main__":
