@@ -2,5 +2,6 @@
  - replace python implementation of ntor by a proper one (wrapped ctor?)
  - use collections.namedtuple instead of unnamed tuples?
  - use stem.client.datatype.Address for consensus.parse_address?
+ - use ipaddress.ip_address instead of rolling our own?
  - remove rollback state and make all errors fatal?
  - remove optional sanity and make all errors fatal?
