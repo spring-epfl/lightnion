@@ -36,13 +36,13 @@ class cmd(view.enum(1)):
 
 header_view = view.fields(
     circid=view.uint(4), cmd=cmd)
-header_view_legacy = view.fields(
+header_legacy_view = view.fields(
     circid=view.uint(2), cmd=cmd, length=view.length(2))
-header_view_variable = view.fields(
+header_variable_view = view.fields(
     circid=view.uint(4), cmd=cmd, length=view.length(2))
 
 class cell_view(view.packet):
-    _whitelist = [header_view, header_view_legacy, header_view_variable]
+    _whitelist = [header_view, header_legacy_view, header_variable_view]
     def __init__(self, header):
         if header not in self._whitelist:
             raise ValueError('Invalid header type: {}'.format(header))
@@ -55,13 +55,13 @@ class cell_view(view.packet):
         cell_cmd = self.header.value(payload, field='cmd')
         return cell_cmd.is_fixed == self.fixed_size
 
-variable_size = view.like(cell_view(header_view_variable), 'variable_size')
-legacy_size = view.like(cell_view(header_view_legacy), 'legacy_size')
+variable_size = view.like(cell_view(header_variable_view), 'variable_size')
+legacy_size = view.like(cell_view(header_legacy_view), 'legacy_size')
 fixed_size = view.like(cell_view(header_view), 'fixed_size')
 
 header = view.like(header_view, 'header')
-header_legacy = view.like(header_view_legacy, 'header_legacy')
-header_variable = view.like(header_view_variable, 'header_variable')
+header_legacy = view.like(header_legacy_view, 'header_legacy')
+header_variable = view.like(header_variable_view, 'header_variable')
 
 import cell.versions
 import cell.relay
