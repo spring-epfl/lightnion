@@ -26,5 +26,12 @@ class cell_view(_view.packet):
         super().__init__(header_view=header, data_name='certs')
         self._fields['certs'] = certs_view
 
+    def valid(self, payload=b''):
+        if not super().valid(payload):
+            return False
+
+        cell_cmd = self.header.value(payload, field='cmd')
+        return cell_cmd == _cell.cmd.CERTS
+
 view = cell_view()
 cell = _view.like(view, 'certs_cell')
