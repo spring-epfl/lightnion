@@ -14,6 +14,9 @@ class basic:
     def write(self, payload=b'', value=None):
         raise NotImplementedError
 
+    def __contains__(self, field):
+        raise NotImplementedError
+
 class composite(basic):
     def write(self, payload=b'', value=None, **kwargs):
         raise NotImplementedError
