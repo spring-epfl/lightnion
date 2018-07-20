@@ -25,7 +25,7 @@ class cell_view(_view.packet):
     def __init__(self, header=header_view):
         super().__init__(header_view=header, data_name='versions')
         self._fields['versions'] = _view.series(
-            _view.uint(2), header_view.length)
+            _view.uint(2), header.length)
         self._max_size = 64 * 2
 
     def valid(self, payload=b''):
