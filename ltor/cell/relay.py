@@ -1,7 +1,7 @@
-import cell
+import cell as _cell
 import cell.view as _view
 
-payload_len = cell.payload_len - 11
+payload_len = _cell.payload_len - 11
 
 class cmd(_view.enum(1)):
     RELAY_BEGIN         = 0x01
@@ -71,16 +71,17 @@ class cmd(_view.enum(1)):
             cmd.RELAY_EXTEND2,
             cmd.RELAY_EXTENDED2]
 
-header_view = _view.fields(
+relay_header_view = _view.fields(
     cmd=cmd,
     recognized=_view.data(2),
     streamid=_view.uint(2),
     digest=_view.data(4),
     length=_view.length(2))
 
-class cell_view(_view.packet):
-    def __init__(self, header=header_view):
-        super().__init__(header_view=header, fixed_size=payload_len)
+class relay_view(_view.packet):
+    def __init__(self, header=relay_header_view):
+        super().__init__(header_view=header)
+        self._max_size = payload_len
 
     def valid(self, payload=b''):
         if not self.header.valid(payload):
@@ -90,6 +91,30 @@ class cell_view(_view.packet):
             return True
 
         return super().valid(payload)
+
+payload_view = relay_view()
+payload = _view.like(payload_view, 'relay_payload')
+
+class cell_view(_view.packet):
+    def __init__(self, header=_cell.header_view):
+        super().__init__(header_view=header,
+            fixed_size=_cell.payload_len, data_name='relay')
+        self._fields['relay'] = payload_view
+
+    def valid(self, payload=b''):
+        if not super().valid(payload):
+            return False
+
+        cell_cmd = self.header.value(payload, field='cmd')
+        if not cell_cmd == _cell.cmd.RELAY:
+            return False
+
+        offset = self.offset(payload, field='relay')
+        circid = self.header.value(payload, field='circid')
+        relay_cmd = self.relay.header.value(payload[offset:], field='cmd')
+        if circid == 0 and not relay_cmd.is_control:
+            return False
+        return True
 
 view = cell_view()
 cell = _view.like(view, 'relay_cell')
