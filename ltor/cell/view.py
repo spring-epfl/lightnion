@@ -154,7 +154,7 @@ class fields(composite):
         return results
 
     def offset(self, payload=b'', field=None):
-        if field not in self._fields:
+        if field not in self:
             raise ValueError('Field {} not in fields'.format(field))
 
         offset = 0
@@ -197,6 +197,9 @@ class fields(composite):
             payload = payload[:offset] + svalue
         return payload
 
+    def __contains__(self, field):
+        return field in self._fields
+
     def __getattr__(self, field):
         return self._fields[field]
 
@@ -206,7 +209,7 @@ class packet(fields):
             raise TypeError('Invalid header type: {}'.format(header_view))
 
         self._fixed_size = True
-        if field_name in header_view._fields:
+        if field_name in header_view:
             self._fixed_size = False
 
         if self._fixed_size:
@@ -287,13 +290,13 @@ class wrapper:
         self.raw = self._view.write(self.raw, value, **kwargs)
 
     def __setattr__(self, field, value):
-        if not field.startswith('_') and field in self._view._fields:
+        if not field.startswith('_') and field in self._view:
             self.write(value={field: value})
         else:
             object.__setattr__(self, field, value)
 
     def __getattr__(self, field):
-        if field in self._view._fields:
+        if field in self._view:
             subview = self._view._fields[field]
             if isinstance(subview, composite):
                 subwrapper = bind(subview, self, field)
