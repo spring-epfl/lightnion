@@ -14,11 +14,17 @@ class basic:
     def write(self, payload=b'', value=None):
         raise NotImplementedError
 
+class composite(basic):
+    def write(self, payload=b'', value=None, **kwargs):
+        raise NotImplementedError
+
+    def __len__(self):
+        raise NotImplementedError
+
     def __contains__(self, field):
         raise NotImplementedError
 
-class composite(basic):
-    def write(self, payload=b'', value=None, **kwargs):
+    def __getitem__(self, field):
         raise NotImplementedError
 
 class uint(basic):
@@ -200,8 +206,14 @@ class fields(composite):
             payload = payload[:offset] + svalue
         return payload
 
+    def __len__(self):
+        return len(self._fields)
+
     def __contains__(self, field):
         return field in self._fields
+
+    def __getitem__(self, field):
+        return self.__getattr__(field)
 
     def __getattr__(self, field):
         return self._fields[field]
@@ -260,6 +272,99 @@ class packet(fields):
             self.header.value(payload, self._field_name)
 
         return super().write(payload, value)
+
+class series(composite):
+    max_quantity = 32
+    def __init__(self, item_view, quantity):
+        if isinstance(quantity, int) and not quantity < 1:
+            fixed = True
+        elif isinstance(quantity, length):
+            fixed = False
+        else:
+            raise ValueError('Invalid quantity: {}'.format(quantity))
+        self.length = quantity
+        self.fixed = fixed
+        self.item = item_view
+
+    @property
+    def quantity(self):
+        if self.fixed:
+            return self.length
+        return self.length.cache
+
+    def offset(self, payload=b'', field=None):
+        field = int(field)
+        if not self.quantity > field:
+            raise IndexError('Invalid item index: {}'.format(field))
+
+        total_offset = 0
+        for _ in range(field):
+            width = self.item.width(payload)
+            payload = payload[width:]
+            total_offset += width
+        return total_offset
+
+    def width(self, payload=b''):
+        offset = self.offset(payload, self.quantity - 1)
+        return offset + self.item.width(payload[offset:])
+
+    def valid(self, payload=b''):
+        if self.quantity > self.max_quantity:
+            return False
+
+        for _ in range(self.quantity):
+            if not self.item.valid(payload):
+                return False
+            width = self.item.width(payload)
+            payload = payload[width:]
+        return True
+
+    def value(self, payload=b'', field=None):
+        if field is None:
+            results = []
+            for _ in range(self.quantity):
+                results.append(self.item.value(payload))
+                width = self.item.width(payload)
+                payload = payload[width:]
+            return results
+
+        field = int(field)
+        if not self.quantity > field:
+            raise IndexError('Invalid item index: {}'.format(field))
+
+        return self.item.value(payload[self.offset(payload, field):])
+
+    def write(self, payload=b'', value=None, **kwargs):
+        if len(kwargs) > 0:
+            if value is not None:
+                raise ValueError('Conflict: value and kwargs both given.')
+            value = kwargs
+
+        if isinstance(value, list):
+            if len(value) > self.quantity:
+                raise ValueError(
+                    'Input list too long: {} out of {} items'.format(
+                    len(value), self.quantity))
+            return self.write(payload, dict(enumerate(value)))
+
+        if isinstance(value, tuple) and isinstance(value[0], (int, str)):
+            field = int(value[0])
+            offset = self.offset(payload, field)
+            svalue = self.item.write(payload[offset:], value[1])
+            return payload[:offset] + svalue
+
+        for field, svalue in value.items():
+            payload = self.write(payload, value=(int(field), svalue))
+        return payload
+
+    def __len__(self):
+        return self.quantity
+
+    def __contains__(self, field):
+        return field == self.item
+
+    def __getitem__(self, field):
+        return self.item
 
 class wrapper:
     def __init__(self, parent_view):
