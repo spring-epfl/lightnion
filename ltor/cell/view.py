@@ -389,7 +389,7 @@ class series(composite):
         return self.quantity
 
     def __contains__(self, field):
-        return field == self.item
+        return int(field) < self.quantity
 
     def __getitem__(self, field):
         return self.item
@@ -436,7 +436,7 @@ class wrapper:
         return field in self._view
 
     def __getitem__(self, field):
-        return self.__getattr__(field)
+        return self.__getattr__(str(field))
 
     def __setattr__(self, field, value):
         if (not field.startswith('_')
