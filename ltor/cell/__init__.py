@@ -2,6 +2,8 @@ import cell
 import cell.view as view
 
 payload_len = 509
+max_payload_len = 1024 * 1024 # (arbitrary, TODO: find a good one)
+
 class cmd(view.enum(1)):
     PADDING             = 0x00
     CREATE              = 0x01
