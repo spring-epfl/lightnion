@@ -1,10 +1,7 @@
-
 import cell
 import cell.view as view
 
 payload_len = 509
-import cell.relay as relay
-
 class cmd(view.enum(1)):
     PADDING             = 0x00
     CREATE              = 0x01
@@ -60,3 +57,6 @@ variable_size = view.like(cell_view(header_view_variable), 'variable_size')
 legacy_size = view.like(cell_view(header_view_legacy), 'legacy_size')
 fixed_size = view.like(cell_view(header_view), 'fixed_size')
 header = view.like(header_view, 'header')
+
+import cell.versions
+import cell.relay
