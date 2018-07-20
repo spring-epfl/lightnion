@@ -219,7 +219,9 @@ class fields(composite):
         return self._fields[field]
 
 class packet(fields):
-    def __init__(self, header_view, fixed_size=0, field_name='length'):
+    _max_size = 1024 * 1024
+    def __init__(self, header_view, fixed_size=0,
+        field_name='length', data_name='data'):
         if not isinstance(header_view, fields):
             raise TypeError('Invalid header type: {}'.format(header_view))
 
@@ -233,7 +235,8 @@ class packet(fields):
             data_view = data(header_view._fields[field_name])
 
         self._field_name = field_name
-        super().__init__(header=header_view, data=data_view)
+        self._data_name = data_name
+        super().__init__(**{'header': header_view, data_name: data_view})
 
     @property
     def fixed_size(self):
@@ -248,14 +251,20 @@ class packet(fields):
         if not self.header.valid(payload):
             return False
         elif not self.fixed_size:
-            self.header.value(payload, self._field_name)
+            width = self.header.value(payload, self._field_name)
+            if width > self._max_size:
+                return False
         return super().valid(payload)
 
     def value(self, payload=b'', field=None):
-        if not self.fixed_size and field == 'data':
-            self.header.value(payload, self._field_name)
-        if field == 'data':
-            return super().value(payload, 'data')
+        if field == self._data_name:
+            if not self.fixed_size:
+                self.header.value(payload, self._field_name)
+            return super().value(payload, self._data_name)
+        elif field is None:
+            whole = self.header.value(payload, field=None)
+            whole[self._data_name] = self.value(payload, self._data_name)
+            return whole
         return self.header.value(payload, field)
 
     def write(self, payload=b'', value=None, **kwargs):
@@ -268,10 +277,29 @@ class packet(fields):
             payload = super().write(payload, header=value['header'])
             del value['header']
 
-        if not self.fixed_size and 'data' in value:
+        if not self.fixed_size and self._data_name in value:
             self.header.value(payload, self._field_name)
 
-        return super().write(payload, value)
+        if self._data_name in value:
+            payload = super().write(payload,
+                **{self._data_name: value[self._data_name]})
+            del value[self._data_name]
+
+        return self.header.write(payload, value)
+
+    def __len__(self):
+        return len(self.header) + 1
+
+    def __contains__(self, field):
+        return field in self._fields or field in self.header
+
+    def __getitem__(self, field):
+        return self.__getattr__(field)
+
+    def __getattr__(self, field):
+        if field in ['header', self._data_name]:
+            return self._fields[field]
+        return self.header[field]
 
 class series(composite):
     max_quantity = 32
