@@ -58,7 +58,10 @@ class cell_view(view.packet):
 variable_size = view.like(cell_view(header_view_variable), 'variable_size')
 legacy_size = view.like(cell_view(header_view_legacy), 'legacy_size')
 fixed_size = view.like(cell_view(header_view), 'fixed_size')
+
 header = view.like(header_view, 'header')
+header_legacy = view.like(header_view_legacy, 'header_legacy')
+header_variable = view.like(header_view_variable, 'header_variable')
 
 import cell.versions
 import cell.relay

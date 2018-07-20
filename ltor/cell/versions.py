@@ -37,3 +37,4 @@ class cell_view(_view.packet):
 
 view = cell_view()
 cell = _view.like(view, 'versions_cell')
+header = _view.like(header_view, 'versions_header')
