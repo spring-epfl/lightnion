@@ -425,21 +425,34 @@ class wrapper:
     def write(self, value=None, **kwargs):
         self.raw = self._view.write(self.raw, value, **kwargs)
 
+    def __len__(self):
+        if not isinstance(self._view, composite):
+            raise NotImplementedError
+        return len(self._view)
+
+    def __contains__(self, field):
+        if not isinstance(self._view, composite):
+            raise NotImplementedError
+        return field in self._view
+
+    def __getitem__(self, field):
+        return self.__getattr__(field)
+
     def __setattr__(self, field, value):
-        if not field.startswith('_') and field in self._view:
+        if (not field.startswith('_')
+            and isinstance(self._view, composite) and field in self._view):
             self.write(value={field: value})
         else:
             object.__setattr__(self, field, value)
 
     def __getattr__(self, field):
-        if field in self._view:
-            subview = self._view._fields[field]
+        if isinstance(self._view, composite) and field in self._view:
+            subview = self._view[field]
             if isinstance(subview, composite):
-                subwrapper = bind(subview, self, field)
-                return subwrapper()
+                return bind(subview, self, field)
         return self._view.value(self.raw, field)
 
-def bind(parent_view, parent_wrapper, parent_field):
+def bind(parent_view, parent_wrapper, parent_field=None):
     class _anonymous_subwrapper(wrapper):
         def __init__(self):
             super().__init__(parent_view)
@@ -448,22 +461,27 @@ def bind(parent_view, parent_wrapper, parent_field):
 
         @property
         def raw(self):
+            if self._field is None:
+                return self._parent.raw
             offset = self._parent.offset(self._field)
             return self._parent.raw[offset:]
 
         @raw.setter
         def raw(self, value):
+            if self._field is None:
+                self._parent.raw = value
+                return
             parent = self._parent.raw
             offset = self._parent.offset(self._field)
             parent = parent[:offset] + value + parent[offset + len(value):]
             self._parent.raw = parent
 
-    if parent_field.isidentifier():
+    if parent_field is not None and parent_field.isidentifier():
         _anonymous_subwrapper.__name__ = '{}'.format(parent_field)
 
     _anonymous_subwrapper.__qualname__ = '{}.{}'.format(
         parent_wrapper.__class__.__qualname__, _anonymous_subwrapper.__name__)
-    return _anonymous_subwrapper
+    return _anonymous_subwrapper()
 
 def like(parent_view, typename=None):
     if typename is not None and not typename.isidentifier():
