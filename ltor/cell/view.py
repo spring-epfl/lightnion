@@ -303,14 +303,14 @@ class packet(fields):
 
 class series(composite):
     max_quantity = 32
-    def __init__(self, item_view, quantity):
-        if isinstance(quantity, int) and not quantity < 1:
+    def __init__(self, item_view, n):
+        if isinstance(n, int) and not n < 1:
             fixed = True
-        elif isinstance(quantity, length):
+        elif isinstance(n, length):
             fixed = False
         else:
-            raise ValueError('Invalid quantity: {}'.format(quantity))
-        self.length = quantity
+            raise ValueError('Invalid quantity: {}'.format(n))
+        self.length = n
         self.fixed = fixed
         self.item = item_view
 
