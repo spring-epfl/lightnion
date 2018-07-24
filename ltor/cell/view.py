@@ -620,7 +620,8 @@ def cache(base, typename=None, init=None):
             '''See help({}.__init__) for an accurate signature.'''.format(
                 base.__qualname__)
 
-            base.__init__(self, *kargs, **kwargs)
+            if not issubclass(base, _enum.Enum):
+                base.__init__(self, *kargs, **kwargs)
             self._cache = threading.local()
             self._cache.value = None
 
