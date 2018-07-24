@@ -10,8 +10,8 @@ class cert_type(_view.enum(1)):
     ED_SIGNED_AUTHENTICATE      = 0x06
     RSA_SIGNED_ED_IDENTITY      = 0x07
 
-cert_header_view = _view.fields(**{
-    'type': cert_type, 'clen': _view.cache(_view.uint, init=[2])})
+cert_header_view = _view.fields(
+    **{'type': cert_type, 'clen': _view.cache(_view.uint, init=[2])})
 cert_view = _view.packet(header_view=cert_header_view, field_name='clen')
 
 certs_header_view = _view.fields(quantity=_view.cache(_view.uint, init=[1]))
