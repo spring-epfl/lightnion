@@ -403,6 +403,40 @@ class series(composite):
     def __getitem__(self, field):
         return self.item
 
+class union(composite):
+    def __init__(self, view_table, union_tag):
+        self.view_table = view_table
+        self.union_tag = union_tag
+
+    @property
+    def tag(self):
+        return self.union_tag.cache
+
+    @property
+    def active_view(self):
+        return self.view_table[self.tag]
+
+    def offset(self, payload=b'', field=None):
+        return 0
+
+    def width(self, payload=b''):
+        return self.active_view.width(payload)
+
+    def valid(self, payload=b''):
+        if self.tag not in self.view_table:
+            return False
+
+        return self.active_view.valid(payload)
+
+    def value(self, payload=b'', field=None):
+        return self.active_view.value(payload, field)
+
+    def write(self, payload=b'', value=None, **kwargs):
+        return self.active_view(payload, value=vaule, **kwargs)
+
+    def __contains__(self, field):
+        return field in self.active_view
+
 class wrapper:
     '''This is a view bound to raw bytes.
 
