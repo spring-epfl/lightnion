@@ -107,7 +107,7 @@ class data(basic):
     def __init__(self, size):
         if isinstance(size, int) and not size < 1:
             fixed = True
-        elif isinstance(size, length):
+        elif isinstance(size, cached):
             fixed = False
         else:
             raise ValueError('Invalid size: {}'.format(size))
@@ -293,7 +293,7 @@ class series(composite):
     def __init__(self, item_view, n):
         if isinstance(n, int) and not n < 1:
             fixed = True
-        elif isinstance(n, length):
+        elif isinstance(n, cached):
             fixed = False
         else:
             raise ValueError('Invalid quantity: {}'.format(n))
