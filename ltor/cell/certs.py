@@ -21,8 +21,6 @@ class _certs_view(_view.packet):
     _default_data_name = 'listing'
 
     def __init__(self, **kwargs):
-        assert 'data_name' not in kwargs and 'data_view' not in kwargs
-
         super().__init__(**kwargs)
         self._fields['listing'] = _view.series(cert_view,
             self._fields['header'].quantity)
