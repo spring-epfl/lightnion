@@ -572,5 +572,3 @@ def cache(base, typename=None, init=None):
         _anonymous_cached_view.__name__ = typename
 
     return _forward_init(_anonymous_cached_view, init)
-
-length = cache(uint, 'length')

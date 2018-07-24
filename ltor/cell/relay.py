@@ -76,7 +76,7 @@ relay_header_view = _view.fields(
     recognized=_view.data(2),
     streamid=_view.uint(2),
     digest=_view.data(4),
-    length=_view.length(2))
+    length=_view.cache(_view.uint, init=[2]))
 
 class relay_view(_view.packet):
     def __init__(self, header=relay_header_view):

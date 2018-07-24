@@ -1,7 +1,7 @@
 import cell as _cell
 import cell.view as _view
 
-class length_view(_view.length):
+class length_view(_view.cache(_view.uint)):
     @property
     def cache(self):
         return super().cache // 2
