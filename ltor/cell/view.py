@@ -398,6 +398,10 @@ class series(composite):
         return self.item
 
 class wrapper:
+    '''This is a view bound to raw bytes.
+
+    See help(self.view) for details on the underlying view.'''
+
     def __init__(self, parent_view):
         self._view = parent_view
 
