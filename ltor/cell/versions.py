@@ -38,3 +38,28 @@ class cell_view(_view.packet):
 view = cell_view()
 cell = _view.like(view, 'versions_cell')
 header = _view.like(header_view, 'versions_header')
+
+def pack(versions):
+    vercell = cell(b'')
+    vercell.header.set(circid=0, cmd=_cell.cmd.VERSIONS, length=len(versions))
+    vercell.set(versions=versions)
+    return vercell
+
+def recv(peer):
+    answer = peer.recv(_cell.header_legacy_view.width())
+
+    header = _cell.header_legacy(answer)
+    if not header.valid:
+        raise RuntimeError('Invalid v2 cell header: {}'.format(header.raw))
+    if not header.cmd == _cell.cmd.VERSIONS:
+        raise RuntimeError('Expecting VERSIONS, got: {}'.format(header.cmd))
+
+    length = header.length
+    if length > _cell.max_payload_len:
+        raise RuntimeError('VERSIONS cell too long: {}'.format(header.length))
+
+    answer += peer.recv(length)
+    if not view.valid(answer):
+        raise RuntimeError('Invalid VERSIONS cell: {}'.format(answer))
+
+    return cell(answer)
