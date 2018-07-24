@@ -6,13 +6,12 @@ class length_view(_view.cache(_view.uint)):
     def cache(self):
         return super().cache // 2
 
-    @cache.setter
-    def cache(self, value):
-        super().cache = value * 2
-
     @property
     def iseven(self):
         return bool(self._cache.value % 2 == 0)
+
+    def write(self, payload=b'', value=None):
+        return super().write(payload, value * 2)
 
     def valid(self, payload=b''):
         if not super().valid(payload):

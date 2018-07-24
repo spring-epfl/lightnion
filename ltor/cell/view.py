@@ -568,10 +568,6 @@ def cache(base, typename=None, init=None):
                     + 'Have you called .value() of parent view yet?')
             return self._cache.value
 
-        @cache.setter
-        def cache(self, value):
-            self._cache.value = value
-
         @property
         def cached(self):
             return self._cache.value is not None
@@ -580,8 +576,8 @@ def cache(base, typename=None, init=None):
             self._cache.value = super().value(payload)
             return self.cache
 
-        def write(self, payload=b'', value=None):
-            payload = super().write(payload, value)
+        def write(self, payload=b'', *kargs, **kwargs):
+            payload = super().write(payload, *kargs, **kwargs)
             self._cache.value = self.value(payload)
             return payload
 
