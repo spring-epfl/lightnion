@@ -509,6 +509,9 @@ def like(parent_view, typename=None):
     return _anonymous_wrapper
 
 def cache(base, typename=None):
+    if typename is not None and not typename.isidentifier():
+        raise ValueError('Typename {} is not an identifier'.format(typename))
+
     if (not inspect.isclass(base)) or isinstance(base, cached):
         raise ValueError('Class {} is invalid for caching.'.format(base))
 
@@ -545,9 +548,10 @@ def cache(base, typename=None):
             self._cache.value = self.value(payload)
             return payload
 
+    _anonymous_cached_view.__qualname__ = 'cached.{}'.format(base.__name__)
+    _anonymous_cached_view.__name__ = 'cached_{}'.format(base.__name__)
     if typename is not None:
-        _anonymous_cached_view.__qualname__ = 'cached.{}'.format(typename)
-        _anonymous_cached_view.__name__ = 'cached_{}'.format(typename)
+        _anonymous_cached_view.__name__ = typename
 
     return _anonymous_cached_view
 
