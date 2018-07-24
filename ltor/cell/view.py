@@ -255,7 +255,7 @@ class packet(fields):
     def fixed_size(self):
         return self._fixed_size
 
-    def cache(self, payload=b''):
+    def cache_fields(self, payload=b''):
         for field in self._extra_fields:
             self.header.value(payload, field)
 
@@ -266,14 +266,14 @@ class packet(fields):
 
     def width(self, payload=b''):
         if len(self._extra_fields) > 0:
-            self.cache(payload)
+            self.cache_fields(payload)
         return super().width(payload)
 
     def valid(self, payload=b''):
         if not self.header.valid(payload):
             return False
         if len(self._extra_fields) > 0:
-            self.cache(payload)
+            self.cache_fields(payload)
         if not self.fixed_size:
             width = self.header.value(payload, self._field_name)
             if width > self._max_size:
@@ -283,7 +283,7 @@ class packet(fields):
     def value(self, payload=b'', field=None):
         if field == self._data_name:
             if len(self._extra_fields) > 0:
-                self.cache(payload)
+                self.cache_fields(payload)
             return super().value(payload, self._data_name)
         elif field is None:
             whole = self.header.value(payload, field=None)
@@ -302,7 +302,7 @@ class packet(fields):
             del value['header']
 
         if len(self._extra_fields) > 0 and self._data_name in value:
-            self.cache(payload)
+            self.cache_fields(payload)
 
         if self._data_name in value:
             payload = super().write(payload,
