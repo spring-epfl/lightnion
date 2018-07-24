@@ -96,6 +96,7 @@ def recv(peer):
 import cell.parts
 
 import cell.versions
+import cell.netinfo
 import cell.relay
 import cell.certs
 
