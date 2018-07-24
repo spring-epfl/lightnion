@@ -65,41 +65,11 @@ class receiver(worker):
         super().__init__(peer, max_queue, period)
         peer.settimeout(period)
 
-    def recv_given_size(self, size):
-        payload = b''
-        while len(payload) < size:
-            payload += self.peer.recv(size)
-        return payload
-
-    def recv(self):
-        payload = self.recv_given_size(cell.header_view.width())
-
-        header = cell.header(payload)
-        if not header.valid:
-            raise RuntimeError('Invalid cell header: {}'.format(header.raw))
-
-        if header.cmd.is_fixed:
-            return header.raw + self.recv_given_size(cell.payload_len)
-
-        payload += self.recv_given_size(
-            cell.header_variable_view.width() - len(payload))
-
-        header = cell.header_variable(payload)
-        if not header.valid:
-            raise RuntimeError(
-                    'Invalid variable cell header: {}'.format(header.raw))
-
-        length = header.length
-        if length > cell.max_payload_len:
-            raise RuntimeError('Invalid cell length: {}'.format(length))
-
-        return payload + self.recv_given_size(length)
-
     def run(self):
         try:
             while True:
                 try:
-                    self.put(self.recv())
+                    self.put(cell.recv(self.peer))
                 except socket.timeout:
                     pass
 

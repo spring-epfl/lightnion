@@ -63,6 +63,36 @@ header = view.like(header_view, 'header')
 header_legacy = view.like(header_legacy_view, 'header_legacy')
 header_variable = view.like(header_variable_view, 'header_variable')
 
+def _recv_given_size(peer, size):
+    payload = b''
+    while len(payload) < size:
+        payload += peer.recv(size)
+    return payload
+
+def recv(peer):
+    payload = _recv_given_size(peer, header_view.width())
+
+    cell_header = header(payload)
+    if not cell_header.valid:
+        raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
+
+    if cell_header.cmd.is_fixed:
+        return cell_header.raw + _recv_given_size(peer, payload_len)
+
+    remains = header_variable_view.width() - len(payload)
+    payload += _recv_given_size(peer, remains)
+
+    cell_header = header_variable(payload)
+    if not cell_header.valid:
+        raise RuntimeError(
+            'Invalid variable cell header: {}'.format(cell_header.raw))
+
+    length = cell_header.length
+    if length > max_payload_len:
+        raise RuntimeError('Invalid cell length: {}'.format(length))
+
+    return payload + _recv_given_size(peer, length)
+
 import cell.parts
 
 import cell.versions
