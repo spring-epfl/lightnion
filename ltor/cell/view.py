@@ -445,6 +445,9 @@ class wrapper:
             object.__setattr__(self, field, value)
 
     def __getattr__(self, field):
+        if field == '__name__':
+            return self.__class__.__name__
+
         if isinstance(self._view, composite) and field in self._view:
             subview = self._view[field]
             if isinstance(subview, composite):
@@ -476,7 +479,7 @@ def bind(parent_view, parent_wrapper, parent_field=None):
             self._parent.raw = parent
 
     if parent_field is not None and parent_field.isidentifier():
-        _anonymous_subwrapper.__name__ = '{}'.format(parent_field)
+        _anonymous_subwrapper.__name__ = '{}_wrapper'.format(parent_field)
 
     _anonymous_subwrapper.__qualname__ = '{}.{}'.format(
         parent_wrapper.__class__.__qualname__, _anonymous_subwrapper.__name__)
@@ -501,6 +504,8 @@ def like(parent_view, typename=None):
 
     if typename is not None:
         _anonymous_wrapper.__qualname__ = 'wrapper.{}'.format(typename)
+        _anonymous_wrapper.__name__ = '{}_wrapper'.format(typename)
+
     return _anonymous_wrapper
 
 def cache(base, typename=None):
