@@ -1,4 +1,6 @@
 import collections
+import threading
+import inspect
 import enum as _enum
 
 class basic:
@@ -12,6 +14,15 @@ class basic:
         raise NotImplementedError
 
     def write(self, payload=b'', value=None):
+        raise NotImplementedError
+
+class cached:
+    @property
+    def cache(self):
+        raise NotImplementedError
+
+    @property
+    def cached(self):
         raise NotImplementedError
 
 class composite(basic):
@@ -48,30 +59,6 @@ class uint(basic):
     def write(self, payload=b'', value=None):
         value = int(value).to_bytes(self.size, byteorder=self.byteorder)
         return value + payload[self.size:]
-
-class length(uint):
-    def __init__(self, size, byteorder='big'):
-        super().__init__(size, byteorder=byteorder)
-        self._cache = None
-
-    @property
-    def cached(self):
-        return self._cache is not None
-
-    @property
-    def cache(self):
-        if not self.cached:
-            raise RuntimeError('Bounded length unknown at runtime')
-        return self._cache
-
-    def value(self, payload=b''):
-        self._cache = super().value(payload)
-        return self.cache
-
-    def write(self, payload=b'', value=None):
-        payload = super().write(payload, value)
-        self._cache = self.value(payload)
-        return payload
 
 def enum(size, byteorder='big', typename=None):
     if typename is not None and not typename.isidentifier():
@@ -510,3 +497,48 @@ def like(parent_view, typename=None):
     if typename is not None:
         _anonymous_wrapper.__qualname__ = 'wrapper.{}'.format(typename)
     return _anonymous_wrapper
+
+def cache(base, typename=None):
+    if (not inspect.isclass(base)) or isinstance(base, cached):
+        raise ValueError('Class {} is invalid for caching.'.format(base))
+
+    class _anonymous_cached_view(cached, base):
+        def __init__(self, *kargs, **kwargs):
+            '''See help({}.__init__) for an accurate signature.'''.format(
+                base.__qualname__)
+
+            base.__init__(self, *kargs, **kwargs)
+            self._cache = threading.local()
+            self._cache.value = None
+
+        @property
+        def cache(self):
+            if not self.cached:
+                raise RuntimeError('Bounded value unknown at runtime: '
+                    + 'Have you called .value() of parent view yet?')
+            return self._cache.value
+
+        @cache.setter
+        def cache(self, value):
+            self._cache.value = value
+
+        @property
+        def cached(self):
+            return self._cache.value is not None
+
+        def value(self, payload=b''):
+            self._cache.value = super().value(payload)
+            return self.cache
+
+        def write(self, payload=b'', value=None):
+            payload = super().write(payload, value)
+            self._cache.value = self.value(payload)
+            return payload
+
+    if typename is not None:
+        _anonymous_cached_view.__qualname__ = 'cached.{}'.format(typename)
+        _anonymous_cached_view.__name__ = 'cached_{}'.format(typename)
+
+    return _anonymous_cached_view
+
+length = cache(uint, 'length')

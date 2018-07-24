@@ -6,17 +6,18 @@ class length_view(_view.length):
     def cache(self):
         return super().cache // 2
 
+    @cache.setter
+    def cache(self, value):
+        super().cache = value * 2
+
+    @property
+    def iseven(self):
+        return bool(self._cache.value % 2 == 0)
+
     def valid(self, payload=b''):
-        if not len(payload) >= self.size:
+        if not super().valid(payload):
             return False
-        return self.value(payload) > 0 and (self._cache % 2) == 0
-
-    def value(self, payload=b''):
-        super().value(payload)
-        return self.cache
-
-    def write(self, payload=b'', value=None):
-        return super().write(payload, value * 2)
+        return self.value(payload) > 0 and self.cached and self.iseven
 
 header_view = _view.fields(
     circid=_view.uint(2), cmd=_cell.cmd, length=length_view(2))
