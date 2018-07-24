@@ -63,6 +63,8 @@ header = view.like(header_view, 'header')
 header_legacy = view.like(header_legacy_view, 'header_legacy')
 header_variable = view.like(header_variable_view, 'header_variable')
 
+import cell.parts
+
 import cell.versions
 import cell.relay
 import cell.certs
