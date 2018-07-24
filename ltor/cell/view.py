@@ -419,6 +419,11 @@ class wrapper:
     def write(self, value=None, **kwargs):
         self.raw = self._view.write(self.raw, value, **kwargs)
 
+    def truncate(self, width=None):
+        if width is None:
+            width = self.width
+        self.raw = self.raw[:width]
+
     def __len__(self):
         if not isinstance(self._view, composite):
             raise NotImplementedError
