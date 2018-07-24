@@ -12,20 +12,26 @@ class cert_type(_view.enum(1)):
 
 cert_header_view = _view.fields(**{
     'type': cert_type, 'clen': _view.cache(_view.uint, init=[2])})
-cert_view = _view.packet(cert_header_view, field_name='clen')
+cert_view = _view.packet(header_view=cert_header_view, field_name='clen')
 
 certs_header_view = _view.fields(quantity=_view.cache(_view.uint, init=[1]))
 class _certs_view(_view.packet):
-    def __init__(self, header=certs_header_view):
-        super().__init__(header_view=header,
-            field_name='quantity', data_name='listing')
-        self._fields['listing'] = _view.series(cert_view, header.quantity)
+    _default_header_view = certs_header_view
+    _default_field_name = 'quantity'
+    _default_data_name = 'listing'
+
+    def __init__(self, **kwargs):
+        assert 'data_name' not in kwargs and 'data_view' not in kwargs
+
+        super().__init__(**kwargs)
+        self._fields['listing'] = _view.series(cert_view,
+            self._fields['header'].quantity)
 
 certs_view = _certs_view()
 class cell_view(_view.packet):
-    def __init__(self, header=_cell.header_variable_view):
-        super().__init__(header_view=header, data_name='certs')
-        self._fields['certs'] = certs_view
+    _default_header_view = _cell.header_variable_view
+    _default_data_name = 'certs'
+    _default_data_view = certs_view
 
     def valid(self, payload=b''):
         if not super().valid(payload):

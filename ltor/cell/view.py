@@ -207,8 +207,26 @@ class fields(composite):
 
 class packet(fields):
     _max_size = 1024 * 1024
-    def __init__(self, header_view, fixed_size=0,
-        field_name='length', data_name='data'):
+    _default_header_view = None
+    _default_field_name = 'length'
+    _default_fixed_size = 0
+    _default_data_view = data
+    _default_data_name = 'data'
+
+    def __init__(self, header_view=None, fixed_size=None, field_name=None,
+        data_name=None, data_view=None):
+
+        if header_view is None:
+            header_view = self._default_header_view
+        if field_name is None:
+            field_name = self._default_field_name
+        if fixed_size is None:
+            fixed_size = self._default_fixed_size
+        if data_view is None:
+            data_view = self._default_data_view
+        if data_name is None:
+            data_name = self._default_data_name
+
         if not isinstance(header_view, fields):
             raise TypeError('Invalid header type: {}'.format(header_view))
 
@@ -216,10 +234,11 @@ class packet(fields):
         if field_name in header_view:
             self._fixed_size = False
 
-        if self._fixed_size:
-            data_view = data(fixed_size)
-        else:
-            data_view = data(header_view._fields[field_name])
+        if inspect.isclass(data_view):
+            if self._fixed_size:
+                data_view = data_view(fixed_size)
+            else:
+                data_view = data_view(header_view._fields[field_name])
 
         self._field_name = field_name
         self._data_name = data_name

@@ -79,9 +79,8 @@ relay_header_view = _view.fields(
     length=_view.cache(_view.uint, init=[2]))
 
 class relay_view(_view.packet):
-    def __init__(self, header=relay_header_view):
-        super().__init__(header_view=header)
-        self._max_size = payload_len
+    _default_header_view = relay_header_view
+    _max_size = payload_len
 
     def valid(self, payload=b''):
         if not self.header.valid(payload):
@@ -96,10 +95,10 @@ payload_view = relay_view()
 payload = _view.like(payload_view, 'relay_payload')
 
 class cell_view(_view.packet):
-    def __init__(self, header=_cell.header_view):
-        super().__init__(header_view=header,
-            fixed_size=_cell.payload_len, data_name='relay')
-        self._fields['relay'] = payload_view
+    _default_data_view = payload_view
+    _default_data_name = 'relay'
+    _default_fixed_size = _cell.payload_len
+    _default_header_view = _cell.header_view
 
     def valid(self, payload=b''):
         if not super().valid(payload):
