@@ -495,6 +495,17 @@ class wrapper:
             width = self.width
         self.raw = self.raw[:width]
 
+    def finalize(self, truncate=True):
+        if truncate:
+            self.truncate()
+        if not self.valid:
+            raise RuntimeError('Invalid payload for {} view: {}'.format(
+                self._view, self.raw))
+
+    def set(self, *kargs, **kwargs):
+        self.write(*kargs, **kwargs)
+        self.finalize()
+
     def __len__(self):
         if not isinstance(self._view, composite):
             raise NotImplementedError
