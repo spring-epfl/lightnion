@@ -389,7 +389,10 @@ class series(composite):
         return self.quantity
 
     def __contains__(self, field):
-        return int(field) < self.quantity
+        try:
+            return int(field) < self.quantity
+        except ValueError:
+            return False
 
     def __getitem__(self, field):
         return self.item
