@@ -454,7 +454,22 @@ class wrapper:
                 return bind(subview, self, field)
         return self._view.value(self.raw, field)
 
-def bind(parent_view, parent_wrapper, parent_field=None):
+def _forward_init(cls, args):
+    if args is None:
+        return cls
+
+    if isinstance(args, dict):
+        if len(args) == 2 and 'kargs' in args and 'kwargs' in args:
+            return cls(*args['kargs'], **args['kwargs'])
+        if len(args) == 1 and 'kwargs' in args:
+            return cls(**args['kwargs'])
+        if len(args) == 1 and 'kargs' in args:
+            return cls(*args['kargs'])
+
+        return cls(**args)
+    return cls(*args)
+
+def bind(parent_view, parent_wrapper, parent_field=None, init=[]):
     class _anonymous_subwrapper(wrapper):
         def __init__(self):
             super().__init__(parent_view)
@@ -483,9 +498,9 @@ def bind(parent_view, parent_wrapper, parent_field=None):
 
     _anonymous_subwrapper.__qualname__ = '{}.{}'.format(
         parent_wrapper.__class__.__qualname__, _anonymous_subwrapper.__name__)
-    return _anonymous_subwrapper()
+    return _forward_init(_anonymous_subwrapper, init)
 
-def like(parent_view, typename=None):
+def like(parent_view, typename=None, init=None):
     if typename is not None and not typename.isidentifier():
         raise ValueError('Typename {} is not an identifier'.format(typename))
 
@@ -506,14 +521,17 @@ def like(parent_view, typename=None):
         _anonymous_wrapper.__qualname__ = 'wrapper.{}'.format(typename)
         _anonymous_wrapper.__name__ = '{}_wrapper'.format(typename)
 
-    return _anonymous_wrapper
+    return _forward_init(_anonymous_wrapper, init)
 
-def cache(base, typename=None):
+def cache(base, typename=None, init=None):
     if typename is not None and not typename.isidentifier():
         raise ValueError('Typename {} is not an identifier'.format(typename))
 
-    if (not inspect.isclass(base)) or isinstance(base, cached):
-        raise ValueError('Class {} is invalid for caching.'.format(base))
+    if not inspect.isclass(base):
+        raise ValueError('Expect a class: {} is not.'.format(base))
+
+    if issubclass(base, cached):
+        raise ValueError('Class {} already cached.'.format(base))
 
     class _anonymous_cached_view(cached, base):
         def __init__(self, *kargs, **kwargs):
@@ -553,6 +571,6 @@ def cache(base, typename=None):
     if typename is not None:
         _anonymous_cached_view.__name__ = typename
 
-    return _anonymous_cached_view
+    return _forward_init(_anonymous_cached_view, init)
 
 length = cache(uint, 'length')
