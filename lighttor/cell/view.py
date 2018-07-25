@@ -428,21 +428,18 @@ class series(composite):
                 raise RuntimeError('Conflict: value and kwargs both given.')
             value = kwargs
 
-        if isinstance(value, list):
+        if isinstance(value, (list, tuple)):
             if len(value) > self.quantity:
                 raise ValueError(
                     'Input list too long: {} out of {} items'.format(
                     len(value), self.quantity))
             return self.write(payload, dict(enumerate(value)))
 
-        if isinstance(value, tuple) and isinstance(value[0], (int, str)):
-            field = int(value[0])
-            offset = self.offset(payload, field)
-            svalue = self.item.write(payload[offset:], value[1])
-            return payload[:offset] + svalue
-
         for field, svalue in sorted(value.items()):
-            payload = self.write(payload, value=(int(field), svalue))
+            field = int(field)
+            offset = self.offset(payload, field)
+            svalue = self.item.write(payload[offset:], svalue)
+            payload = payload[:offset] + svalue
         return payload
 
     def __len__(self):
