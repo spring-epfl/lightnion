@@ -330,15 +330,20 @@ class packet(fields):
 
         if 'header' in value:
             payload = super().write(payload, header=value['header'])
+            value = dict(value)
             del value['header']
 
         if len(self._extra_fields) > 0 and self._data_name in value:
             self.cache_fields(payload)
 
         if self._data_name in value:
-            payload = super().write(payload,
+            if len(value) > 1:
+                headers = dict(value)
+                del headers[self._data_name]
+                payload = self.header.write(payload, headers)
+
+            return super().write(payload,
                 **{self._data_name: value[self._data_name]})
-            del value[self._data_name]
 
         return self.header.write(payload, value)
 
