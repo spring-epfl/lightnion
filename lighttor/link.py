@@ -13,7 +13,7 @@ class link(collections.namedtuple('link', ['io', 'version'])):
     Usage::
 
       >>> import lighttor as ltor
-      >>> link = ltor.link.handshake('127.0.0.1', 5000)
+      >>> link = ltor.link.initiate('127.0.0.1', 5000)
       >>> link.version
       5
       >>> link.send(ltor.cell.padding.pack())
