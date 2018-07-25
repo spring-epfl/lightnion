@@ -130,7 +130,7 @@ def enum(size, byteorder='big', typename=None, cached=False):
 
 class data(basic):
     def __init__(self, size):
-        if isinstance(size, int) and not size < 1:
+        if isinstance(size, int) and not size < 0:
             fixed = True
         elif isview(size) and iscached(size):
             fixed = False
