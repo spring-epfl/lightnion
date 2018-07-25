@@ -93,7 +93,7 @@ def recv(peer):
 
     return payload + _recv_given_size(peer, length)
 
-import cell.parts
+import cell.address
 
 import cell.versions
 import cell.netinfo

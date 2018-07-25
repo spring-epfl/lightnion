@@ -1,9 +1,11 @@
 import cell as _cell
 import cell.view as _view
-import cell.parts as _parts
+import cell.address
+
+import time
 
 netinfo_header_view = _view.fields(timestamp=_view.uint(4),
-    other=_parts.address_view, quantity=_view.cache(_view.uint, init=[1]))
+    other=cell.address.view, quantity=_view.cache(_view.uint, init=[1]))
 
 class _netinfo_view(_view.packet):
     _default_header_view = netinfo_header_view
@@ -11,11 +13,11 @@ class _netinfo_view(_view.packet):
     _default_data_name = 'addresses'
 
     _addr_type_whitelist = [
-        _parts.addr_type.IPV4_ADDR, _parts.addr_type.IPV6_ADDR]
+        cell.address.addr_type.IPV4_ADDR, cell.address.addr_type.IPV6_ADDR]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._fields['addresses'] = _view.series(_parts.address_view,
+        self._fields['addresses'] = _view.series(cell.address.view,
             self._fields['header'].quantity)
 
     def valid(self, payload=b''):
@@ -46,3 +48,18 @@ class cell_view(_view.packet):
 
 view = cell_view()
 cell = _view.like(view, 'netinfo_cell')
+
+def pack(other_address, *addresses, timestamp=None):
+    if timestamp is None:
+        timestamp = int(time.time())
+
+    base = cell(b'')
+    base.set(
+        circid=0,
+        cmd=_cell.cmd.NETINFO,
+        netinfo=dict(
+            timestamp=timestamp,
+            other=_cell.address.pack(other_address).value(),
+            quantity=len(addresses),
+            addresses=[_cell.address.pack(a).value() for a in addresses]))
+    return base
