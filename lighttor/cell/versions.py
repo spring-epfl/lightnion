@@ -1,23 +1,11 @@
 from .. import cell as _cell
 from . import view as _view
-
-class length_view(_view.cache(_view.uint)):
-    def cache(self):
-        return super().cache() // 2
-
-    def iseven(self):
-        return bool(self._cache.value % 2 == 0)
-
-    def write(self, payload=b'', value=None):
-        return super().write(payload, value * 2)
-
-    def valid(self, payload=b''):
-        if not super().valid(payload):
-            return False
-        return self.value(payload) > 0 and self.cached() and self.iseven()
+from . import common
 
 header_view = _view.fields(
-    circid=_view.uint(2), cmd=_cell.cmd, length=length_view(2))
+    circid=_view.uint(2),
+    cmd=_cell.cmd,
+    length=common.length_halved_view(2))
 
 class cell_view(_view.packet):
     def __init__(self, header=header_view):
