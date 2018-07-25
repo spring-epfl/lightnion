@@ -1,5 +1,5 @@
-import cell as _cell
-import cell.view as _view
+from .. import cell as _cell
+from . import view as _view
 
 class cell_view(_view.packet):
     _default_header_view = _cell.header_view

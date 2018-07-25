@@ -2,7 +2,7 @@ import collections
 import socket
 import ssl
 
-import cell
+import lighttor as ltor
 
 class link(collections.namedtuple('link', ['io', 'version'])):
     """An established Tor link, send and receive messages in separate threads.
@@ -39,8 +39,8 @@ def negotiate_version(peer, versions, *, as_initiator):
     :param bool as_initiator: send VERSIONS cell first.
     """
     if as_initiator:
-        cell.versions.send(peer, cell.versions.pack(versions))
-    vercell = cell.versions.recv(peer)
+        ltor.cell.versions.send(peer, ltor.cell.versions.pack(versions))
+    vercell = ltor.cell.versions.recv(peer)
 
     common_versions = list(set(vercell.versions).intersection(versions))
     if len(common_versions) < 1:
@@ -53,7 +53,7 @@ def negotiate_version(peer, versions, *, as_initiator):
             version)
 
     if not as_initiator:
-        cell.versions.send(peer, cell.versions.pack(versions))
+        ltor.cell.versions.send(peer, ltor.cell.versions.pack(versions))
     return version
 
 def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
@@ -104,15 +104,15 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     version = negotiate_version(peer, versions, as_initiator=True)
 
     # Wraps with cell.socket.io
-    peer = cell.socket.io(peer)
+    peer = ltor.cell.socket.io(peer)
 
     # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
-    certs_cell = cell.certs.cell(peer.recv())
+    certs_cell = ltor.cell.certs.cell(peer.recv())
     auth_cell = peer.recv() # TODO: support AUTH_CHALLENGE
-    netinfo_cell = cell.netinfo.cell(peer.recv())
+    netinfo_cell = ltor.cell.netinfo.cell(peer.recv())
 
     # Send our NETINFO to say "we don't want to authenticate"
-    peer.send(cell.netinfo.pack(address))
+    peer.send(ltor.cell.netinfo.pack(address))
     return link(peer, version)
 
 if __name__ == "__main__":

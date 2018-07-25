@@ -1,5 +1,4 @@
-import cell
-import cell.view as _view
+from . import view as _view
 
 import ipaddress
 

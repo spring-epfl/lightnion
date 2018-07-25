@@ -1,8 +1,9 @@
+import lighttor as ltor
+import lighttor.cell
+
 import threading
 import socket
 import queue
-
-import cell
 
 class worker(threading.Thread):
     def __init__(self, peer, max_queue=2048, period=0.5):
@@ -48,7 +49,7 @@ class sender(worker):
     def send(self, payload):
         while not self.dead:
             try:
-                cell.send(self.peer, payload)
+                ltor.cell.send(self.peer, payload)
                 break
             except socket.timeout:
                 pass
@@ -69,7 +70,7 @@ class receiver(worker):
         try:
             while not self.dead:
                 try:
-                    self.put(cell.recv(self.peer))
+                    self.put(ltor.cell.recv(self.peer))
                 except socket.timeout:
                     pass
 

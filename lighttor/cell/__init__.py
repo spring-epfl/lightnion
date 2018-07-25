@@ -1,5 +1,4 @@
-import cell
-import cell.view as view
+from . import view
 
 payload_len = 509
 max_payload_len = 1024 * 1024 # (arbitrary, TODO: find a good one)
@@ -116,12 +115,6 @@ def send(peer, payload):
 
     return peer.sendall(payload.ljust(length, b'\x00'))
 
-import cell.address
-
-import cell.padding
-import cell.relay
-import cell.versions
-import cell.netinfo
-import cell.certs
-
-import cell.socket
+from . import address
+from . import padding, relay, versions, netinfo, certs
+from . import socket

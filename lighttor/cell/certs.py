@@ -1,5 +1,5 @@
-import cell as _cell
-import cell.view as _view
+from .. import cell as _cell
+from . import view as _view
 
 """Tor CERTS cells views & wrappers
 

@@ -1,5 +1,5 @@
-import cell as _cell
-import cell.view as _view
+from .. import cell as _cell
+from . import view as _view
 
 class length_view(_view.cache(_view.uint)):
     def cache(self):
