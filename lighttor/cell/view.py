@@ -116,9 +116,9 @@ def enum(size, byteorder='big', typename=None, cached=False):
 
             @classmethod
             def write(cls, payload=b'', value=None, **kwargs):
-                value = int(cls(value)).to_bytes(size, byteorder='big')
-                cls._cache.value = cls.value(value)
-                return value + payload[size:]
+                cls._cache.value = cls(value)
+                packed = int(cls.cache()).to_bytes(size, byteorder='big')
+                return packed + payload[size:]
 
         _anonymous_cached_enum._cache = threading.local()
         _anonymous_cached_enum._cache.value = None
@@ -696,7 +696,7 @@ def cache(base, typename=None, init=None):
 
         def write(self, payload=b'', *kargs, **kwargs):
             payload = super().write(payload, *kargs, **kwargs)
-            self._cache.value = self.value(payload)
+            self._cache.value = super().value(payload)
             return payload
 
     _anonymous_cached_view.__qualname__ = 'cached.{}'.format(base.__name__)
