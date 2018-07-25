@@ -1,5 +1,6 @@
 import collections
 import threading
+import ipaddress
 import inspect
 import enum as _enum
 
@@ -723,3 +724,34 @@ def iscomposite(item):
             return True
         return isinstance(item.active_view, composite)
     return isinstance(item, composite)
+
+class ip_address(data):
+    def __init__(self, *, version):
+        if version not in [4, 6]:
+            raise ValueError('Invalid IP version: {}'.format(version))
+
+        if version == 4:
+            self._ip_type = ipaddress.IPv4Address
+            super().__init__(4)
+        else:
+            self._ip_type = ipaddress.IPv6Address
+            super().__init__(16)
+
+    def valid(self, payload=b''):
+        if not super().valid(payload):
+            return False
+
+        try:
+            self.value(payload)
+            return True
+        except ipaddress.AddressValueError:
+            return False
+
+    def value(self, payload=b'', field=None):
+        value = super().value(payload)
+        return self._ip_type(value)
+
+    def write(self, payload=b'', value=None, **kwargs):
+        if not isinstance(value, self._ip_type):
+            value = self._ip_type(value)
+        return super().write(payload, value=value.packed)
