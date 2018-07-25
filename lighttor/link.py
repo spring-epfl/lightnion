@@ -108,7 +108,7 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
 
     # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
     certs_cell = ltor.cell.certs.cell(peer.recv())
-    auth_cell = peer.recv() # TODO: support AUTH_CHALLENGE
+    auth_cell = ltor.cell.challenge.cell(peer.recv())
     netinfo_cell = ltor.cell.netinfo.cell(peer.recv())
 
     # Send our NETINFO to say "we don't want to authenticate"
