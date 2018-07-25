@@ -118,9 +118,10 @@ def send(peer, payload):
 
 import cell.address
 
+import cell.padding
+import cell.relay
 import cell.versions
 import cell.netinfo
-import cell.relay
 import cell.certs
 
 import cell.socket
