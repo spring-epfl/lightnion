@@ -441,7 +441,7 @@ class series(composite):
             svalue = self.item.write(payload[offset:], value[1])
             return payload[:offset] + svalue
 
-        for field, svalue in value.items():
+        for field, svalue in sorted(value.items()):
             payload = self.write(payload, value=(int(field), svalue))
         return payload
 
