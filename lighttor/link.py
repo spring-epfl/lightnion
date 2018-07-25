@@ -114,15 +114,3 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     # Send our NETINFO to say "we don't want to authenticate"
     peer.send(ltor.cell.netinfo.pack(address))
     return link(peer, version)
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('addr', nargs='?', default='127.0.0.1')
-    parser.add_argument('port', nargs='?', type=int, default=9050)
-    sys_argv = parser.parse_args()
-
-    link = initiate(sys_argv.addr, sys_argv.port)
-    print('Link v{} established – {}'.format(link.version, link.io))
-    link.close()
