@@ -1,16 +1,65 @@
-import stem
-import stem.client.cell
-import stem.client.datatype
-import stem.socket
+import collections
+import socket
+import ssl
 
-def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
+import cell
+
+class link(collections.namedtuple('link', ['io', 'version'])):
+    """An established Tor link, send and receive messages in separate threads.
+
+    :param io: cell.socket.io instance that wraps the TLS/SSLv3 connection
+    :param int version: link version
+
+    Usage::
+
+      >>> import lighttor as ltor
+      >>> link = ltor.link.handshake('127.0.0.1', 5000)
+      >>> link.version
+      5
+      >>> link.send(ltor.cell.padding.pack())
+      >>> ltor.cell.padding.cell(link.recv()).valid
+      True
+      >>> link.close()
     """
-    We replicate here a link "in-protocol" (v3) handshake:
-     - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L257
 
-    The expected transcript from the point of view of a "client" is:
+    def recv(self):
+        return self.io.recv()
 
-         (... establish a proper TLS/SSLv3 handshake link here ...)
+    def send(self, cell):
+        self.io.send(cell)
+
+    def close(self):
+        self.io.close()
+
+def negotiate_version(peer, versions, *, as_initiator):
+    """Performs a VERSIONS negotiation
+
+    :param peer: ssl.socket instance.
+    :param list versions: target link versions.
+    :param bool as_initiator: send VERSIONS cell first.
+    """
+    if as_initiator:
+        cell.versions.send(peer, cell.versions.pack(versions))
+    vercell = cell.versions.recv(peer)
+
+    common_versions = list(set(vercell.versions).intersection(versions))
+    if len(common_versions) < 1:
+        raise RuntimeError('No common supported versions: {} and {}'.format(
+            list(vercell.versions), versions))
+
+    version = max(common_versions)
+    if version < 4:
+        raise RuntimeError('No support for version 3 or lower, got {}').format(
+            version)
+
+    if not as_initiator:
+        cell.versions.send(peer, cell.versions.pack(versions))
+    return version
+
+def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
+    """Establish a link with the "in-protocol" (v3) handshake as initiator
+
+    The expected transcript is:
 
            Onion Proxy (client)              Onion Router (server)
 
@@ -18,7 +67,6 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
                |   [4] <-------- VERSIONS ---------: [3]
                |
                |           Negotiated Version
-               |                  >= 3
                |
                |   [4] <--------- CERTS -----------: [3]
                |       <----- AUTH_CHALLENGE ------:
@@ -28,7 +76,6 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
         Link   |               authenticate
       Protocol |
         >= 3   |   [5] :-------- NETINFO ----------> [6]
-               |
                |
                | Alternative:
                | (          We (OR) authenticate         )
@@ -40,83 +87,33 @@ def handshake(address='127.0.0.1', port=9050, versions=[3, 4, 5], sanity=True):
                | (                                       )
                \
 
-    After establishing a link via such "in-protocol" handshake, we can perform
-    further operations (for example, establishing a circuit).
-
     :param str address: remote relay address (default: 127.0.0.1).
     :param int port: remote relay ORPort (default: 9050).
-    :param list versions: target link versions (default: [3, 4, 5]).
-    :param bool sanity: enable extra sanity checks (default: True).
+    :param list versions: target link versions (default: [4, 5]).
 
     :returns: a tuple (link socket, link version)
 
     """
 
-    # [1] Connect to the OR
-    socket = stem.socket.RelaySocket(address, port)
+    # Establish connection
+    peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    peer.connect((address, port))
+    peer = ssl.wrap_socket(peer)
 
-    # [1:2] Send a VERSIONS cell to begin with.
-    #
-    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L553
-    #
-    versions_scell = stem.client.cell.VersionsCell(versions)
-    socket.send(versions_scell.pack())
+    # VERSIONS handshake
+    version = negotiate_version(peer, versions, as_initiator=True)
 
-    # [3:4] Receive a VERSIONS cell from the OR.
-    answer = socket.recv()
-    if not answer:
-        socket.close()
-        return None, None # (abort if we get no answer to our first cell)
+    # Wraps with cell.socket.io
+    peer = cell.socket.io(peer)
 
-    # [4] We need to have a circuit_id of 2 bytes for VERSIONS cell, hence we
-    #     explicitly require here to use an older link version (< v4).
-    #
-    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L438
-    #
-    versions_rcell, answer = stem.client.cell.Cell.pop(answer, 2)
+    # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
+    certs_cell = cell.certs.cell(peer.recv())
+    auth_cell = peer.recv() # TODO: support AUTH_CHALLENGE
+    netinfo_cell = cell.netinfo.cell(peer.recv())
 
-    # [4] We compute the set of common versions between the two VERSIONS cell.
-    #
-    common = set(versions)
-    common = common.intersection(versions_rcell.versions)
-    if len(common) < 1:
-        socket.close()
-        return None, None # (abort if no common versions found)
-
-    # [4] We keep the maximal common version
-    version = max(common)
-    if version < 3:
-        return None, None # (let's say that we don't support v2-or-lower links)
-
-    # [3:4] We also expect CERTS, AUTH_CHALLENGE, NETINFO cells afterwards
-    if sanity:
-        certs_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert isinstance(certs_rcell, stem.client.cell.CertsCell)
-
-        auth_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert isinstance(auth_rcell, stem.client.cell.AuthChallengeCell)
-
-        netinfo_rcell, answer = stem.client.cell.Cell.pop(answer, version)
-        assert isinstance(netinfo_rcell, stem.client.cell.NetinfoCell)
-
-    # [5:6] We send the required NETINFO cell to finish the handshake
-    #
-    # See https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L518
-    #
-    address_packable = stem.client.datatype.Address(address) # stem's datatype
-    netinfo_scell = stem.client.cell.NetinfoCell(address_packable, [])
-
-    socket.send(netinfo_scell.pack(version)) # (use negotiated version)
-    return (socket, version)
-
-def keepalive(link):
-    """
-    Send a keepalive through a given link.
-
-    :params tuple link: a tuple (link socket, link version)
-    """
-    link_socket, link_version = link
-    link_socket.send(stem.client.cell.PaddingCell().pack(link_version))
+    # Send our NETINFO to say "we don't want to authenticate"
+    peer.send(cell.netinfo.pack(address))
+    return link(peer, version)
 
 if __name__ == "__main__":
     import argparse
@@ -126,5 +123,6 @@ if __name__ == "__main__":
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = handshake(address=sys_argv.addr, port=sys_argv.port)
-    print('Link v{} established – {}'.format(link[1], link[0]))
+    link = initiate(sys_argv.addr, sys_argv.port)
+    print('Link v{} established – {}'.format(link.version, link.io))
+    link.close()
