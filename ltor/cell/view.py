@@ -2,6 +2,7 @@ import collections
 import threading
 import ipaddress
 import inspect
+import codecs
 import enum as _enum
 
 class basic:
@@ -755,3 +756,111 @@ class ip_address(data):
         if not isinstance(value, self._ip_type):
             value = self._ip_type(value)
         return super().write(payload, value=value.packed)
+
+class codec(data):
+    @staticmethod
+    def _is_text_encoding(c):
+        try:
+            codecs.encode(b'', c)
+            return False
+        except BaseException:
+            pass
+
+        try:
+            if not isinstance(codecs.encode('', c), bytes):
+                return False
+            return True
+        except BaseException:
+            return False
+
+    @staticmethod
+    def _is_bytes_mapping(c):
+        if codec._is_text_encoding(c):
+            return False
+
+        try:
+            if not isinstance(codecs.encode(b'', c), bytes):
+                return False
+            return True
+        except BaseException:
+            return False
+
+    @staticmethod
+    def _is_text_mapping(c):
+        return c in ['rot_13', 'rot13']
+
+    @staticmethod
+    def _build_encode_chain(codecs):
+        encode_chain = []
+        is_input_str = True
+        for c in codecs:
+            if codec._is_text_encoding(c):
+                encode_chain.append((is_input_str, c))
+                is_input_str = bool(not is_input_str)
+                continue
+            if codec._is_text_encoding(c) and not is_input_str:
+                raise ValueError(
+                    'Got bytes for {} in chain: {}'.format(c, codecs))
+            if codec._is_bytes_mapping(c) and is_input_str:
+                raise ValueError(
+                    'Got str for {} in chain: {}'.format(c, codecs))
+            encode_chain.append((True, c))
+
+        if is_input_str:
+            raise ValueError(
+                'Chain encodes to str instead of bytes: {}'.format(codecs))
+        return encode_chain
+
+    @staticmethod
+    def _build_decode_chain(codecs):
+        decode_chain = []
+        is_input_str = False
+        for c in reversed(codecs):
+            if codec._is_text_encoding(c):
+                decode_chain.append((is_input_str, c))
+                is_input_str = bool(not is_input_str)
+                continue
+            if codec._is_text_encoding(c) and not is_input_str:
+                raise ValueError(
+                    'Got bytes for {} in chain: {}'.format(c, codecs))
+            if codec._is_bytes_mapping(c) and is_input_str:
+                raise ValueError(
+                    'Got str for {} in chain: {}'.format(c, codecs))
+            decode_chain.append((False, c))
+
+        if not is_input_str:
+            raise ValueError(
+                'Chain decodes to bytes instead of str: {}'.format(codecs))
+        return decode_chain
+
+    def __init__(self, *codecs, size):
+        self.encode_chain = codec._build_encode_chain(codecs)
+        self.decode_chain = codec._build_decode_chain(codecs)
+        super().__init__(size)
+
+    def valid(self, payload=b''):
+        if not super().valid(payload):
+            return False
+
+        try:
+            self.value(payload)
+            return True
+        except ValueError:
+            return False
+
+    def value(self, payload=b'', field=None):
+        value = super().value(payload)
+        for use_encode, c in self.decode_chain:
+            if use_encode:
+                value = codecs.encode(value, c)
+            else:
+                value = codecs.decode(value, c)
+        return value
+
+    def write(self, payload=b'', value=None, **kwargs):
+        for use_encode, c in self.encode_chain:
+            if use_encode:
+                value = codecs.encode(value, c)
+            else:
+                value = codecs.decode(value, c)
+        return super().write(payload, value=value)
