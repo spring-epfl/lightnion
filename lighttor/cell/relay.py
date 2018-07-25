@@ -117,4 +117,3 @@ class cell_view(_view.packet):
 
 view = cell_view()
 cell = _view.like(view, 'relay_cell')
-
