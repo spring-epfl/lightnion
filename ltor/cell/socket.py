@@ -46,15 +46,15 @@ class sender(worker):
         peer.settimeout(period)
 
     def send(self, payload):
-        while True:
+        while not self.dead:
             try:
-                self.peer.sendall(payload)
+                cell.send(self.peer, payload)
                 break
             except socket.timeout:
                 pass
 
     def run(self):
-        while True:
+        while not self.dead:
             try:
                 self.send(self.get())
             except BaseException as e:
@@ -67,7 +67,7 @@ class receiver(worker):
 
     def run(self):
         try:
-            while True:
+            while not self.dead:
                 try:
                     self.put(cell.recv(self.peer))
                 except socket.timeout:
@@ -77,12 +77,19 @@ class receiver(worker):
             self.die(e)
 
 class io:
-    def __init__(self, peer, max_queue=2048):
+    _join_timeout = 3
+
+    def __init__(self, peer, daemon=True, max_queue=2048):
         self.receiver = receiver(peer, max_queue)
         self.sender = sender(peer, max_queue)
 
+        if daemon:
+            self.receiver.daemon = True
+            self.sender.daemon = True
+
         self.receiver.start()
         self.sender.start()
+        self.peer = peer
 
     def recv(self):
         return self.receiver.get()
@@ -90,9 +97,9 @@ class io:
     def send(self, payload):
         self.sender.put(payload)
 
-    def stop(self):
-        self.receiver.dead = True
-        self.sender.dead = True
-        self.peer.close()
-        self.sender.join()
-        self.receiver.join()
+    def close(self):
+        self.sender.close()
+        self.receiver.close()
+
+        self.sender.join(self._join_timeout)
+        self.receiver.join(self._join_timeout)

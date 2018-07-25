@@ -93,6 +93,29 @@ def recv(peer):
 
     return payload + _recv_given_size(peer, length)
 
+def send(peer, payload):
+    try:
+        payload = payload.raw
+    except AttributeError:
+        pass
+
+    cell_header = header(payload)
+    if not cell_header.valid:
+        raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
+
+    length = payload_len
+    if not cell_header.cmd.is_fixed:
+        cell_header = header_variable(payload)
+        if not cell_header.valid:
+            raise RuntimeError(
+                'Invalid variable cell header: {}'.format(cell_header.raw))
+
+        length = cell_header.length
+        if length > max_payload_len:
+            raise RuntimeError('Invalid cell length: {}'.format(length))
+
+    return peer.sendall(payload.ljust(length, b'\x00'))
+
 import cell.address
 
 import cell.versions

@@ -61,3 +61,15 @@ def recv(peer):
         raise RuntimeError('Invalid VERSIONS cell: {}'.format(answer))
 
     return cell(answer)
+
+def send(peer, payload):
+    try:
+        payload = payload.raw
+    except AttributeError:
+        pass
+
+    vercell = cell(payload)
+    if not vercell.valid:
+        raise RuntimeError('VERSIONS cell invalid: {}'.format(payload))
+
+    return peer.sendall(payload)
