@@ -2,11 +2,9 @@ import cell as _cell
 import cell.view as _view
 
 class length_view(_view.cache(_view.uint)):
-    @property
     def cache(self):
-        return super().cache // 2
+        return super().cache() // 2
 
-    @property
     def iseven(self):
         return bool(self._cache.value % 2 == 0)
 
@@ -16,7 +14,7 @@ class length_view(_view.cache(_view.uint)):
     def valid(self, payload=b''):
         if not super().valid(payload):
             return False
-        return self.value(payload) > 0 and self.cached and self.iseven
+        return self.value(payload) > 0 and self.cached() and self.iseven()
 
 header_view = _view.fields(
     circid=_view.uint(2), cmd=_cell.cmd, length=length_view(2))

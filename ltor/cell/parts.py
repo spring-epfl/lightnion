@@ -1,7 +1,7 @@
 import cell
 import cell.view as _view
 
-class addr_type(_view.enum(1)):
+class addr_type(_view.enum(1, cached=True)):
     HOSTNAME        = 0x00
     IPV4_ADDR       = 0x04
     IPV6_ADDR       = 0x06

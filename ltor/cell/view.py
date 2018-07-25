@@ -10,20 +10,14 @@ class basic:
     def valid(self, payload=b''):
         raise NotImplementedError
 
-    def value(self, payload=b''):
+    def value(self, payload=b'', field=None):
         raise NotImplementedError
 
-    def write(self, payload=b'', value=None):
+    def write(self, payload=b'', value=None, **kwargs):
         raise NotImplementedError
 
-class cached:
-    @property
-    def cache(self):
-        raise NotImplementedError
-
-    @property
-    def cached(self):
-        raise NotImplementedError
+    def __contains__(self, field):
+        return False
 
 class composite(basic):
     def write(self, payload=b'', value=None, **kwargs):
@@ -53,14 +47,14 @@ class uint(basic):
     def valid(self, payload=b''):
         return len(payload) >= self.size
 
-    def value(self, payload=b''):
+    def value(self, payload=b'', field=None):
         return int.from_bytes(payload[:self.size], byteorder=self.byteorder)
 
-    def write(self, payload=b'', value=None):
+    def write(self, payload=b'', value=None, **kwargs):
         value = int(value).to_bytes(self.size, byteorder=self.byteorder)
         return value + payload[self.size:]
 
-def enum(size, byteorder='big', typename=None):
+def enum(size, byteorder='big', typename=None, cached=False):
     if typename is not None and not typename.isidentifier():
         raise ValueError('Typename {} is not an identifier'.format(typename))
 
@@ -86,18 +80,47 @@ def enum(size, byteorder='big', typename=None):
             except ValueError:
                 return False
 
+        def __int__(self):
+            return self._value_
+
         @classmethod
-        def value(cls, payload=b''):
+        def value(cls, payload=b'', field=None):
             value = int.from_bytes(payload[:size], byteorder='big')
             return cls(value)
 
         @classmethod
-        def write(cls, payload=b'', value=None):
+        def write(cls, payload=b'', value=None, **kwargs):
             value = int(cls(value)).to_bytes(size, byteorder='big')
             return value + payload[size:]
 
-        def __int__(self):
-            return self._value_
+    if cached:
+        class _anonymous_cached_enum(_anonymous_enum):
+            @classmethod
+            def cache(cls):
+                if not cls.cached():
+                    raise RuntimeError('Bounded value unknown at runtime: '
+                        + 'Have you called .value() of parent view yet?')
+                return cls._cache.value
+
+            @classmethod
+            def cached(cls):
+                return cls._cache.value is not None
+
+            @classmethod
+            def value(cls, payload=b'', field=None):
+                value = int.from_bytes(payload[:size], byteorder='big')
+                cls._cache.value = cls(value)
+                return cls.cache()
+
+            @classmethod
+            def write(cls, payload=b'', value=None, **kwargs):
+                value = int(cls(value)).to_bytes(size, byteorder='big')
+                cls._cache.value = cls.value(value)
+                return value + payload[size:]
+
+        _anonymous_cached_enum._cache = threading.local()
+        _anonymous_cached_enum._cache.value = None
+        _anonymous_enum = _anonymous_cached_enum
 
     if typename is not None:
         _anonymous_enum.__qualname__ = typename
@@ -107,7 +130,7 @@ class data(basic):
     def __init__(self, size):
         if isinstance(size, int) and not size < 1:
             fixed = True
-        elif isinstance(size, cached):
+        elif isview(size) and iscached(size):
             fixed = False
         else:
             raise ValueError('Invalid size: {}'.format(size))
@@ -118,20 +141,20 @@ class data(basic):
     def size(self):
         if self.fixed:
             return self.length
-        return self.length.cache
+        return self.length.cache()
 
     def width(self, payload=b''):
         return self.size
 
     def valid(self, payload=b''):
-        if not self.fixed and not self.length.cached:
+        if not self.fixed and not self.length.cached():
             return False
         return len(payload) >= self.size
 
-    def value(self, payload=b''):
+    def value(self, payload=b'', field=None):
         return payload[:self.size]
 
-    def write(self, payload=b'', value=None):
+    def write(self, payload=b'', value=None, **kwargs):
         if len(value) != self.size:
             raise ValueError('Invalid value size: {} instead of {}'.format(
                 len(value), self.size))
@@ -139,6 +162,9 @@ class data(basic):
 
 class fields(composite):
     def __init__(self, **kwargs):
+        for key, view in kwargs.items():
+            if not isview(view):
+                raise TypeError('Field {} is not a view: {}'.format(key, view))
         self._fields = collections.OrderedDict(kwargs)
 
     def visit(self, payload=b'', operator=lambda v, p: v.width(p)):
@@ -184,7 +210,7 @@ class fields(composite):
     def write(self, payload=b'', value=None, **kwargs):
         if len(kwargs) > 0:
             if value is not None:
-                raise ValueError('Conflict: value and kwargs both given.')
+                raise RuntimeError('Conflict: value and kwargs both given.')
             value = kwargs
 
         for field, svalue in value.items():
@@ -233,7 +259,7 @@ class packet(fields):
             data_name = self._default_data_name
 
         if not isinstance(header_view, fields):
-            raise TypeError('Invalid header type: {}'.format(header_view))
+            raise TypeError('Header not a view.fields: {}'.format(header_view))
 
         self._fixed_size = True
         if field_name in header_view:
@@ -246,6 +272,9 @@ class packet(fields):
             else:
                 data_view = data_view(header_view._fields[field_name])
 
+        if not isview(data_view):
+            raise TypeError('Data view not a view: {}'.format(data_view))
+
         self._extra_fields = extra_fields
         self._field_name = field_name
         self._data_name = data_name
@@ -255,7 +284,7 @@ class packet(fields):
     def fixed_size(self):
         return self._fixed_size
 
-    def cache_fields(self, payload=b''):
+    def cache_fields(self, payload=b'', value=None):
         for field in self._extra_fields:
             self.header.value(payload, field)
 
@@ -294,7 +323,7 @@ class packet(fields):
     def write(self, payload=b'', value=None, **kwargs):
         if len(kwargs) > 0:
             if value is not None:
-                raise ValueError('Conflict: value and kwargs both given.')
+                raise RuntimeError('Conflict: value and kwargs both given.')
             value = kwargs
 
         if 'header' in value:
@@ -330,7 +359,7 @@ class series(composite):
     def __init__(self, item_view, n):
         if isinstance(n, int) and not n < 1:
             fixed = True
-        elif isinstance(n, cached):
+        elif isview(n) and iscached(n):
             fixed = False
         else:
             raise ValueError('Invalid quantity: {}'.format(n))
@@ -342,7 +371,7 @@ class series(composite):
     def quantity(self):
         if self.fixed:
             return self.length
-        return self.length.cache
+        return self.length.cache()
 
     def offset(self, payload=b'', field=None):
         field = int(field)
@@ -389,7 +418,7 @@ class series(composite):
     def write(self, payload=b'', value=None, **kwargs):
         if len(kwargs) > 0:
             if value is not None:
-                raise ValueError('Conflict: value and kwargs both given.')
+                raise RuntimeError('Conflict: value and kwargs both given.')
             value = kwargs
 
         if isinstance(value, list):
@@ -423,12 +452,16 @@ class series(composite):
 
 class union(composite):
     def __init__(self, view_table, union_tag):
+        for key, view in view_table.items():
+            if not isview(view):
+                raise TypeError('Union of {} not a view: {}'.format(key, view))
+
         self.view_table = view_table
         self.union_tag = union_tag
 
     @property
     def tag(self):
-        return self.union_tag.cache
+        return self.union_tag.cache()
 
     @property
     def active_view(self):
@@ -450,7 +483,7 @@ class union(composite):
         return self.active_view.value(payload, field)
 
     def write(self, payload=b'', value=None, **kwargs):
-        return self.active_view(payload, value=vaule, **kwargs)
+        return self.active_view.write(payload, value=value, **kwargs)
 
     def __contains__(self, field):
         return field in self.active_view
@@ -461,6 +494,8 @@ class wrapper:
     See help(self.view) for details on the underlying view.'''
 
     def __init__(self, parent_view):
+        if not isview(parent_view):
+            raise TypeError('Wrapping not a view: {}'.format(parent_view))
         self._view = parent_view
 
     @property
@@ -507,21 +542,24 @@ class wrapper:
         self.finalize()
 
     def __len__(self):
-        if not isinstance(self._view, composite):
+        if not iscomposite(self._view):
             raise NotImplementedError
         return len(self._view)
 
     def __contains__(self, field):
-        if not isinstance(self._view, composite):
+        if not iscomposite(self._view):
             raise NotImplementedError
         return field in self._view
 
     def __getitem__(self, field):
         return self.__getattr__(str(field))
 
+    def __setitem__(self, field, value):
+        self.__setattr__(str(field), value)
+
     def __setattr__(self, field, value):
         if (not field.startswith('_')
-            and isinstance(self._view, composite) and field in self._view):
+            and iscomposite(self._view) and field in self._view):
             self.write(value={field: value})
         else:
             object.__setattr__(self, field, value)
@@ -530,9 +568,9 @@ class wrapper:
         if field == '__name__':
             return self.__class__.__name__
 
-        if isinstance(self._view, composite) and field in self._view:
+        if iscomposite(self._view) and field in self._view:
             subview = self._view[field]
-            if isinstance(subview, composite):
+            if iscomposite(subview):
                 return bind(subview, self, field)
         return self._view.value(self.raw, field)
 
@@ -575,8 +613,17 @@ def bind(parent_view, parent_wrapper, parent_field=None, init=[]):
             parent = parent[:offset] + value + parent[offset + len(value):]
             self._parent.raw = parent
 
-    if parent_field is not None and parent_field.isidentifier():
-        _anonymous_subwrapper.__name__ = '{}'.format(parent_field)
+    typename = str(parent_field)
+    if typename is not None:
+        if not typename.isidentifier():
+            try:
+                if int(typename) >= 0:
+                    typename = 'idx_{}'.format(typename)
+            except ValueError:
+                pass
+
+        if typename.isidentifier():
+            _anonymous_subwrapper.__name__ = '{}'.format(typename)
 
     _anonymous_subwrapper.__qualname__ = '{}.{}'.format(
         parent_wrapper.__class__.__qualname__, _anonymous_subwrapper.__name__)
@@ -610,35 +657,35 @@ def cache(base, typename=None, init=None):
         raise ValueError('Typename {} is not an identifier'.format(typename))
 
     if not inspect.isclass(base):
-        raise ValueError('Expect a class: {} is not.'.format(base))
+        raise TypeError('Expect a class: {} is not.'.format(base))
 
-    if issubclass(base, cached):
-        raise ValueError('Class {} already cached.'.format(base))
+    if issubclass(base, _enum.Enum):
+        raise TypeError('Use view.enum(cached=True) to cache enumerations.')
 
-    class _anonymous_cached_view(cached, base):
+    if iscached(base):
+        raise TypeError('Class {} already cached.'.format(base))
+
+    class _anonymous_cached_view(base):
         def __init__(self, *kargs, **kwargs):
             '''See help({}.__init__) for an accurate signature.'''.format(
                 base.__qualname__)
 
-            if not issubclass(base, _enum.Enum):
-                base.__init__(self, *kargs, **kwargs)
+            base.__init__(self, *kargs, **kwargs)
             self._cache = threading.local()
             self._cache.value = None
 
-        @property
         def cache(self):
-            if not self.cached:
+            if not self.cached():
                 raise RuntimeError('Bounded value unknown at runtime: '
                     + 'Have you called .value() of parent view yet?')
             return self._cache.value
 
-        @property
         def cached(self):
             return self._cache.value is not None
 
-        def value(self, payload=b''):
+        def value(self, payload=b'', field=None):
             self._cache.value = super().value(payload)
-            return self.cache
+            return self.cache()
 
         def write(self, payload=b'', *kargs, **kwargs):
             payload = super().write(payload, *kargs, **kwargs)
@@ -651,3 +698,28 @@ def cache(base, typename=None, init=None):
         _anonymous_cached_view.__name__ = typename
 
     return _forward_init(_anonymous_cached_view, init)
+
+def isview(item):
+    if not hasattr(item, 'width') or not inspect.ismethod(item.width):
+        return False
+    if not hasattr(item, 'valid') or not inspect.ismethod(item.valid):
+        return False
+    if not hasattr(item, 'value') or not inspect.ismethod(item.value):
+        return False
+    if not hasattr(item, 'write') or not inspect.ismethod(item.write):
+        return False
+    return True
+
+def iscached(item):
+    if not hasattr(item, 'cache') or not inspect.ismethod(item.cache):
+        return False
+    if not hasattr(item, 'cached') or not inspect.ismethod(item.cache):
+        return False
+    return True
+
+def iscomposite(item):
+    if isinstance(item, union):
+        if not item.union_tag.cached():
+            return True
+        return isinstance(item.active_view, composite)
+    return isinstance(item, composite)
