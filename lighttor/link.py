@@ -4,7 +4,7 @@ import ssl
 
 import lighttor as ltor
 
-class link(collections.namedtuple('link', ['io', 'version'])):
+class link(collections.namedtuple('link', ['io', 'version', 'circuits_'])):
     """An established Tor link, send and receive messages in separate threads.
 
     :param io: cell.socket.io instance that wraps the TLS/SSLv3 connection
@@ -21,7 +21,6 @@ class link(collections.namedtuple('link', ['io', 'version'])):
       True
       >>> link.close()
     """
-
     def recv(self):
         return self.io.recv()
 
@@ -30,6 +29,14 @@ class link(collections.namedtuple('link', ['io', 'version'])):
 
     def close(self):
         self.io.close()
+
+    @property
+    def circuits(self):
+        return self.circuits_
+
+    @circuits.setter
+    def circuits(self, circuits):
+        self._circuits = set(self.circuits_).union(circuits)
 
 def negotiate_version(peer, versions, *, as_initiator):
     """Performs a VERSIONS negotiation
@@ -113,4 +120,4 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
 
     # Send our NETINFO to say "we don't want to authenticate"
     peer.send(ltor.cell.netinfo.pack(address))
-    return link(peer, version)
+    return link(peer, version, [0])
