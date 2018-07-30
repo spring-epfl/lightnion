@@ -118,6 +118,15 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     auth_cell = ltor.cell.challenge.cell(peer.recv())
     netinfo_cell = ltor.cell.netinfo.cell(peer.recv())
 
+    # Sanity checks
+    if not certs_cell.valid:
+        raise RuntimeError('Invalid CERTS cell: {}'.format(certs_cell.raw))
+    if not auth_cell.valid:
+        raise RuntimeError('Invalid AUTH_CHALLENGE cell:{}'.format(
+            auth_cell.raw))
+    if not netinfo_cell.valid:
+        raise RuntimeError('Invalid NETINFO cell: {}'.format(netinfo_cell.raw))
+
     # Send our NETINFO to say "we don't want to authenticate"
     peer.send(ltor.cell.netinfo.pack(address))
     return link(peer, version, [0])
