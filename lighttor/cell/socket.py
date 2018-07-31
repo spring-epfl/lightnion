@@ -1,5 +1,4 @@
 import lighttor as ltor
-import lighttor.cell
 
 import threading
 import socket
