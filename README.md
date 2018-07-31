@@ -112,7 +112,7 @@ First, start by reading:
 Now, if you are the one trying to build such privacy-enabled service, there is
 not much that you can do against
 [traffic analysis](https://www.torproject.org/about/overview.html.en#whyweneedtor).
-Most chooses to tell their privacy-minded and tech-savvy users to use the Tor
+Most chooses to tell their privacy-minded and tech-savvy users to get the Tor
 Browser and leave other kinds of users aside.
 
 **Lighttor brings a different compromise into the picture:** your
@@ -121,9 +121,9 @@ however the other kinds will also interact with you through Tor and will have
 some form of protection.
 
 The trick is that you will not be able to distinguish privacy-minded users from
-other kinds of users... and that you can trust those privacy-minded users to
-run signed software that actively checks if your privacy-enabled service
-follows the rules.
+other kinds of users. Thus, even getting few users to run signed software that
+checks if your service does not misbehave can provide good incentives to remain
+honest.
 
 To sum up, if you build such "privacy by default" service with lighttor, all
 your users talk to you through Tor, get some protection and can at least trust
@@ -140,7 +140,7 @@ _No idea, yet._
 Lighttor is first and foremost a research project, its whole job is to figure
 out how to achieve its goals.
 
-Please open an issue or [contact us](#contact) if you spot an issue, have some
+Please open an issue or [contact us](#contact) if you spot problems, have some
 criticism or want to [contribute](#contribute).
 
 ### Why doing things in a browser?
@@ -188,10 +188,10 @@ integrated into an instant messaging client written in javascript. You first
 download the webpage, then the client kicks in and send/receive all messages
 through the Tor network.
 
-Every user that keeps its client browser tab open for a long time starts to 
-look the same for the servers that hosts everything. However, if you disabled
-javascript in the first place, you never were an user of this instant messaging
-service in the first place.
+Every user that keeps its browser tab open for a long time starts to look the
+same, providing some form of anonymity. However, if you disabled javascript in
+the first place, you never were an user of this instant messaging service in
+the first place.
 
 ### Why not hacking the official Tor client?
 
@@ -222,7 +222,6 @@ integrated within the existing Tor ecosystem. However building such pluggable
 transport is for now not a priority, lighttor needs more work to get to this
 point.
 
----
 ---
 
 Contribute
