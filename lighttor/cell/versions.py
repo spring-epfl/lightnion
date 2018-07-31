@@ -1,6 +1,8 @@
+from .. import constants
+from . import common
+
 from .. import cell as _cell
 from . import view as _view
-from . import common
 
 header_view = _view.fields(
     circid=_view.uint(2),
@@ -41,7 +43,7 @@ def recv(peer):
         raise RuntimeError('Expecting VERSIONS, got: {}'.format(header.cmd))
 
     length = header.length
-    if length > _cell.max_payload_len:
+    if length > constants.max_payload_len:
         raise RuntimeError('VERSIONS cell too long: {}'.format(header.length))
 
     answer += peer.recv(length)

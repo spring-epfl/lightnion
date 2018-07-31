@@ -1,7 +1,9 @@
+from .. import constants
+
 from .. import cell as _cell
 from . import view as _view
 
-payload_len = _cell.payload_len - 11
+payload_len = constants.payload_len - 11
 
 class cmd(_view.enum(1)):
     RELAY_BEGIN         = 0x01
@@ -97,7 +99,7 @@ payload = _view.like(payload_view, 'relay_payload')
 class cell_view(_view.packet):
     _default_data_view = payload_view
     _default_data_name = 'relay'
-    _default_fixed_size = _cell.payload_len
+    _default_fixed_size = constants.payload_len
     _default_header_view = _cell.header_view
 
     def valid(self, payload=b''):

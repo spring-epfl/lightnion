@@ -1,7 +1,5 @@
+from .. import constants
 from . import view
-
-payload_len = 509
-max_payload_len = 1024 * 1024 # (arbitrary, TODO: find a good one)
 
 class cmd(view.enum(1)):
     PADDING             = 0x00
@@ -45,7 +43,7 @@ class cell_view(view.packet):
     def __init__(self, header):
         if header not in self._whitelist:
             raise ValueError('Invalid header type: {}'.format(header))
-        super().__init__(header_view=header, fixed_size=payload_len)
+        super().__init__(header_view=header, fixed_size=constants.payload_len)
 
     def valid(self, payload=b''):
         if not super().valid(payload):
@@ -76,7 +74,7 @@ def recv(peer):
         raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
 
     if cell_header.cmd.is_fixed:
-        return cell_header.raw + _recv_given_size(peer, payload_len)
+        return cell_header.raw + _recv_given_size(peer, constants.payload_len)
 
     remains = header_variable_view.width() - len(payload)
     payload += _recv_given_size(peer, remains)
@@ -87,7 +85,7 @@ def recv(peer):
             'Invalid variable cell header: {}'.format(cell_header.raw))
 
     length = cell_header.length
-    if length > max_payload_len:
+    if length > constants.max_payload_len:
         raise RuntimeError('Invalid cell length: {}'.format(length))
 
     return payload + _recv_given_size(peer, length)
@@ -102,7 +100,7 @@ def send(peer, payload):
     if not cell_header.valid:
         raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
 
-    length = payload_len + cell_header.width
+    length = constants.payload_len + cell_header.width
     if not cell_header.cmd.is_fixed:
         cell_header = header_variable(payload)
         if not cell_header.valid:
@@ -110,7 +108,7 @@ def send(peer, payload):
                 'Invalid variable cell header: {}'.format(cell_header.raw))
 
         length = cell_header.length + cell_header.width
-        if length > max_payload_len:
+        if length > constants.max_payload_len:
             raise RuntimeError('Invalid cell length: {}'.format(length))
 
     return peer.sendall(payload.ljust(length, b'\x00'))
