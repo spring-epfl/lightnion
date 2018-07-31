@@ -102,14 +102,14 @@ def send(peer, payload):
     if not cell_header.valid:
         raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
 
-    length = payload_len
+    length = payload_len + cell_header.width
     if not cell_header.cmd.is_fixed:
         cell_header = header_variable(payload)
         if not cell_header.valid:
             raise RuntimeError(
                 'Invalid variable cell header: {}'.format(cell_header.raw))
 
-        length = cell_header.length
+        length = cell_header.length + cell_header.width
         if length > max_payload_len:
             raise RuntimeError('Invalid cell length: {}'.format(length))
 
