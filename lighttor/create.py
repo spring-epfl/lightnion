@@ -1,3 +1,4 @@
+import collections
 import base64
 
 import lighttor as ltor
@@ -27,6 +28,9 @@ def ntor_key_material(raw_material, sanity=True):
         raw_material[56:72])    # Kb or backward_key / KEY_LEN (16) bytes
 
     return key_material
+
+class circuit(collections.namedtuple('circuit', ['id', 'material'])):
+    pass
 
 def fast(link):
     """Use a CREATE_FAST cell to initiate a one-hop circuit.
@@ -69,7 +73,6 @@ def fast(link):
     op_cell = ltor.cell.create_fast.pack(circuit_id)
     link.send(op_cell)
 
-
     # Receive CREATED_FAST cell (contains OR material and key confirmation)
     link.register(circuit_id)
 
@@ -79,16 +82,16 @@ def fast(link):
         raise RuntimeError('Got invalid CREATED_CELL: {}'.format(or_cell.raw))
 
     # Compute KDF-TOR on OP+OR materials
-    key_material = ltor.crypto.kdf_tor(
+    material = ltor.crypto.kdf_tor(
         op_cell.create_fast.material + or_cell.created_fast.material)
 
     # Confirm shared derived material
-    if not key_material.key_hash == or_cell.created_fast.derivative:
+    if not material.key_hash == or_cell.created_fast.derivative:
         raise RuntimeError(
             'Invalid CREATE_FAST, invalid KDF-TOR confirmation: '.format(
-                (key_material.key_hash, or_cell.created_fast.derivative)))
+                (material.key_hash, or_cell.created_fast.derivative)))
 
-    return (circuit_id, key_material)
+    return circuit(circuit_id, material)
 
 def ntor(link, identity, onion_key, circuits=[], sanity=True):
 
