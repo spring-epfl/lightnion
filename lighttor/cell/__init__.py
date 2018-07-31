@@ -115,6 +115,6 @@ def send(peer, payload):
 
 from . import address
 from . import (
-    padding, relay, create_fast, created_fast, versions, netinfo, certs,
-    challenge)
+    padding, relay, create_fast, created_fast, versions, netinfo, relay_early,
+    certs, challenge)
 from . import socket
