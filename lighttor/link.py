@@ -16,8 +16,8 @@ class link:
       >>> link = ltor.link.initiate('127.0.0.1', 5000)
       >>> link.version
       5
-      >>> link.send(ltor.cell.padding.pack())
-      >>> ltor.cell.padding.cell(link.recv()).valid
+      >>> link.send(ltor.cell.create_fast.pack(2**31))
+      >>> ltor.cell.created_fast.cell(link.get(circuit_id=2**31)).valid
       True
       >>> link.close()
     """
@@ -149,7 +149,7 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     :param int port: remote relay ORPort (default: 9050).
     :param list versions: target link versions (default: [4, 5]).
 
-    :returns: a tuple (link socket, link version)
+    :returns: a link.link object
 
     """
 
