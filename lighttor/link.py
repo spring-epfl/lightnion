@@ -1,10 +1,9 @@
-import collections
 import socket
 import ssl
 
 import lighttor as ltor
 
-class link(collections.namedtuple('link', ['io', 'version', 'circuits_'])):
+class link:
     """An established Tor link, send and receive messages in separate threads.
 
     :param io: cell.socket.io instance that wraps the TLS/SSLv3 connection
@@ -21,6 +20,24 @@ class link(collections.namedtuple('link', ['io', 'version', 'circuits_'])):
       True
       >>> link.close()
     """
+    def __init__(self, io, version, circuits=[0]):
+        self.version = version
+        self.io = io
+
+        self.circuits = set()
+        for circuit in circuits:
+            self.register(circuit)
+
+    def register(self, circuit_id):
+        if circuit_id in self.circuits:
+            raise RuntimeError('Circuit {} already registered.'.format(
+                circuit_id))
+
+        self.circuits.add(circuit_id)
+
+    def unregister(self, circuit_id):
+        self.circuit_id.remove(circuit_id)
+
     def recv(self):
         return self.io.recv()
 
@@ -29,14 +46,6 @@ class link(collections.namedtuple('link', ['io', 'version', 'circuits_'])):
 
     def close(self):
         self.io.close()
-
-    @property
-    def circuits(self):
-        return self.circuits_
-
-    @circuits.setter
-    def circuits(self, circuits):
-        self._circuits = set(self.circuits_).union(circuits)
 
 def negotiate_version(peer, versions, *, as_initiator):
     """Performs a VERSIONS negotiation
