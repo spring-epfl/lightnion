@@ -116,5 +116,5 @@ def send(peer, payload):
     return peer.sendall(payload.ljust(length, b'\x00'))
 
 from . import address
-from . import padding, relay, versions, netinfo, certs, challenge
+from . import padding, relay, create_fast, versions, netinfo, certs, challenge
 from . import socket
