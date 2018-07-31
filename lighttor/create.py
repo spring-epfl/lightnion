@@ -1,18 +1,13 @@
 import base64
 
-import stem
-import stem.client.cell
-import stem.client.datatype
-import curve25519
+import lighttor as ltor
 
-import ntor_ref
+# import stem
+# import stem.client.cell
+# import stem.client.datatype
+# import curve25519
 
-def fast_key_material(raw_material, sanity=True):
-    if sanity:
-        assert len(raw_material) == (20 + 20)
-
-    key_material = stem.client.datatype.KDF.from_value(raw_material)
-    return key_material
+# import ntor_ref
 
 def ntor_key_material(raw_material, sanity=True):
     if sanity:
@@ -33,12 +28,10 @@ def ntor_key_material(raw_material, sanity=True):
 
     return key_material
 
-def fast(link, circuits=[], sanity=True):
-    """
-    We replicate here a one-hop circuit creation with CREATE_FAST:
-     - https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1129
+def fast(link):
+    """Use a CREATE_FAST cell to initiate a one-hop circuit.
 
-    The expected transcript from the point of view of a "client" is:
+    The expected transcript is:
 
               (... perform a proper link handshake here ...)
 
@@ -50,106 +43,50 @@ def fast(link, circuits=[], sanity=True):
                |      Shared circuit key (via KDF-TOR²)
                \
 
-    ¹The initiator picks an available circuit ID (also called CircID) with its
-     most significant bit equal to:
-        - for v3-or-lower links, 1 iff the initiator has the "lower" key, or
-          else any value iff the initiator has no key.
-        - for v4-or-higher links, 1 iff the node is the initiator.
+    ¹The initiator picks an available circuit ID (CircID) with its most
+     significant bit equal to 1 (v4-or-higher links).
 
-     Note that in practice, "dumb" clients with no public key can always do the
-     v4-or-higher behavior – setting the most significant bit to 1:
-        https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L931
+    :param link: a link.link object, see: link.initiate
 
-     Note that we still need to take into account the different sizes of IDs:
-        https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L915
-
-     Note that zero is a reserved CircID for off-circuit cells:
-        https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L935
-
-
-    ²The KDF-TOR derivation function is only to be used in CREATE_FAST, the
-     legacy "Tor Authentication Protocol" handshakes & hidden services. Its
-     successor (KDF-RFC5869) is to be used elsewhere.
-
-     About TAP (Tor Authentication Protocol), see:
-        https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1015
-
-     About KDF-TOR, see:
-        https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1164
-
-
-    After establishing a circuit via a CREATE_FAST "handshake", we can extend
-    the circuit with a EXTEND(2) "handshake" encapsulated in RELAY_EARLY cells.
-
-    Note that CREATE_FAST may be disabled in published consensus OR status:
-     - https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L1905
-
-    :param tuple link: a tuple (link socket, link version). See: link.establish
-    :param list circuits: a list of pre-existing circuit ID (default: []).
-    :param bool sanity: performs extra sanity checks (default: False).
-
-    :returns: a tuple (circuit ID, circuit shared keys)
+    :returns: a tuple (circuit id, shared key material)
 
     """
-    link_socket, link_version = link
 
-    # [7] Pick an available ID
-    circuit_id = 0x80000000 if link_version > 3 else 0x0001 # handle MSB (see¹)
-    while circuit_id in circuits:
+    # Pick an available ID (link version > 3)
+    circuit_id = 0x80000000
+    while circuit_id in link.circuits:
         circuit_id += 1
 
-    # [7] Extra sanity checks – bound checking with unlikely invalid values.
-    if sanity:
-        if link_version > 3 and not (0x100000000 > circuit_id > 0):
-            return None, None
-        if link_version < 4 and not (0x10000 > circuit_id > 0):
-            return None, None
+    # Sanity checks
+    try:
+        packed = ltor.cell.view.uint(4).write(value=circuit_id)
+        assert circuit_id == ltor.cell.view.uint(4).value(packed)
+    except (OverflowError, AssertionError):
+        raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
+            circuit_id, packed))
 
-    # [7:8] Send CREATE_FAST cell – contains OP's randomness (key material).
-    create_scell = stem.client.cell.CreateFastCell(circuit_id)
-    link_socket.send(create_scell.pack(link_version))
+    # Send CREATE_FAST cell (contains OP material)
+    op_cell = ltor.cell.create_fast.pack(circuit_id)
+    link.send(op_cell)
 
-    # [9:10] Retrieve the 2nd part of the handshake – contains OR's randomness.
-    answer = link_socket.recv()
-    if not answer:
-        return None, None
-    created_rcell = None
 
-    # [9:10] We're being strict here – we don't handle concurrent circuits:
-    #   1. Receive one pending cell.
-    #   2. Aborts if this cell do not belong to our circuit.
-    #   3. Aborts if this cell is not a CREATED_FAST cell.
-    #
-    if sanity:
-        created_rcell, _ = stem.client.cell.Cell.pop(answer, link_version)
-        if created_rcell.circ_id != circuit_id:
-            return None, None
-        if not isinstance(created_rcell, stem.client.cell.CreatedFastCell):
-            return None, None
-    #
-    # [9:10] We're sticking to stem's client behavior here:
-    #   1. Receive all pending cells.
-    #   2. Filter out cells that are not in our circuit (extra check here).
-    #   3. Filter out cells that are not a CREATED_FAST cell.
-    #   4. Picks the first listed candidate.
-    #
-    else:
-        received_cells = stem.client.cell.Cell.unpack(answer, link_version)
-        circuit_rcells = [c for c in received_cells if c.circ_id != circuit_id]
-        created_rcells = [c for c in circuit_rcells if isinstance(c,
-            stem.client.cell.CreatedFastCell)]
+    # Receive CREATED_FAST cell (contains OR material and key confirmation)
+    link.register(circuit_id)
 
-        if len(created_rcells) < 1:
-            return None, None
-        created_rcell = created_rcells[0] # (expecting only one CREATED_FAST)
+    or_cell = ltor.cell.created_fast.cell(link.get(circuit_id))
+    if not or_cell.valid:
+        link.unregister(circuit_id)
+        raise RuntimeError('Got invalid CREATED_CELL: {}'.format(or_cell.raw))
 
-    # [10] Here we're using stem's client to do the heavy lifting.
-    key_material = fast_key_material(
-        create_scell.key_material + created_rcell.key_material)
+    # Compute KDF-TOR on OP+OR materials
+    key_material = ltor.crypto.kdf_tor(
+        op_cell.create_fast.material + or_cell.created_fast.material)
 
-    # [10] Confirm that key hashes match between us & the OR.
-    if key_material.key_hash != created_rcell.derivative_key:
-        return None, None
+    # Confirm shared derived material
+    if not key_material.key_hash == or_cell.created_fast.derivative:
+        raise RuntimeError(
+            'Invalid CREATE_FAST, invalid KDF-TOR confirmation: '.format(
+                (key_material.key_hash, or_cell.created_fast.derivative)))
 
     return (circuit_id, key_material)
 
