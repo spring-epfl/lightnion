@@ -1,4 +1,5 @@
 import socket
+import queue
 import ssl
 
 import lighttor as ltor
@@ -20,23 +21,64 @@ class link:
       True
       >>> link.close()
     """
-    def __init__(self, io, version, circuits=[0]):
+    def __init__(self, io, version, circuits=[0], max_pool=2048):
+        self.max_pool = 2048
         self.version = version
         self.io = io
 
+        self.pool = dict()
         self.circuits = set()
         for circuit in circuits:
             self.register(circuit)
+
+    def pull(self):
+        payload = self.io.recv()
+
+        # We know that receiver.get() will give you a cell with a well-formed
+        # header, thus we directly access to its circid with validation.
+        #
+        # We doesn't handle VERSIONS cells with shorter circid.
+        #
+        circuit_id = ltor.cell.view.uint(4).value(payload)
+        self.put(circuit_id, payload)
+
+    def put(self, circuit_id, payload):
+        pool_size = sum([q.qsize() for _, q in self.pool.items()])
+        if pool_size > self.max_pool:
+            raise RuntimeError(
+                'Link circuit pool is full: {}'.format(pool_size))
+
+        if circuit_id not in self.circuits:
+            raise RuntimeError('Got circid {} outside {}, cell: {}'.format(
+                circuit_id, self.circuits, payload))
+
+        try:
+            payload = payload.raw
+        except AttributeError:
+            pass
+
+        self.pool[circuit_id].put(payload)
+
+    def get(self, circuit_id, block=True):
+        while block:
+            try:
+                return self.pool[circuit_id].get_nowait()
+            except queue.Empty:
+                self.pull()
+        else:
+            return self.pool[circuit_id].get_nowait()
 
     def register(self, circuit_id):
         if circuit_id in self.circuits:
             raise RuntimeError('Circuit {} already registered.'.format(
                 circuit_id))
 
+        self.pool[circuit_id] = queue.Queue(maxsize=self.max_pool)
         self.circuits.add(circuit_id)
 
     def unregister(self, circuit_id):
         self.circuit_id.remove(circuit_id)
+        del self.pool[circuit_id]
 
     def recv(self):
         return self.io.recv()
