@@ -169,6 +169,9 @@ class fields(composite):
                 raise TypeError('Field {} is not a view: {}'.format(key, view))
         self._fields = collections.OrderedDict(kwargs)
 
+    def list_fields(self):
+        return list(self._fields)
+
     def visit(self, payload=b'', operator=lambda v, p: v.width(p)):
         results = []
         for _, view in self._fields.items():
@@ -285,6 +288,9 @@ class packet(fields):
     @property
     def fixed_size(self):
         return self._fixed_size
+
+    def list_fields(self):
+        return list(self._fields) + self.header.list_fields()
 
     def cache_fields(self, payload=b'', value=None):
         for field in self._extra_fields:
@@ -517,6 +523,13 @@ class wrapper:
     @property
     def valid(self):
         return self._view.valid(self.raw)
+
+    @property
+    def fields(self, wrapper_attr=['raw']):
+        if (hasattr(self._view, 'list_fields')
+            and inspect.ismethod(self._view.list_fields)):
+            return wrapper_attr + self._view.list_fields()
+        return wrapper_attr
 
     def offset(self, field):
         return self._view.offset(self.raw, field)
