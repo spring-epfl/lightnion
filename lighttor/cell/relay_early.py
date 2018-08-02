@@ -28,3 +28,10 @@ class cell_view(_view.packet):
 
 view = cell_view()
 cell = _view.like(view, 'relay_early_cell')
+
+def pack(circid, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
+    base = cell(b'')
+    base.header.set(
+        circid=circid,
+        cmd=_cell.cmd.RELAY_EARLY)
+    return relay._pack_details(base, cmd, recognized, streamid, digest, data)

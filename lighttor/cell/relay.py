@@ -119,3 +119,20 @@ class cell_view(_view.packet):
 
 view = cell_view()
 cell = _view.like(view, 'relay_cell')
+
+def _pack_details(base, relay_cmd, recognized, streamid, digest, data):
+    base.relay.header.set(
+        cmd=relay_cmd,
+        recognized=recognized,
+        streamid=streamid,
+        digest=digest,
+        length=len(data))
+    base.set(relay=dict(data=data))
+    return base
+
+def pack(circid, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
+    base = cell(b'')
+    base.header.set(
+        circid=circid,
+        cmd=_cell.cmd.RELAY)
+    return _pack_details(base, cmd, recognized, streamid, digest, data)
