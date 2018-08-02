@@ -234,6 +234,8 @@ class fields(composite):
         return self.__getattr__(field)
 
     def __getattr__(self, field):
+        if field.startswith('__'):
+            raise AttributeError
         return self._fields[field]
 
 class packet(fields):
@@ -363,6 +365,8 @@ class packet(fields):
         return self.__getattr__(field)
 
     def __getattr__(self, field):
+        if field.startswith('__'):
+            raise AttributeError
         if field in ['header', self._data_name]:
             return self._fields[field]
         return self.header[field]
@@ -501,7 +505,8 @@ class union(composite):
 class wrapper:
     '''This is a view bound to raw bytes.
 
-    See help(self.view) for details on the underlying view.'''
+    See self.fields to list fields within the view.
+    See help(self._view) for details on the underlying view.'''
 
     def __init__(self, parent_view):
         if not isview(parent_view):
@@ -582,9 +587,8 @@ class wrapper:
             object.__setattr__(self, field, value)
 
     def __getattr__(self, field):
-        if field == '__name__':
-            return self.__class__.__name__
-
+        if field.startswith('__'):
+            raise AttributeError
         if iscomposite(self._view) and field in self._view:
             subview = self._view[field]
             if iscomposite(subview):
