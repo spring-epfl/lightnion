@@ -35,12 +35,17 @@ class link:
         payload = self.io.recv()
 
         # We know that receiver.get() will give you a cell with a well-formed
-        # header, thus we directly access to its circuit_id with validation.
+        # header, thus we do not validate it one more time.
         #
         # We doesn't handle VERSIONS cells with shorter circuit_id.
         #
-        circuit_id = ltor.cell.view.uint(4).value(payload)
-        self.put(circuit_id, payload)
+        header = ltor.cell.header(payload)
+        if header.cmd is ltor.cell.cmd.DESTROY:
+            raise RuntimeError(
+                'Got DESTROY cell for circuit {}!'.format(header.circuit_id))
+        # TODO: property handle DESTROY cells
+
+        self.put(header.circuit_id, payload)
 
     def put(self, circuit_id, payload):
         pool_size = sum([q.qsize() for _, q in self.pool.items()])
