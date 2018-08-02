@@ -536,6 +536,10 @@ class wrapper:
             return wrapper_attr + self._view.list_fields()
         return wrapper_attr
 
+    @property
+    def truncated(self):
+        return self.raw[:self.width]
+
     def offset(self, field):
         return self._view.offset(self.raw, field)
 
@@ -547,21 +551,16 @@ class wrapper:
     def write(self, value=None, **kwargs):
         self.raw = self._view.write(self.raw, value, **kwargs)
 
-    def truncate(self, width=None):
-        if width is None:
-            width = self.width
-        self.raw = self.raw[:width]
+    def set(self, *kargs, **kwargs):
+        self.write(*kargs, **kwargs)
+        self.finalize(truncate=True)
 
     def finalize(self, truncate=True):
         if truncate:
-            self.truncate()
+            self.raw = self.truncated
         if not self.valid:
             raise RuntimeError('Invalid payload for {} view: {}'.format(
                 self._view, self.raw))
-
-    def set(self, *kargs, **kwargs):
-        self.write(*kargs, **kwargs)
-        self.finalize()
 
     def __len__(self):
         if not iscomposite(self._view):
