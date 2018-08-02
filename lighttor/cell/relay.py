@@ -128,6 +128,13 @@ def _pack_details(base, relay_cmd, recognized, stream_id, digest, data):
         digest=digest,
         length=len(data))
     base.set(relay=dict(data=data))
+
+    # Preemptively add \x00 padding (as it is included within digests)
+    base.relay.raw = base.relay.raw.ljust(payload_len, b'\x00')
+    if not base.valid:
+        raise RuntimeError(
+            'Invalid RELAY{_EARLY,} cell after padding: {}'.format(base.raw))
+
     return base
 
 def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, stream_id, digest):
