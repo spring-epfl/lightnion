@@ -76,7 +76,7 @@ class cmd(_view.enum(1)):
 relay_header_view = _view.fields(
     cmd=cmd,
     recognized=_view.data(2),
-    streamid=_view.uint(2),
+    stream_id=_view.uint(2),
     digest=_view.data(4),
     length=_view.cache(_view.uint, init=[2]))
 
@@ -120,19 +120,19 @@ class cell_view(_view.packet):
 view = cell_view()
 cell = _view.like(view, 'relay_cell')
 
-def _pack_details(base, relay_cmd, recognized, streamid, digest, data):
+def _pack_details(base, relay_cmd, recognized, stream_id, digest, data):
     base.relay.header.set(
         cmd=relay_cmd,
         recognized=recognized,
-        streamid=streamid,
+        stream_id=stream_id,
         digest=digest,
         length=len(data))
     base.set(relay=dict(data=data))
     return base
 
-def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
+def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, stream_id, digest):
     base = cell(b'')
     base.header.set(
         circuit_id=circuit_id,
         cmd=_cell.cmd.RELAY)
-    return _pack_details(base, cmd, recognized, streamid, digest, data)
+    return _pack_details(base, cmd, recognized, stream_id, digest, data)

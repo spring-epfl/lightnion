@@ -29,9 +29,9 @@ class cell_view(_view.packet):
 view = cell_view()
 cell = _view.like(view, 'relay_early_cell')
 
-def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
+def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, stream_id, digest):
     base = cell(b'')
     base.header.set(
         circuit_id=circuit_id,
         cmd=_cell.cmd.RELAY_EARLY)
-    return relay._pack_details(base, cmd, recognized, streamid, digest, data)
+    return relay._pack_details(base, cmd, recognized, stream_id, digest, data)
