@@ -35,9 +35,9 @@ class link:
         payload = self.io.recv()
 
         # We know that receiver.get() will give you a cell with a well-formed
-        # header, thus we directly access to its circid with validation.
+        # header, thus we directly access to its circuit_id with validation.
         #
-        # We doesn't handle VERSIONS cells with shorter circid.
+        # We doesn't handle VERSIONS cells with shorter circuit_id.
         #
         circuit_id = ltor.cell.view.uint(4).value(payload)
         self.put(circuit_id, payload)
@@ -49,7 +49,7 @@ class link:
                 'Link circuit pool is full: {}'.format(pool_size))
 
         if circuit_id not in self.circuits:
-            raise RuntimeError('Got circid {} outside {}, cell: {}'.format(
+            raise RuntimeError('Got circuit_id {} outside {}, cell: {}'.format(
                 circuit_id, self.circuits, payload))
 
         try:

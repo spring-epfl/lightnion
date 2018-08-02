@@ -27,7 +27,7 @@ def pack(circuit_id, material=None):
 
     base = cell(b'')
     base.set(
-        circid=circuit_id,
+        circuit_id=circuit_id,
         cmd=_cell.cmd.CREATE_FAST,
         create_fast=dict(material=material))
     return base

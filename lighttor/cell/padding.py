@@ -17,5 +17,5 @@ cell = _view.like(view, 'padding_cell')
 
 def pack():
     base = cell(b'')
-    base.set(circid=0, cmd=_cell.cmd.PADDING)
+    base.set(circuit_id=0, cmd=_cell.cmd.PADDING)
     return base

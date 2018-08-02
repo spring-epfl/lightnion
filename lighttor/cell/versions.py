@@ -5,7 +5,7 @@ from .. import cell as _cell
 from . import view as _view
 
 header_view = _view.fields(
-    circid=_view.uint(2),
+    circuit_id=_view.uint(2),
     cmd=_cell.cmd,
     length=common.length_halved_view(2))
 
@@ -29,7 +29,10 @@ header = _view.like(header_view, 'versions_header')
 
 def pack(versions):
     vercell = cell(b'')
-    vercell.header.set(circid=0, cmd=_cell.cmd.VERSIONS, length=len(versions))
+    vercell.header.set(
+        circuit_id=0,
+        cmd=_cell.cmd.VERSIONS,
+        length=len(versions))
     vercell.set(versions=versions)
     return vercell
 

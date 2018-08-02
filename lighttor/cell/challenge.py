@@ -43,7 +43,7 @@ def pack(*methods, challenge=None):
         challenge = os.urandom(32)
 
     base = cell(b'')
-    base.header.set(circid=0, cmd=_cell.cmd.AUTH_CHALLENGE, length=0)
+    base.header.set(circuit_id=0, cmd=_cell.cmd.AUTH_CHALLENGE, length=0)
     base.auth.set(challenge=challenge, quantity=len(methods), methods=methods)
     base.set(length=base.auth.width)
     return base

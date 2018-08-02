@@ -54,7 +54,7 @@ def pack(other_address, *addresses, timestamp=None):
 
     base = cell(b'')
     base.set(
-        circid=0,
+        circuit_id=0,
         cmd=_cell.cmd.NETINFO,
         netinfo=dict(
             timestamp=timestamp,

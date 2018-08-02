@@ -32,11 +32,11 @@ class cmd(view.enum(1)):
         return self._value_ == int(cmd.VERSIONS)
 
 header_view = view.fields(
-    circid=view.uint(4), cmd=cmd)
+    circuit_id=view.uint(4), cmd=cmd)
 header_legacy_view = view.fields(
-    circid=view.uint(2), cmd=cmd, length=view.cache(view.uint, init=[2]))
+    circuit_id=view.uint(2), cmd=cmd, length=view.cache(view.uint, init=[2]))
 header_variable_view = view.fields(
-    circid=view.uint(4), cmd=cmd, length=view.cache(view.uint, init=[2]))
+    circuit_id=view.uint(4), cmd=cmd, length=view.cache(view.uint, init=[2]))
 
 class cell_view(view.packet):
     _whitelist = [header_view, header_legacy_view, header_variable_view]

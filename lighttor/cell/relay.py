@@ -111,9 +111,9 @@ class cell_view(_view.packet):
             return False
 
         offset = self.offset(payload, field='relay')
-        circid = self.header.value(payload, field='circid')
+        circuit_id = self.header.value(payload, field='circuit_id')
         relay_cmd = self.relay.header.value(payload[offset:], field='cmd')
-        if circid == 0 and not relay_cmd.is_control:
+        if circuit_id == 0 and not relay_cmd.is_control:
             return False
         return True
 
@@ -130,9 +130,9 @@ def _pack_details(base, relay_cmd, recognized, streamid, digest, data):
     base.set(relay=dict(data=data))
     return base
 
-def pack(circid, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
+def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, streamid, digest):
     base = cell(b'')
     base.header.set(
-        circid=circid,
+        circuit_id=circuit_id,
         cmd=_cell.cmd.RELAY)
     return _pack_details(base, cmd, recognized, streamid, digest, data)

@@ -26,7 +26,7 @@ cell = _view.like(view, 'created_fast_cell')
 def pack(circuit_id, material, derivative):
     base = cell(b'')
     base.set(
-        circid=circuit_id,
+        circuit_id=circuit_id,
         cmd=_cell.cmd.CREATED_FAST,
         created_fast=dict(material=material, derivative=derivative))
     return base
