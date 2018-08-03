@@ -207,6 +207,8 @@ used, mostly for the sensitive parts.
 
 ### Why are you not using [stem](http://stem.torproject.org/) to do that?
 
+_Because lighttor started before stem gained more client capabilities._
+
 Closely related to:
 [Why not hacking the official Tor client?](#why-not-hacking-the-official-Tor-client)
 
