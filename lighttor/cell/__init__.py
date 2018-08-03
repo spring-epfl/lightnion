@@ -63,7 +63,7 @@ header_variable = view.like(header_variable_view, 'header_variable')
 def _recv_given_size(peer, size):
     payload = b''
     while len(payload) < size:
-        payload += peer.recv(size)
+        payload += peer.recv(size - len(payload))
     return payload
 
 def recv(peer):
