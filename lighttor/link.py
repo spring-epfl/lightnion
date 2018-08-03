@@ -31,8 +31,11 @@ class link:
         for circuit in circuits:
             self.register(circuit)
 
-    def pull(self):
-        payload = self.io.recv()
+    def pull(self, block=True):
+        try:
+            payload = self.io.recv(block=block)
+        except queue.Empty:
+            return False
 
         # We know that receiver.get() will give you a cell with a well-formed
         # header, thus we do not validate it one more time.
@@ -42,10 +45,12 @@ class link:
         header = ltor.cell.header(payload)
         if header.cmd is ltor.cell.cmd.DESTROY:
             raise RuntimeError(
-                'Got DESTROY cell for circuit {}!'.format(header.circuit_id))
+                'Got DESTROY cell for circuit {}, full cell: {}'.format(
+            header.circuit_id, payload))
         # TODO: property handle DESTROY cells
 
         self.put(header.circuit_id, payload)
+        return True
 
     def put(self, circuit_id, payload):
         pool_size = sum([q.qsize() for _, q in self.pool.items()])
@@ -71,6 +76,7 @@ class link:
             except queue.Empty:
                 self.pull()
         else:
+            self.pull(block=False)
             return self.pool[circuit_id].get_nowait()
 
     def register(self, circuit_id):
@@ -85,8 +91,8 @@ class link:
         self.circuit_id.remove(circuit_id)
         del self.pool[circuit_id]
 
-    def recv(self):
-        return self.io.recv()
+    def recv(self, block=True):
+        return self.io.recv(block=block)
 
     def send(self, cell):
         self.io.send(cell)
