@@ -87,8 +87,8 @@ def directory_query(
         query=None,
         last_stream_id=0,
         compression='deflate',
-        timeout=20,
-        period=0.01,
+        timeout=10,
+        period=0.1,
         **kwargs):
     if compression not in ['identity', 'deflate', 'gzip']:
         raise NotImplementedError(
@@ -134,11 +134,9 @@ def directory_query(
             time.sleep(period)
 
             state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
-                stream_id=0)
+                    stream_id=0)
             state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
-                stream_id=last_stream_id)
-            state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
-                stream_id=last_stream_id)
+                    stream_id=last_stream_id)
 
     # TODO: proper support for concurrent streams on the same circuit
     if not all([c.relay.stream_id == last_stream_id for c in cells]):
