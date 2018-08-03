@@ -1,5 +1,6 @@
 import collections
 import base64
+import queue
 
 import lighttor as ltor
 
@@ -30,7 +31,15 @@ def ntor_key_material(raw_material, sanity=True):
     return key_material
 
 class circuit(collections.namedtuple('circuit', ['id', 'material'])):
-    pass
+    destroyed = False
+    reason = None
+    queue = None
+
+    def put(self, payload):
+        return self.queue.put(payload)
+
+    def get(self, block=True):
+        return self.queue.get(block=block)
 
 def fast(link):
     """Use a CREATE_FAST cell to initiate a one-hop circuit.
@@ -52,8 +61,7 @@ def fast(link):
 
     :param link: a link.link object, see: link.initiate
 
-    :returns: a tuple (circuit id, shared key material)
-
+    :returns: a onion.state object, see: onion.state
     """
 
     # Pick an available ID (link version > 3)
@@ -73,12 +81,16 @@ def fast(link):
     op_cell = ltor.cell.create_fast.pack(circuit_id)
     link.send(op_cell)
 
-    # Receive CREATED_FAST cell (contains OR material and key confirmation)
-    link.register(circuit_id)
+    # (register a dummy circuit first to reuse the circuit API)
+    dummy = circuit(circuit_id, None)
+    link.register(dummy)
 
-    or_cell = ltor.cell.created_fast.cell(link.get(circuit_id))
+    # Receive CREATED_FAST cell (contains OR material and key confirmation)
+    or_cell = ltor.cell.created_fast.cell(link.get(dummy))
+
+    # (unregister the dummy circuit before validation/material confirmation)
+    link.unregister(dummy)
     if not or_cell.valid:
-        link.unregister(circuit_id)
         raise RuntimeError('Got invalid CREATED_CELL: {}'.format(or_cell.raw))
 
     # Compute KDF-TOR on OP+OR materials
@@ -91,7 +103,11 @@ def fast(link):
             'Invalid CREATE_FAST, invalid KDF-TOR confirmation: '.format(
                 (material.key_hash, or_cell.created_fast.derivative)))
 
-    return circuit(circuit_id, material)
+    # Register the real circuit
+    final = circuit(circuit_id, material)
+    link.register(final)
+
+    return ltor.onion.state(link, final)
 
 def ntor(link, identity, onion_key, circuits=[], sanity=True):
 

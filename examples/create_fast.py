@@ -17,6 +17,6 @@ if __name__ == '__main__':
     #
     print('\nCreating 10 one-hop circuits with CREATE_FAST cells:')
     for i in range(10):
-        circuit = ltor.create.fast(link)
+        state = ltor.create.fast(link)
         print(' {:2}. Circuit {} created – Key hash: {}'.format(i + 1,
-            circuit.id, circuit.material.key_hash.hex()))
+            state.circuit.id, state.circuit.material.key_hash.hex()))

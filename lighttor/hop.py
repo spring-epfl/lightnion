@@ -20,15 +20,18 @@ def recv(state, block=True, once=False):
 
     while True:
         try:
-            payload = state.link.get(circuit_id=state.circuit.id, block=block)
+            payload = state.link.get(circuit=state.circuit, block=block)
         except queue.Empty:
             return state, []
+        except KeyError:
+            raise RuntimeError('Circuit got destroyed, reason: {}'.format(
+                state.circuit.reason))
 
         header = ltor.cell.header(payload)
         if header.cmd in [ltor.cell.cmd.RELAY, ltor.cell.cmd.RELAY_EARLY]:
             break
 
-        state.link.put(state.circuit.id, payload)
+        state.link.put(state.circuit, payload)
 
     cell_type = ltor.cell.relay.cell
     if header.cmd is ltor.cell.cmd.RELAY_EARLY:
@@ -204,12 +207,9 @@ if __name__ == "__main__":
     link = link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 
-    circuit = create.fast(link)
-    print('Circuit {} created – Key hash: {}'.format(circuit.id,
-        circuit.material.key_hash.hex()))
-
-    # building the endpoint's state
-    endpoint = ltor.onion.state(link, circuit)
+    endpoint = create.fast(link)
+    print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
+        endpoint.circuit.material.key_hash.hex()))
 
     print('Sending a RELAY_DROP for fun...')
     endpoint = send(endpoint, ltor.cell.relay.cmd.RELAY_DROP, stream_id=0)

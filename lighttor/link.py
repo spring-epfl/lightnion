@@ -26,10 +26,8 @@ class link:
         self.version = version
         self.io = io
 
-        self.pool = dict()
-        self.circuits = set()
-        for circuit in circuits:
-            self.register(circuit)
+        self.circuits = dict()
+        self.register(ltor.create.circuit(0, None))
 
     def pull(self, block=True):
         try:
@@ -43,54 +41,60 @@ class link:
         # We doesn't handle VERSIONS cells with shorter circuit_id.
         #
         header = ltor.cell.header(payload)
-        if header.cmd is ltor.cell.cmd.DESTROY:
-            raise RuntimeError(
-                'Got DESTROY cell for circuit {}, full cell: {}'.format(
-            header.circuit_id, payload))
-        # TODO: property handle DESTROY cells
+        if not header.circuit_id in self.circuits:
+            raise RuntimeError('Got circuit {} outside {}, cell: {}'.format(
+                header.circuit_id, list(self.circuits), payload))
 
-        self.put(header.circuit_id, payload)
+        # TODO: property handle DESTROY cells
+        circuit = self.circuits[header.circuit_id]
+        if header.cmd is ltor.cell.cmd.DESTROY:
+            self.put(circuit, payload)
+            circuit.destroyed = True
+            circuit.reason = payload
+            self.unregister(circuit)
+            return False
+
+        self.put(circuit, payload)
         return True
 
-    def put(self, circuit_id, payload):
-        pool_size = sum([q.qsize() for _, q in self.pool.items()])
-        if pool_size > self.max_pool:
+    def put(self, circuit, payload):
+        circuits_size = sum([c.queue.qsize() for _, c in self.circuits.items()])
+        if circuits_size > self.max_circuits:
             raise RuntimeError(
-                'Link circuit pool is full: {}'.format(pool_size))
+                'Link circuit queues are full: {}'.format(circuits_size))
 
-        if circuit_id not in self.circuits:
+        if circuit.id not in self.circuits:
             raise RuntimeError('Got circuit_id {} outside {}, cell: {}'.format(
-                circuit_id, self.circuits, payload))
+                circuit.id, list(self.circuits), payload))
 
         try:
             payload = payload.raw
         except AttributeError:
             pass
 
-        self.pool[circuit_id].put(payload)
+        self.circuits[circuit.id].put(payload)
 
-    def get(self, circuit_id, block=True):
+    def get(self, circuit, block=True):
         while block:
             try:
-                return self.pool[circuit_id].get_nowait()
+                return self.circuits[circuit.id].get(block=False)
             except queue.Empty:
                 pass
             self.pull()
         else:
             self.pull(block=False)
-            return self.pool[circuit_id].get_nowait()
+            return self.circuits[circuit.id].get(block=False)
 
-    def register(self, circuit_id):
-        if circuit_id in self.circuits:
+    def register(self, circuit):
+        if circuit.id in self.circuits:
             raise RuntimeError('Circuit {} already registered.'.format(
-                circuit_id))
+                circuit.id))
 
-        self.pool[circuit_id] = queue.Queue(maxsize=self.max_pool)
-        self.circuits.add(circuit_id)
+        circuit.queue = queue.Queue(maxsize=self.max_circuits)
+        self.circuits[circuit.id] = circuit
 
-    def unregister(self, circuit_id):
-        self.circuit_id.remove(circuit_id)
-        del self.pool[circuit_id]
+    def unregister(self, circuit):
+        del self.circuits[circuit.id]
 
     def recv(self, block=True):
         return self.io.recv(block=block)
@@ -192,4 +196,4 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
 
     # Send our NETINFO to say "we don't want to authenticate"
     peer.send(ltor.cell.netinfo.pack(address))
-    return link(peer, version, [0])
+    return link(peer, version)
