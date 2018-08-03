@@ -3,6 +3,7 @@ import lighttor as ltor
 import threading
 import socket
 import queue
+import ssl
 
 class worker(threading.Thread):
     def __init__(self, peer, max_queue=2048):
@@ -45,23 +46,24 @@ class sender(worker):
         super().__init__(peer, max_queue)
         peer.settimeout(period)
 
-    def send(self, payload):
-        while not self.dead:
+    def send(self, peer, data):
+        while len(data) > 0 and not self.dead:
             try:
-                ltor.cell.send(self.peer, payload)
-                break
-            except socket.timeout:
-                pass
+                sended = peer.send(data)
+                data = data[sended:]
+            except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
+                print('send {}'.format(e))
 
     def run(self):
         while not self.dead:
             try:
-                self.send(self.get())
+                ltor.cell.send(self.peer, self.get(),
+                    _sendall=lambda peer, data: self.send(peer, data))
             except BaseException as e:
                 self.die(e)
 
 class receiver(worker):
-    def __init__(self, peer, max_queue=2048, period=0.5, buffer_size=8192):
+    def __init__(self, peer, max_queue=2048, period=0.5, buffer_size=4096):
         super().__init__(peer, max_queue)
         self.buffer_size = buffer_size
         peer.settimeout(period)
@@ -70,9 +72,10 @@ class receiver(worker):
         try:
             while not self.dead:
                 try:
-                    self.put(self.peer.recv(self.buffer_size))
-                except socket.timeout:
-                    pass
+                    payload = self.peer.recv(self.buffer_size)
+                    self.put(payload)
+                except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
+                    print('recv {}'.format(e))
 
         except BaseException as e:
             self.die(e)
@@ -91,7 +94,7 @@ class cellmaker(worker):
             payload, self.buffer = self.buffer[:size], self.buffer[size:]
             return payload
 
-    def __init__(self, io, peer, max_queue=2048, buffer_size=8192):
+    def __init__(self, io, peer, max_queue=2048, buffer_size=4096):
         super().__init__(peer, max_queue)
         self.fake_peer = cellmaker._fake_peer(io, buffer_size)
 
@@ -106,7 +109,7 @@ class cellmaker(worker):
 class io:
     _join_timeout = 3
 
-    def __init__(self, peer, daemon=True, max_queue=2048, buffer_size=8192):
+    def __init__(self, peer, daemon=True, max_queue=2048, buffer_size=4096):
         self.cellmaker = cellmaker(self, peer, max_queue, buffer_size)
         self.receiver = receiver(peer, max_queue, buffer_size)
         self.sender = sender(peer, max_queue)

@@ -1,3 +1,4 @@
+ - rewrite proper cell consumer/producer (.recv/.send)
  - rewrite parsers to make them simpler
  - replace python implementation of ntor by a proper one (wrapped ctor?)
  - use collections.namedtuple instead of unnamed tuples?
