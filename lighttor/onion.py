@@ -240,7 +240,46 @@ def recognize(state, cell, backward=True):
     # Update state iff the digests matched
     return rollback, True
 
-def peel(state, cell):
+# TODO: fix this VERY VERY ugly hack (SENDMEs are the bottleneck)
+def _auto_sendme(state, cell):
+    if not cell.relay.cmd == ltor.cell.relay.cmd.RELAY_DATA:
+        return state
+    link, circuit, flow = state.link, state.circuit, ltor.constants.flow
+
+    # Circuit-level sendme
+    #
+    if circuit.window is None:
+        circuit.window = flow.circuit.default
+
+    circuit.window -= 1
+    if circuit.window < flow.circuit.lowlimit:
+        circuit.window += flow.circuit.increment
+        state, sendme = build(state, ltor.cell.relay.cmd.RELAY_SENDME)
+        link.send(sendme)
+
+    # Stream-level sendme
+    #
+    if not cell.relay.stream_id > 0:
+        return state
+
+    if circuit.stream_windows is None:
+        circuit.stream_windows = dict()
+
+    if not cell.relay.stream_id in circuit.stream_windows:
+        circuit.stream_windows[cell.relay.stream_id] = flow.stream.default
+
+    circuit.stream_windows[cell.relay.stream_id] -= 1
+    if not circuit.stream_windows[cell.relay.stream_id] < flow.stream.lowlimit:
+        return state
+
+    circuit.stream_windows[cell.relay.stream_id] += flow.stream.increment
+    state, sendme = build(state, ltor.cell.relay.cmd.RELAY_SENDME,
+        stream_id=cell.relay.stream_id)
+    state.link.send(sendme)
+
+    return state
+
+def peel(state, cell, *, _sendme=True):
     '''Decrypt a RELAY{_EARLY,} cell using provided `state`.
 
     :param state: a state object (see onion.state)
@@ -251,6 +290,7 @@ def peel(state, cell):
     *Note: returns an updated state that MUST be used afterwards.*
     '''
     rollback = state._clone()
+
     cell.relay.raw = rollback.backward_decryptor.update(cell.relay.raw)
     if rollback.depth == 0:
         rollback, recognized = recognize(rollback, cell)
@@ -258,9 +298,13 @@ def peel(state, cell):
             raise RuntimeError(
                 'Got an unrecognized RELAY cell: {}'.format(cell.raw))
 
+        if _sendme:
+            rollback = _auto_sendme(rollback, cell)
         return rollback, cell
 
     cell.relay.raw = rollback.backward_decryptor.update(cell.relay.raw)
-    rollback._inner, cell = peel(rollback._inner, cell)
+    rollback._inner, cell = peel(rollback._inner, cell, _sendme=False)
 
+    if _sendme:
+        rollback = _auto_sendme(rollback, cell)
     return rollback, cell
