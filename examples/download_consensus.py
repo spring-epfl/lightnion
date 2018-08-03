@@ -23,9 +23,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Download the full consensus without compression
-    endpoint, last_stream_id, full_answer = ltor.hop.directory_query(
-        endpoint, '/tor/status-vote/current/consensus',
-        compression='identity')
+    endpoint, full_answer = ltor.hop.directory_query(endpoint,
+        '/tor/status-vote/current/consensus', compression='identity')
 
     total_time = time.time() - start_time
     print('Note: consensus written to /tmp/consensus')
@@ -37,9 +36,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Download the microdesc consensus with compression
-    endpoint, last_stream_id, full_answer = ltor.hop.directory_query(
-        endpoint, '/tor/status-vote/current/consensus-microdesc',
-        last_stream_id=last_stream_id)
+    endpoint, full_answer = ltor.hop.directory_query(endpoint,
+        '/tor/status-vote/current/consensus-microdesc')
 
     total_time = time.time() - start_time
     print('Note: microdesc consensus written to /tmp/consensus-microdesc')

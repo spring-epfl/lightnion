@@ -85,7 +85,6 @@ directory_request = '\r\n'.join((
 def directory_query(
         state,
         query=None,
-        last_stream_id=0,
         compression='deflate',
         timeout=1,
         **kwargs):
@@ -98,9 +97,11 @@ def directory_query(
     if not query.startswith('/tor/') or any([c in query for c in ' \r\n']):
         raise RuntimeError('Invalid query: {}'.format(query))
 
-    last_stream_id += 1
+    state.circuit.last_stream_id += 1
+    stream_id = state.circuit.last_stream_id
+
     state = send(
-        state, ltor.cell.relay.cmd.RELAY_BEGIN_DIR, stream_id=last_stream_id)
+        state, ltor.cell.relay.cmd.RELAY_BEGIN_DIR, stream_id=stream_id)
     state, cells = recv(state)
 
     if not cells[0].relay.cmd == ltor.cell.relay.cmd.RELAY_CONNECTED:
@@ -112,7 +113,7 @@ def directory_query(
         state,
         ltor.cell.relay.cmd.RELAY_DATA,
         bytes(http, 'utf8'),
-        stream_id=last_stream_id)
+        stream_id=stream_id)
 
     # TODO: proper support for RELAY_END reasons
     state, cells = recv(state)
@@ -134,7 +135,7 @@ def directory_query(
                 diff_time = time.time()
 
     # TODO: proper support for concurrent streams on the same circuit
-    if not all([c.relay.stream_id == last_stream_id for c in cells]):
+    if not all([c.relay.stream_id == stream_id for c in cells]):
         raise RuntimeError('No proper support for multiple stream!')
 
     content = b''
@@ -152,7 +153,7 @@ def directory_query(
         raise RuntimeError('Unexpected answer to query "{}": {}'.format(query,
             content))
 
-    return state, last_stream_id, content
+    return state, content
 
 def zlib_decompress(compressed_data, min_bufsize=32):
     data = b''

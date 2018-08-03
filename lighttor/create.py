@@ -32,6 +32,7 @@ def ntor_key_material(raw_material, sanity=True):
 
 class circuit(collections.namedtuple('circuit', ['id', 'material'])):
     stream_windows = None # per-stream window (see onion._auto_sendme hack)
+    last_stream_id = 0
     destroyed = False
     window = None # per-circuit window (see onion._auto_sendme hack)
     reason = None
