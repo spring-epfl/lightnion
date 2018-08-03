@@ -74,7 +74,8 @@ class link:
             try:
                 return self.pool[circuit_id].get_nowait()
             except queue.Empty:
-                self.pull()
+                pass
+            self.pull()
         else:
             self.pull(block=False)
             return self.pool[circuit_id].get_nowait()
