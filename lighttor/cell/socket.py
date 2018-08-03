@@ -25,10 +25,6 @@ class _real_peer:
         with self.lock:
             return self.peer.sendall(data)
 
-    def settimeout(self, timeout):
-        with self.lock:
-            return self.peer.settimeout(timeout)
-
     def close(self):
         with self.lock:
             self.close = (lambda self: None)
@@ -80,9 +76,8 @@ class worker(threading.Thread):
         return self.queue.empty()
 
 class sender(worker):
-    def __init__(self, peer, max_queue=2048, period=0.5):
+    def __init__(self, peer, max_queue=2048):
         super().__init__(peer, max_queue)
-        peer.settimeout(period)
 
     def send(self, peer, data):
         while len(data) > 0 and not self.dead:
@@ -90,7 +85,7 @@ class sender(worker):
                 sended = peer.send(data)
                 data = data[sended:]
             except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
-                print('send {}'.format(e))
+                pass # print('send {}'.format(e))
 
     def run(self):
         while not self.dead:
@@ -101,10 +96,9 @@ class sender(worker):
                 self.die(e)
 
 class receiver(worker):
-    def __init__(self, peer, max_queue=2048, period=0.04, buffer_size=4096):
+    def __init__(self, peer, max_queue=2048, buffer_size=4096):
         super().__init__(peer, max_queue)
         self.buffer_size = buffer_size
-        peer.settimeout(period)
 
     def run(self):
         try:
@@ -113,7 +107,7 @@ class receiver(worker):
                     payload = self.peer.recv(self.buffer_size)
                     self.put(payload)
                 except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
-                    print('recv {}'.format(e))
+                    pass # print('recv {}'.format(e))
 
         except BaseException as e:
             self.die(e)
@@ -135,7 +129,9 @@ class cellmaker(worker):
 class io:
     _join_timeout = 3
 
-    def __init__(self, peer, daemon=True, max_queue=2048, buffer_size=4096):
+    def __init__(self, peer,
+            daemon=True, period=0.04, max_queue=2048, buffer_size=4096):
+        peer.settimeout(period)
         peer = _real_peer(peer)
 
         self.cellmaker = cellmaker(self, peer, max_queue, buffer_size)
