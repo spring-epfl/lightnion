@@ -120,9 +120,9 @@ class cell_view(_view.packet):
 view = cell_view()
 cell = _view.like(view, 'relay_cell')
 
-def _pack_details(base, relay_cmd, recognized, stream_id, digest, data):
+def _pack_details(base, cmd, recognized, stream_id, digest, data):
     base.relay.header.set(
-        cmd=relay_cmd,
+        cmd=cmd,
         recognized=recognized,
         stream_id=stream_id,
         digest=digest,
@@ -130,10 +130,10 @@ def _pack_details(base, relay_cmd, recognized, stream_id, digest, data):
     base.set(relay=dict(data=data))
 
     # Preemptively add \x00 padding (as it is included within digests)
-    base.relay.raw = base.relay.raw.ljust(payload_len, b'\x00')
+    base.relay.raw = base.relay.raw.ljust(constants.payload_len, b'\x00')
     if not base.valid:
         raise RuntimeError(
-            'Invalid RELAY{_EARLY,} cell after padding: {}'.format(base.raw))
+            'Invalid RELAY cell after padding: {}'.format(base.raw))
 
     return base
 
