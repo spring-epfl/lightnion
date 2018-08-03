@@ -1,197 +1,160 @@
 import zlib
+import time
+import queue
 
-import stem
-import stem.client.cell
+import lighttor as ltor
 
-import onion
-import create
-import link
+def recv(state, block=True, once=False):
+    '''Receive one or more RELAY{_EARLY,} cells from `state` attached circuit.
 
-# TODO: buffered recv (empty queues, validate cells only afterwards)
-#
-def recv(state, sanity=True):
-    """
-    Receive one or more RELAY_CELL cells – assuming a v4-or-higher header size
-    and that we are on a one-hop circuit.
+    :param state: a state object (see onion.state)
+    :param bool block: block while receiving? (default: True)
+    :param bool block: attempt only receiving once? (default: False)
 
-    The caller can trust the callee to not tamper with state and to output an
-    updated version iff the callee succeeded – or else the unaffected state.
+    :returns: a tuple (updated state, received RELAY{_EARLY,} cells)
 
-    :param state onion.state: endpoint's cryptographic state
-    :params bool sanity: extra sanity checks
+    Notes:
+        - returns an updated state that *MUST* be used afterwards.
+        - non-RELAY{_EARLY,} cells within the circuit *may be reordered.*
+    '''
 
-    :returns: a tuple (updated state, received RELAY cells list / None)
-    """
-    link_socket, link_version = state.link
-    circuit_id, _ = state.circuit
-    rollback = state.clone()
+    while True:
+        try:
+            payload = state.link.get(circuit_id=state.circuit.id, block=block)
+        except queue.Empty:
+            return state, []
 
-    # (we don't support v3-or-lower with short circIDs)
-    if link_version < 4:
-        return state, None
-    header_size = 5
+        header = ltor.cell.header(payload)
+        if header.cmd in [ltor.cell.cmd.RELAY, ltor.cell.cmd.RELAY_EARLY]:
+            break
 
-    # We receive some data.
-    answer = link_socket.recv()
-    if len(answer) < 1:
-        return state, None
+        state.link.put(state.circuit.id, payload)
 
-    plains = []
-    while len(answer) > 0:
-        if answer[4] != stem.client.cell.RelayCell.VALUE:
-            rcell, answer = stem.client.cell.Cell.pop(answer, link_version)
-            plains.append(rcell)
-            continue
+    cell_type = ltor.cell.relay.cell
+    if header.cmd is ltor.cell.cmd.RELAY_EARLY:
+        cell_type = ltor.cell.relay_early.cell
 
-        rcell, answer = stem.client.cell.Cell.pop(
-            answer, link_version, is_encrypted=True)
+    cell = cell_type(payload)
+    #import pdb
+    #pdb.set_trace()
+    #if not cell.valid:
+    #    raise RuntimeError(
+    #        'Got invalid (encrypted) RELAY cell: {}'.format(cell.raw))
 
-        # Extra sanity checks
-        if sanity:
-            if rcell.circ_id != circuit_id:
-                return state, None
-            if not isinstance(rcell, stem.client.cell.RelayCell):
-                return state, None
+    state, cell = ltor.onion.peel(state, cell)
+    if not cell.valid:
+        raise RuntimeError(
+            'Got invalid (decrypted) RELAY cell: {}'.format(cell.raw))
 
-        # (we repack the cell after unpacking it to get its "raw bytes" form,
-        #  but it's more a poor man's trick than a requirement)
-        #
-        repack = rcell.pack(link_version)
-        rollback, peeled_cell = onion.peel(rollback, repack)
-        if not peeled_cell:
-            return state, None
+    cells = [cell]
+    while not once:
+        state, new_cells = recv(state, block=False, once=True)
+        if len(new_cells) == 0:
+            break
+        cells += new_cells
+    return state, cells
 
-        # Save the unencrypted cell for later.
-        plains.append(peeled_cell)
+def send(state, command, payload=b'', stream_id=0):
+    '''Send one RELAY{_EARLY,} cell through `state` attached circuit.
 
-        # Upon receiving an incomplete RELAY cell, we can expect more data.
-        if 514 > len(answer) > 0:
-            answer += link_socket.recv()
-    return rollback, plains
+    :param state: a state object (see onion.state)
+    :param str command: RELAY{_EARLY,} cell command (see cell.relay.cmd)
+    :param bytes payload: RELAY{_EARLY,} cell content (default: b'')
+    :param int stream_id: RELAY{_EARLY,} stream ID (default: 0)
 
-def send(state, command, payload='', stream_id=0):
-    """
-    Send one RELAY cell – assuming a v4-or-higher header size and that we are
-    on a one-hop circuit.
+    :returns: an updated state
 
-    The caller can trust the callee to not tamper with state and to output an
-    updated version iff the callee succeeded – or else the unaffected state.
-
-    :param state onion.state: endpoint's cryptographic state
-    :param str command: RELAY cell command to send
-    :param bytes payload: content of the RELAY cell (default: b'')
-    :param int stream_id: stream ID (default: 0)
-
-    :returns: a tuple (updated state, number of bytes send / None)
-    """
-    link_socket, _ = state.link
+    *Note: returns an updated state that *MUST* be used afterwards.*
+    '''
 
     # We build our onion
-    rollback, packed_cell = onion.build(
-        state, command, payload, stream_id)
-    if packed_cell is None:
-        return state, None
+    state, cell = ltor.onion.build(state, command, payload, stream_id)
 
     # Then, we send the encrypted payload.
-    link_socket.send(packed_cell)
-    return rollback, len(packed_cell)
+    state.link.send(cell)
+    return state
 
-directory_request_format = '\r\n'.join((
+directory_request = '\r\n'.join((
       'GET {query} HTTP/1.0',
       'Accept-Encoding: {compression}',
     )) + '\r\n\r\n'
 
 def directory_query(
-        state=None,
+        state,
         query=None,
         last_stream_id=0,
         compression='deflate',
-        sanity=True,
+        timeout=20,
+        period=0.01,
         **kwargs):
-
-    if state is None:
-        port = kwargs.get('port', 9050)
-        address = kwargs.get('address', '127.0.0.1')
-        versions = kwargs.get('versions', [4])
-        link = link.handshake(address, port, versions, sanity)
-
-        if None in link:
-            return None, None, None
-
-        circuits = kwargs.get('circuits', [])
-        circuit = create.fast(link, circuits, sanity)
-
-        if None in circuit:
-            return None, None, None
-
-        state = onion.state(link, circuit, sanity)
-    link_socket, link_version = state.link
-    circuit_id, _ = state.circuit
-
-    if last_stream_id is None:
-        last_stream_id = 0
-    last_stream_id += 1
-
-    if query is None:
-        query = '/tor/status-vote/current/consensus'
-    if sanity:
-        assert query.startswith('/tor/')
-        assert not any([c in query for c in ' \r\n'])
-
-    state, nbytes = send(state, 'RELAY_BEGIN_DIR', stream_id=last_stream_id)
-    if nbytes is None:
-        return state, last_stream_id, None
-
-    state, answers = recv(state, sanity)
-    if answers is None or len(answers) < 1:
-        return state, last_stream_id, None
-
-    if sanity:
-        assert len(answers) == 1
-        if isinstance(answers[0], stem.client.cell.DestroyCell):
-            raise RuntimeError(('Got DestroyCell (circ_id {}) with reason {} '
-                + '({})! (are you keeping the circuit state updated?)').format(
-                answers[0].circ_id, answers[0].reason_int, answers[0].reason))
-
-        assert answers[0].command == 'RELAY_CONNECTED'
-
     if compression not in ['identity', 'deflate', 'gzip']:
         raise NotImplementedError(
             'Compression method "{}" not supported.'.format(compression))
 
-    http_request = directory_request_format.format(
-        query=query, compression=compression)
-    state, nbytes = send(state, 'RELAY_DATA', http_request,
+    if query is None:
+        query = '/tor/status-vote/current/consensus'
+    if not query.startswith('/tor/') or any([c in query for c in ' \r\n']):
+        raise RuntimeError('Invalid query: {}'.format(query))
+
+    last_stream_id += 1
+    state = send(
+        state, ltor.cell.relay.cmd.RELAY_BEGIN_DIR, stream_id=last_stream_id)
+    state, cells = recv(state)
+
+    if not cells[0].relay.cmd == ltor.cell.relay.cmd.RELAY_CONNECTED:
+        raise RuntimeError('Expecting RELAY_CONNECTED after RELAY_BEGIN_DIR,'
+            + ' got {} in cell:'.format(cells[0].relay.cmd, cells[0].raw))
+
+    http = directory_request.format(query=query, compression=compression)
+    state = send(
+        state,
+        ltor.cell.relay.cmd.RELAY_DATA,
+        bytes(http, 'utf8'),
         stream_id=last_stream_id)
-    if nbytes is None:
-        return state, last_stream_id, None
 
-    state, answers = recv(state, sanity)
-    if answers is None or len(answers) < 1:
-        return state, last_stream_id, None
+    # TODO: proper support for RELAY_END reasons & SENDME cells
+    state, cells = recv(state)
+    if ltor.cell.relay.cmd.RELAY_END not in [c.relay.cmd for c in cells]:
+        candidates = []
+        start_time = time.time()
+        while True:
+            print(time.time() - start_time, len(cells))
+            if time.time() - start_time > timeout:
+                break
 
-    # only try to receive one more time (if the buffer size was exceeded)
-    if 'RELAY_END' not in [c.command for c in answers]:
-        state, more_answers = recv(state, sanity)
-        if more_answers is None or len(more_answers) < 1:
-            return state, last_stream_id, None
-        answers += more_answers
+            state, new_cells = recv(state, block=False)
+            candidates = [c.relay.cmd for c in new_cells]
+            cells += new_cells
 
-    state, nbytes = send(state, 'RELAY_END', stream_id=last_stream_id)
-    if sanity:
-        assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
-        assert nbytes is not None
+            if ltor.cell.relay.cmd.RELAY_END in candidates:
+                break
+            time.sleep(period)
 
-    content = b''.join([cell.data for cell in answers if (
-        cell.command == 'RELAY_DATA' and cell.stream_id == last_stream_id)])
+            state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
+                stream_id=0)
+            state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
+                stream_id=last_stream_id)
+            state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
+                stream_id=last_stream_id)
+
+    # TODO: proper support for concurrent streams on the same circuit
+    if not all([c.relay.stream_id == last_stream_id for c in cells]):
+        raise RuntimeError('No proper support for multiple stream!')
+
+    content = b''
+    for cell in cells:
+        if not cell.relay.cmd == ltor.cell.relay.cmd.RELAY_DATA:
+            continue
+        content += cell.relay.data
 
     if compression in ['deflate', 'gzip']:
         http_headers, compressed_data = content.split(b'\r\n\r\n', 1)
         raw_data = zlib_decompress(compressed_data)
         content = http_headers + b'\r\n\r\n' + raw_data
 
-    if sanity:
-        assert content.startswith(b'HTTP/1.0')
+    if not content.startswith(b'HTTP/1.0'):
+        raise RuntimeError('Unexpected answer to query "{}": {}'.format(query,
+            content))
 
     return state, last_stream_id, content
 
@@ -238,73 +201,32 @@ if __name__ == "__main__":
     #   9. Repeat with another stream
     #
 
-    link = link.handshake(address=sys_argv.addr, port=sys_argv.port)
-    print('Link v{} established – {}'.format(link[1], link[0]))
+    link = link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    print('Link v{} established – {}'.format(link.version, link.io))
 
     circuit = create.fast(link)
-    print('Circuit {} created – Key hash: {}'.format(circuit[0],
-        circuit[1].key_hash.hex()))
+    print('Circuit {} created – Key hash: {}'.format(circuit.id,
+        circuit.material.key_hash.hex()))
 
     # building the endpoint's state
-    endpoint = onion.state(link, circuit)
+    endpoint = ltor.onion.state(link, circuit)
 
-    print('[stream_id=1] Sending RELAY_BEGIN_DIR...')
-    endpoint, _ = send(endpoint, 'RELAY_BEGIN_DIR', stream_id=1)
+    print('Sending a RELAY_DROP for fun...')
+    endpoint = send(endpoint, ltor.cell.relay.cmd.RELAY_DROP, stream_id=0)
 
-    print('[stream_id=1] Receiving now...')
-    endpoint, answers = recv(endpoint)
-
-    print('[stream_id=1] Success! (with {})'.format(answers[0].command))
-    assert len(answers) == 1
-
-    # handmade HTTP request FTW
-    http_request = '\r\n'.join((
-      'GET /tor/status-vote/current/consensus HTTP/1.0', # regular consensus
-      'Accept-Encoding: identity', # no compression
-    )) + '\r\n\r\n'
-
-    print('[stream_id=1] Sending a RELAY_DATA to HTTP GET the consensus...')
-    endpoint, _ = send(
-        endpoint, 'RELAY_DATA', http_request, stream_id=1)
-
-    print('[stream_id=1] Receiving now...')
-    endpoint, answers = recv(endpoint)
-
-    print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
-    assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
-    full_answer = b''.join(
-        [cell.data for cell in answers if cell.command == 'RELAY_DATA'])
-
-    if answers[-1].command == 'RELAY_END':
-        # See:
-        #   https://github.com/plcp/tor-scripts/blob/master/torspec/tor-spec-4d0d42f.txt#L1585
-        assert answers[-1].data == b'\x06' # REASON_DONE
-
-    if not 'RELAY_END' in [cell.command for cell in answers]:
-        print('[stream_id=1] Receiving again...')
-        endpoint, answers = recv(endpoint)
-
-        print('[stream_id=1] Success! (got {} answers)'.format(len(answers)))
-        assert all([c.command in ['RELAY_DATA', 'RELAY_END'] for c in answers])
-        full_answer += b''.join(
-            [cell.data for cell in answers if cell.command == 'RELAY_DATA'])
-
-    print('[stream_id=0] Sending a RELAY_DROP for fun...')
-    endpoint, _ = send(endpoint, 'RELAY_DROP', stream_id=0)
-
-    print('[stream_id=1] Closing the stream...')
-    endpoint, _ = send(endpoint, 'RELAY_END', stream_id=1)
+    # retrieve regular consensus (uncompressed)
+    endpoint, last_stream_id, full_answer = directory_query(
+        endpoint, '/tor/status-vote/current/consensus-microdesc',
+        compression='identity')
 
     print('\nNote: consensus written to /tmp/consensus')
     with open('/tmp/consensus', 'wb') as f:
         f.write(full_answer)
 
-    #
-    # second run (with compression function)
-    #
+    # retrieve microdescriptor consensus (compressed)
     endpoint, last_stream_id, full_answer = directory_query(
         endpoint, '/tor/status-vote/current/consensus-microdesc',
-        last_stream_id=1, compression='gzip')
+        last_stream_id=last_stream_id, compression='gzip')
 
     print('Note: micro-descriptor consensus',
         'written to /tmp/consensus-microdesc')
