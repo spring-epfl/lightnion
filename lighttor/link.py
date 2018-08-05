@@ -21,8 +21,8 @@ class link:
       True
       >>> link.close()
     """
-    def __init__(self, io, version, circuits=[0], max_pool=2048):
-        self.max_pool = 2048
+    def __init__(self, io, version, circuits=[0], max_queue=2048):
+        self.max_queue = 2048
         self.version = version
         self.io = io
 
@@ -59,7 +59,7 @@ class link:
 
     def put(self, circuit, payload):
         circuits_size = sum([c.queue.qsize() for _, c in self.circuits.items()])
-        if circuits_size > self.max_circuits:
+        if circuits_size > self.max_queue:
             raise RuntimeError(
                 'Link circuit queues are full: {}'.format(circuits_size))
 
@@ -90,7 +90,7 @@ class link:
             raise RuntimeError('Circuit {} already registered.'.format(
                 circuit.id))
 
-        circuit.queue = queue.Queue(maxsize=self.max_circuits)
+        circuit.queue = queue.Queue(maxsize=self.max_queue)
         self.circuits[circuit.id] = circuit
 
     def unregister(self, circuit):
