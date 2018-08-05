@@ -4,7 +4,9 @@ import binascii
 import time
 import json
 
-import hop
+import lighttor as ltor
+
+# TODO: remove extra (useless) checks/exceptions within this file
 
 def scrap(consensus, end_of_field):
     """
@@ -48,13 +50,12 @@ def scrap_signature(consensus, fix=b'SIGNATURE'):
     content = b''.join(lines[1:idx_endsig])
     return remaining, content
 
-def parse_address(address, sanity=True):
+def parse_address(address):
     """
         Take a Tor-formatted v4 or v6 IP address with a port, returns a
         cleaned-up version.
 
         :param str address: input address to be processed
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a tuple (address, port, guessed-type) where port is an
                   integer and guessed-type is 4 or 6 (IPv4 or IPv6).
@@ -66,14 +67,16 @@ def parse_address(address, sanity=True):
     if address.startswith('['):
         address = address[1:]
         guessed_type = 6
-    if address.endswith(']') or (sanity and guessed_type == 6):
-        if sanity:
-            assert address.endswith(']')
+    if address.endswith(']') or guessed_type == 6:
+        if not address.endswith(']'):
+            raise RuntimeError(
+                'Seems like an invalid IPv6: {}'.format(address))
         address = address[:-1]
         guessed_type = 6
     if address.count(':') > 3:
-        if sanity:
-            assert guessed_type == 6
+        if not guessed_type == 6:
+            raise RuntimeError(
+                'Seems like an very odd IPv6: {}'.format(address))
         guessed_type = 6
 
     return address, int(port), guessed_type
@@ -144,24 +147,23 @@ def parse_params(params):
         content[key] = int(value)
     return content
 
-def parse_fingerprint(payload, sanity=True):
+def parse_fingerprint(payload):
     asbytes = bytes.fromhex(payload)
     fingers = asbytes.hex().upper()
     fingers = ' '.join([fingers[i:i+4] for i in range(0, len(fingers), 4)])
-    if sanity:
-        assert fingers == payload
+    if not fingers == payload:
+        raise RuntimeError(
+            'Fingerprint not conform: {} vs {}'.format(fingers, payload))
     return fingers
 
-def parse_base64(payload, sanity=True, decode=False):
+def parse_base64(payload, decode=False):
     """
-        Take an input base64 string, decode it, re-encode it, validate if the
-        result match if sanity is enabled.
+        Take an input base64 string, decode it, re-encode it.
 
         For example, we use it to parse "shared-rand-current-value" fields:
             https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2069
 
         :param str payload: input base64-encoded data
-        :param bool sanity: enable extra sanity checks (default: True)
         :param bool decode: return raw bytes (default: False)
 
         :returns: a base64-encoded string equivalent to the input
@@ -172,8 +174,9 @@ def parse_base64(payload, sanity=True, decode=False):
     if not payload[-2:].count('=') == value[-2:].count('='):
         value = value.rstrip('=') + '=' * payload[-2:].count('=')
 
-    if sanity:
-        assert value == payload
+    if not value == payload:
+        raise RuntimeError('Invalid base64 encoding: {} vs {}'.format(
+            value, payload))
 
     if decode:
         return decoded
@@ -235,7 +238,7 @@ def consume_http(consensus):
         if keyword[-1:] == ':':
             fields['headers'][keyword[:-1]] = content
 
-def consume_headers(consensus, flavor='unflavored', sanity=True):
+def consume_headers(consensus, flavor='unflavored'):
     """
         Consume consensus headers if present, then returns the remaining input
         to be further processed and a set of headers (or None, if none
@@ -262,7 +265,6 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
 
         :param str consensus: input to be processed
         :param str flavor: consensus flavor ('unflavored' or 'microdesc')
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a tuple (remaining-input, headers-or-None)
     """
@@ -307,28 +309,42 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
             version, variant = content
             content = dict(version=int(version), flavor=variant)
 
-            if sanity:
-                assert len(fields) == 0 # first field
-                assert content['version'] >= 3
-                assert content['flavor'] == flavor
+            if not len(fields) == 0:
+                raise RuntimeError('Expecting {} as first field: {}'.format(
+                    keyword, content))
+            if not content['version'] >= 3:
+                raise RuntimeError('Expecting {} version >= 3 here: {}'.format(
+                    keyword, content))
+            if not content['flavor'] == flavor:
+                raise RuntimeError('Unmatched {} flavor {} here: {}'.format(
+                    keyword, flavor, content))
 
         if keyword == 'consensus-method':
             content = int(content)
 
-            if sanity:
-                assert content >= 26
+            if not content >= 26:
+                raise RuntimeError(
+                    'Consensus version >= 26 required: {}'.format(content))
 
         if keyword in ['valid-after', 'fresh-until', 'valid-until']:
             date, time, when = parse_time(content)
             content = dict(date=date, time=time, stamp=when.timestamp())
-            if sanity:
-                import time
-                if keyword == 'valid-after':
-                    assert time.time() > content['stamp'] # valid-after
-                if keyword == 'fresh-until':
-                    assert content['stamp'] > fields['valid-after']['stamp']
-                if keyword == 'valid-until':
-                    assert time.time() < content['stamp'] # valid-until
+
+            import time
+            if keyword == 'valid-after':
+                if not time.time() > content['stamp']:
+                    raise RuntimeError('{} not yet valid! {}'.format(
+                        keyword, content)) # valid-after
+
+            if keyword == 'fresh-until':
+                if not content['stamp'] > fields['valid-after']['stamp']:
+                    raise RuntimeError('{} not fresh! {}'.format(
+                        keyword, content)) # fresh-until
+
+            if keyword == 'valid-until':
+                if not time.time() < content['stamp']:
+                    raise RuntimeError('{} no more valid! {}'.format(
+                        keyword, content)) # valid-until
 
         if keyword == 'voting-delay':
             vote, dist = content.split(' ', 1)
@@ -349,15 +365,16 @@ def consume_headers(consensus, flavor='unflavored', sanity=True):
         if keyword.startswith('shared-rand'):
             reveals, value = content.split(' ')
 
-            value = parse_base64(value, sanity)
+            value = parse_base64(value)
             content = {'NumReveals': int(reveals), 'Value': value}
 
-            if sanity:
-                assert content['NumReveals'] >= 0
+            if not content['NumReveals'] >= 0:
+                raise RuntimeError('{} must be >= 0 here:'.format(
+                    keyword, content))
 
         fields[keyword] = content
 
-def consume_dir_sources(consensus, sanity=True):
+def consume_dir_sources(consensus):
     """
         Consume directory source listing if present, then returns the remaining
         input to be further processed and a set of directory sources (or None,
@@ -369,7 +386,6 @@ def consume_dir_sources(consensus, sanity=True):
             - vote-digest
 
         :param str consensus: input to be processed
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a tuple (remaining-input, headers-or-None)
     """
@@ -401,8 +417,9 @@ def consume_dir_sources(consensus, sanity=True):
         keyword, content = header.split(' ', 1)
         if keyword == 'vote-digest':
             value = bytes.fromhex(content).hex()
-            if sanity:
-                assert value.lower() == content.lower()
+            if not value.lower() == content.lower():
+                raise RuntimeError('Unmatched {} here: {} {}'.format(
+                    keyword, value, content))
             content = value
 
         if keyword == 'dir-source':
@@ -410,36 +427,41 @@ def consume_dir_sources(consensus, sanity=True):
                 content.split(' ', 5))
 
             value = bytes.fromhex(identity).hex()
-            if sanity:
-                assert value.lower() == identity.lower()
+            if not value.lower() == identity.lower():
+                raise RuntimeError('Unmatched {} here: {} {}'.format(
+                    keyword, value, content))
             identity = value
 
             content = dict(nickname=nickname, identity=identity,
                 hostname=hostname, address=address, dirport=int(dirport),
                 orport=int(orport))
 
-            if sanity:
-                assert 0 < content['dirport'] < 65536
-                assert 0 < content['orport'] < 65536
+            if not 0 < content['dirport'] < 65536:
+                raise RuntimeError('Invalid dirport here: {}'.format(content))
+            if not 0 < content['orport'] < 65536:
+                raise RuntimeError('Invalid orport here: {}'.format(content))
 
         if keyword != 'dir-source' and fields[-1][0] == 'dir-source':
-            if sanity:
-                assert keyword not in fields[-1][1]
+            if not (keyword not in fields[-1][1]):
+                raise RuntimeError(
+                    'Unexpected {} with: {}'.format(keyword, fields[-1]))
+            assert keyword not in fields[-1][1]
             fields[-1][1][keyword] = content
             continue
 
         fields.append((keyword, content))
 
     full_entries_count = len([v for k, v in fields if k == 'dir-source'])
-    if sanity:
-        assert full_entries_count == len(fields)
+
+    if not full_entries_count == len(fields):
+        raise RuntimeError('Incomplete entry or corrupted?')
 
     if full_entries_count == len(fields):
         fields = [v for k, v in fields]
 
     return consensus, fields
 
-def consume_routers(consensus, flavor='unflavored', sanity=True):
+def consume_routers(consensus, flavor='unflavored'):
     """
         Consume router listing if present, then returns the remaining input to
         be further processed and a set of routers (or None, if none present).
@@ -456,7 +478,6 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
         :param str consensus: input to be processed
         :param str flavor: consensus flavor ('unflavored' or 'microdesc')
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a tuple (remaining-input, headers-or-None)
     """
@@ -464,10 +485,11 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
 
+    # TODO: check if 'a' fields in microdesc consensus are still a thing
     if flavor == 'unflavored':
         whitelist = [b'r', b'm', b's', b'v', b'pr', b'w', b'p', b'a']
     elif flavor == 'microdesc':
-        whitelist = [b'r', b'm', b's', b'v', b'pr', b'w']
+        whitelist = [b'r', b'm', b's', b'v', b'pr', b'w', b'a']
 
     aliases = dict(m='micro-digest', pr='protocols', s='flags', v='version',
         p='exit-policy', a='or-address')
@@ -497,7 +519,7 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
         keyword, content = header.split(' ', 1)
         if keyword == 'm':
-            content = parse_base64(content, sanity)
+            content = parse_base64(content)
 
         if keyword == 's':
             content = content.split(' ')
@@ -510,46 +532,48 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
 
         if keyword == 'p':
             policy_type, portlist = content.split(' ')
-            if sanity:
-                assert policy_type in ['accept', 'reject']
+            if not policy_type in ['accept', 'reject']:
+                raise RuntimeError('Unknown policy: {}'.format(policy_type))
 
             portlist = parse_range_once(portlist, expand=False)
             content = {'type': policy_type, 'PortList': portlist}
 
         if keyword == 'a':
-            address, port, guessed_type = parse_address(content, sanity)
+            address, port, guessed_type = parse_address(content)
             content = [{'ip': address, 'port': port, 'type': guessed_type}]
 
         if keyword == 'r' and flavor == 'unflavored':
             (nickname, identity, digest, date, time, address, orport,
                 dirport) = content.split(' ', 7)
 
-            digest = parse_base64(digest, sanity)
-            identity = parse_base64(identity, sanity)
+            digest = parse_base64(digest)
+            identity = parse_base64(identity)
             date, time, when = parse_time(' '.join([date, time]))
 
             content = dict(nickname=nickname, identity=identity, digest=digest,
                 date=date, time=time, stamp=when.timestamp(), address=address,
                 dirport=int(dirport), orport=int(orport))
 
-            if sanity:
-                assert 0 < content['orport'] < 65536
-                assert 0 <= content['dirport'] < 65536
+            if not 0 <= content['dirport'] < 65536:
+                raise RuntimeError('Invalid dirport here: {}'.format(content))
+            if not 0 < content['orport'] < 65536:
+                raise RuntimeError('Invalid orport here: {}'.format(content))
 
         if keyword == 'r' and flavor == 'microdesc':
             nickname, identity, date, time, address, orport, dirport = (
                 content.split(' ', 6))
 
-            identity = parse_base64(identity, sanity)
+            identity = parse_base64(identity)
             date, time, when = parse_time(date + ' ' + time)
 
             content = dict(nickname=nickname, identity=identity, date=date,
                 time=time, stamp=when.timestamp(), address=address,
                 dirport=int(dirport), orport=int(orport))
 
-            if sanity:
-                assert 0 < content['orport'] < 65536
-                assert 0 <= content['dirport'] < 65536
+            if not 0 <= content['dirport'] < 65536:
+                raise RuntimeError('Invalid dirport here: {}'.format(content))
+            if not 0 < content['orport'] < 65536:
+                raise RuntimeError('Invalid orport here: {}'.format(content))
 
         if keyword != 'r' and fields[-1][0] == 'r':
             if keyword in aliases:
@@ -560,23 +584,25 @@ def consume_routers(consensus, flavor='unflavored', sanity=True):
                 fields[-1][1]['or-address'] += content
                 continue
 
-            if sanity:
-                assert keyword not in fields[-1][1]
+            if not (keyword not in fields[-1][1]):
+                raise RuntimeError('Unexpected {} with: {}'.format(keyword,
+                    fields[-1]))
+
             fields[-1][1][keyword] = content
             continue
 
         fields.append((keyword, content))
 
     full_entries_count = len([v for k, v in fields if k == 'r'])
-    if sanity:
-        assert full_entries_count == len(fields)
+    if not full_entries_count == len(fields):
+        raise RuntimeError('Invalid or corrupted entry?')
 
     if full_entries_count == len(fields):
         fields = [v for k, v in fields]
 
     return consensus, fields
 
-def consume_footer(consensus, flavor='unflavored', sanity=True):
+def consume_footer(consensus, flavor='unflavored'):
     """
         Consume consensus footer if present, then returns the remaining input
         to be further processed and a set of footers (or None, if none
@@ -589,7 +615,6 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
 
         :param str consensus: input to be processed
         :param str flavor: consensus flavor ('unflavored' or 'microdesc')
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a tuple (remaining-input, headers-or-None)
     """
@@ -625,9 +650,8 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
             continue
 
         keyword, content = header.split(' ', 1)
-        if keyword == 'directory-footer':
-            if sanity:
-                assert len(fields) == 0 # first field
+        if keyword == 'directory-footer' and not len(fields) == 0:
+            raise RuntimeError('Expect {} as first field!'.format(keyword))
 
         if keyword == 'bandwidth-weights':
             content = parse_params(content)
@@ -658,7 +682,7 @@ def consume_footer(consensus, flavor='unflavored', sanity=True):
         fields[keyword] = content
     return consensus, fields
 
-def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
+def jsonify(consensus, flavor='unflavored', encode=True):
     """
         Parse a raw consensus with the given flavor, then returns a sanitized
         JSON-ified version (or an equivalent python dictionary if needed).
@@ -666,7 +690,6 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
         :param str consensus: input to be processed
         :param str flavor: consensus flavor ('unflavored' or 'microdesc')
         :param bool encode: serialize output dictionary as JSON (default: True)
-        :param bool sanity: enable extra sanity checks (default: True)
 
         :returns: a JSON-encoded dictionary or an equivalent python dictionary
     """
@@ -676,33 +699,33 @@ def jsonify(consensus, flavor='unflavored', encode=True, sanity=True):
     if http is not None:
         fields['http'] = http
 
-    consensus, headers = consume_headers(consensus, flavor, sanity)
+    consensus, headers = consume_headers(consensus, flavor)
     if headers is not None:
         fields['headers'] = headers
 
-    consensus, dir_sources = consume_dir_sources(consensus, sanity)
+    consensus, dir_sources = consume_dir_sources(consensus)
     if dir_sources is not None:
         fields['dir-sources'] = dir_sources
 
-    consensus, routers = consume_routers(consensus, flavor, sanity)
+    consensus, routers = consume_routers(consensus, flavor)
     if routers is not None:
         fields['routers'] = routers
 
-    consensus, footer = consume_footer(consensus, flavor, sanity)
+    consensus, footer = consume_footer(consensus, flavor)
     if footer is not None:
         fields['footer'] = footer
 
-    if sanity:
-        assert 'headers' in fields
-        assert 'dir-sources' in fields
-        assert 'routers' in fields
-        assert 'footer' in fields
+    if not ('headers' in fields
+        and 'dir-sources' in fields
+        and 'routers' in fields
+        and 'footer' in fields):
+        raise RuntimeError('Missing entry: {}'.format(list(fields)))
 
     if encode:
         return json.dumps(fields), consensus
     return fields, consensus
 
-def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
+def download(state, flavor='microdesc'):
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
@@ -711,24 +734,16 @@ def download(state, flavor='microdesc', last_stream_id=0, sanity=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    state, last_stream_id, answer = hop.directory_query(state, endpoint,
-        sanity=sanity)
-    if answer is None or len(answer) == 0:
-        return state, last_stream_id, None
+    state, answer = ltor.hop.directory_query(state, endpoint)
 
-    consensus, remaining = jsonify(answer, flavor=flavor, encode=False,
-        sanity=sanity)
+    consensus, remaining = jsonify(answer, flavor=flavor, encode=False)
 
-    if sanity:
-        assert consensus is not None
-        assert remaining is not None and len(remaining) == 0
+    if consensus is None or remaining is None or not len(remaining) == 0:
+        raise RuntimeError('Unable to parse downloaded consensus!')
 
-    return state, last_stream_id, consensus
+    return state, consensus
 
 if __name__ == "__main__":
-    import link
-    import create
-    import onion
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -736,12 +751,12 @@ if __name__ == "__main__":
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = link.handshake(address=sys_argv.addr, port=sys_argv.port)
-    print('Link v{} established – {}'.format(link[1], link[0]))
+    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    print('Link v{} established – {}'.format(link.version, link.io))
 
-    circuit = create.fast(link)
-    print('Circuit {} created – Key hash: {}'.format(circuit[0],
-        circuit[1].key_hash.hex()))
+    endpoint = ltor.create.fast(link)
+    print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
+        endpoint.circuit.material.key_hash.hex()))
 
     def pretty_print(consensus):
         print('Summary for "{}" consensus:'.format(consensus['flavor']))
@@ -752,11 +767,9 @@ if __name__ == "__main__":
             len(consensus['footer']['directory-signatures'])), end='\n')
 
     # downloading unflavored consensus
-    state = onion.state(link, circuit)
-    state, last_stream_id, unflavored = download(state, flavor='unflavored')
+    endpoint, unflavored = download(endpoint, flavor='unflavored')
     pretty_print(unflavored)
 
     # downloading microdesc consensus
-    state, last_stream_id, microdesc = download(state, flavor='microdesc',
-        last_stream_id=last_stream_id)
+    endpoint, microdesc = download(endpoint, flavor='microdesc')
     pretty_print(microdesc)
