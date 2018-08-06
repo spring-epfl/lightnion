@@ -134,6 +134,10 @@ def directory_query(
             if len(candidates) > 0:
                 diff_time = time.time()
 
+    # TODO: proper support for incoming RELAY_SENDME cells
+    cells = [c for c in cells if not (c.relay.stream_id == 0
+                and c.relay.cmd == ltor.cell.relay.cmd.RELAY_SENDME)]
+
     # TODO: proper support for concurrent streams on the same circuit
     if not all([c.relay.stream_id == stream_id for c in cells]):
         raise RuntimeError('No proper support for multiple stream!')
