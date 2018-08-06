@@ -109,11 +109,13 @@ def directory_query(
             + ' got {} in cell:'.format(cells[0].relay.cmd, cells[0].raw))
 
     http = directory_request.format(query=query, compression=compression)
-    state = send(
-        state,
-        ltor.cell.relay.cmd.RELAY_DATA,
-        bytes(http, 'utf8'),
-        stream_id=stream_id)
+
+    http = bytes(http, 'utf8')
+    width = ltor.cell.relay.payload_len
+    while len(http) > 0:
+        chunk, http = http[:width], http[width:]
+        state = send(state, ltor.cell.relay.cmd.RELAY_DATA, chunk,
+            stream_id=stream_id)
 
     # TODO: proper support for RELAY_END reasons
     state, cells = recv(state)
