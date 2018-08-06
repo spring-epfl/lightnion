@@ -86,7 +86,7 @@ def directory_query(
         state,
         query=None,
         compression='deflate',
-        timeout=1,
+        timeout=3,
         **kwargs):
     if compression not in ['identity', 'deflate', 'gzip']:
         raise NotImplementedError(
@@ -133,6 +133,11 @@ def directory_query(
 
             if len(candidates) > 0:
                 diff_time = time.time()
+
+        if time.time() - diff_time > timeout:
+            raise RuntimeError(
+                'Timeout while expecting RELAY_END: {:.2f}s out of {}s'.format(
+                time.time() - diff_time, timeout))
 
     # TODO: proper support for incoming RELAY_SENDME cells
     cells = [c for c in cells if not (c.relay.stream_id == 0
