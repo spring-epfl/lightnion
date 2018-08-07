@@ -725,10 +725,16 @@ def jsonify(consensus, flavor='unflavored', encode=True):
         return json.dumps(fields), consensus
     return fields, consensus
 
-def download(state, flavor='microdesc'):
+def download(state, flavor='microdesc', cache=True):
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
             'Consensus flavor "{}" not supported.'.format(flavor))
+
+    if cache:
+        try:
+            return state, ltor.cache.consensus.get(flavor)
+        except BaseException:
+            pass
 
     endpoint = '/tor/status-vote/current/consensus'
     if flavor == 'microdesc':
@@ -741,35 +747,7 @@ def download(state, flavor='microdesc'):
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
 
+    if cache:
+        ltor.cache.consensus.put(consensus)
+
     return state, consensus
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('addr', nargs='?', default='127.0.0.1')
-    parser.add_argument('port', nargs='?', type=int, default=9050)
-    sys_argv = parser.parse_args()
-
-    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
-    print('Link v{} established – {}'.format(link.version, link.io))
-
-    endpoint = ltor.create.fast(link)
-    print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
-        endpoint.circuit.material.key_hash.hex()))
-
-    def pretty_print(consensus):
-        print('Summary for "{}" consensus:'.format(consensus['flavor']))
-        print(' - {} http headers'.format(len(consensus['http']['headers'])))
-        print(' - {} dir. sources'.format(len(consensus['dir-sources'])))
-        print(' - {} nodes listed'.format(len(consensus['routers'])))
-        print(' - {} signatures'.format(
-            len(consensus['footer']['directory-signatures'])), end='\n')
-
-    # downloading unflavored consensus
-    endpoint, unflavored = download(endpoint, flavor='unflavored')
-    pretty_print(unflavored)
-
-    # downloading microdesc consensus
-    endpoint, microdesc = download(endpoint, flavor='microdesc')
-    pretty_print(microdesc)

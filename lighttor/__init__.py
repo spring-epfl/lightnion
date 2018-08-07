@@ -4,6 +4,8 @@ import lighttor.constants
 import lighttor.crypto
 import lighttor.cell
 
+import lighttor.cache
+
 import lighttor.link
 import lighttor.create
 import lighttor.onion

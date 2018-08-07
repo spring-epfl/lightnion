@@ -371,9 +371,10 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     if len(query) != 0:
         yield query
 
-def download(state, cons=None, flavor='microdesc', fail_on_missing=False):
+def download(state,
+        cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
     if cons is None:
-        state, cons = consensus.download(state, flavor=flavor)
+        state, cons = consensus.download(state, flavor=flavor, cache=cache)
         if cons is None:
             return state, None
     elif isinstance(cons, list):
@@ -398,9 +399,23 @@ def download(state, cons=None, flavor='microdesc', fail_on_missing=False):
         endpoint = '/tor/server/d/'
         separator = '+'
 
-    # retrieve descriptors via digests
+    # retrieve descriptors from cache
     descriptors = []
-    for query in batch_query(digests, endpoint, separator):
+    partial_digests = digests
+    if cache:
+        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
+        cached_digests = []
+        for digest in digests:
+            try:
+                descriptor = ltor.cache.descriptors.get(flavor, digest)
+                descriptors.append(descriptor)
+                cached_digests.append(digest)
+            except BaseException as e:
+                pass
+        partial_digests = [d for d in digests if d not in cached_digests]
+
+    # retrieve descriptors via digests
+    for query in batch_query(partial_digests, endpoint, separator):
         state, answer = ltor.hop.directory_query(state, query)
 
         if answer is None or len(answer) == 0:
@@ -433,6 +448,10 @@ def download(state, cons=None, flavor='microdesc', fail_on_missing=False):
     if fail_on_missing and len(invalid) > 0:
         raise RuntimeError('Missing {} digests in answer: {}'.format(
             len(invalid), invalid))
+
+    if cache:
+        for descriptor in descriptors:
+            ltor.cache.descriptors.put(descriptor)
 
     return state, descriptors
 
