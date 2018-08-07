@@ -116,5 +116,5 @@ def send(peer, payload, _sendall=lambda peer, data: peer.sendall(data)):
 from . import address
 from . import (
     padding, relay, create_fast, created_fast, versions, netinfo, relay_early,
-    certs, challenge)
+    create2, created2, certs, challenge)
 from . import socket
