@@ -84,6 +84,6 @@ if __name__ == '__main__':
     print("- endpoint's descriptor ({}) retrieved at depth {}!".format(
         authority['router']['nickname'], endpoint.depth))
 
-    endpoint, ncons = ltor.consensus.download(endpoint)
+    endpoint, ncons = ltor.consensus.download(endpoint, cache=False)
     print("- micro-consensus (with {} nodes) retrieved at depth {}!".format(
         len(ncons['routers']), endpoint.depth))
