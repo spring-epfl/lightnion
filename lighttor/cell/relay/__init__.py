@@ -1,7 +1,7 @@
-from .. import constants
+from ... import constants
 
-from .. import cell as _cell
-from . import view as _view
+from ... import cell as _cell
+from .. import view as _view
 
 payload_len = constants.payload_len - 11
 
@@ -143,3 +143,5 @@ def pack(circuit_id, cmd, data, recognized=b'\x00\x00', *, stream_id, digest):
         circuit_id=circuit_id,
         cmd=_cell.cmd.RELAY)
     return _pack_details(base, cmd, recognized, stream_id, digest, data)
+
+from . import extend2, extended2
