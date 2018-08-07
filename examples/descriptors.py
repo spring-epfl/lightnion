@@ -35,7 +35,7 @@ if __name__ == '__main__':
             if key == 'policy' and udesc[key]['type'] == 'exitpattern':
                 continue # TODO: match exitpatterns against policy summary
 
-            if key in ['micro-digest', 'digest']:
+            if key in ['micro-digest', 'digest', 'flavor']:
                 continue # TODO: match digests against consensus
 
             if key not in udesc and key == 'identity':
