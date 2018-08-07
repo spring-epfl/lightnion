@@ -63,7 +63,10 @@ def fast(link):
     link.register(dummy)
 
     # Receive CREATED_FAST cell (contains OR material and key confirmation)
-    or_cell = ltor.cell.created_fast.cell(link.get(dummy))
+    try:
+        or_cell = ltor.cell.created_fast.cell(link.get(dummy))
+    except KeyError:
+        raise RuntimeError('Got DESTROY cell while creating circuit.')
 
     # (unregister the dummy circuit before validation/material confirmation)
     link.unregister(dummy)
@@ -119,7 +122,10 @@ def ntor(link, descriptor):
     link.register(dummy)
 
     # Receive answers
-    cell = ltor.cell.created2.cell(link.get(dummy))
+    try:
+        cell = ltor.cell.created2.cell(link.get(dummy))
+    except KeyError:
+        raise RuntimeError('Got DESTROY cell while creating circuit.')
 
     # (unregister the dummy circuit before validation/material confirmation)
     link.unregister(dummy)
