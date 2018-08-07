@@ -342,6 +342,10 @@ def jsonify(descriptors, flavor='microdesc', encode=True):
             'Unexpected or corrupted descriptor? ({}/{} found)'.format(
                 len(fields['descriptors']), nbdesc))
 
+    # Add flavor for convenience
+    for idx in range(len(fields['descriptors'])):
+        fields['descriptors'][idx]['flavor'] = flavor
+
     if encode:
         return json.dumps(fields), descriptors
 
