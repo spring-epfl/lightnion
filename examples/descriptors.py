@@ -26,7 +26,7 @@ if __name__ == '__main__':
     skipped = []
     for udesc in undescriptors:
         if udesc['ntor-onion-key'] not in by_key:
-            print('Missing {}, skipped.'.format(udesc['ntor-onion-key']))
+            print('Missing {} (skipped)'.format(udesc['ntor-onion-key']))
             skipped.append(udesc)
             continue
 
@@ -48,7 +48,11 @@ if __name__ == '__main__':
                     assert udesc[key][skey] == svalue
 
     print('\nReady to use {} descriptors!'.format(len(descriptors)))
-    for d in descriptors:
+    for idx, d in enumerate(descriptors):
+        if idx > 10 and idx < len(descriptors) - 10:
+            if idx == 11:
+                print(' - [...]')
+            continue
         print(' - ntor-onion-key: {}'.format(d['ntor-onion-key']))
 
     # asking politely for our OR's descriptor
