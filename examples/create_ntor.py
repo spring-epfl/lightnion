@@ -21,8 +21,7 @@ if __name__ == '__main__':
 
     print('Perform "ntor" handshake with {}:'.format(
         authority['router']['nickname']))
-    endpoint = ltor.create.ntor(link,
-        authority['router']['identity'], authority['ntor-onion-key'])
+    endpoint = ltor.create.ntor(link, authority)
     print(' - Success! (circuit_id: {}, key_hash: {})'.format(
         endpoint.circuit.id, endpoint.circuit.material.key_hash.hex()))
 
