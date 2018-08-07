@@ -1,6 +1,3 @@
-[submodule "stem-client"]
-	path = stem-client
-	url = https://github.com/plcp/stem-client
 [submodule "tor"]
 	path = tor
 	url = https://git.torproject.org/tor.git
