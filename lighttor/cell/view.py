@@ -502,6 +502,9 @@ class union(composite):
     def __contains__(self, field):
         return field in self.active_view
 
+    def __getitem__(self, field):
+        return self.active_view.__getitem__(field)
+
 class wrapper:
     '''This is a view bound to raw bytes.
 
