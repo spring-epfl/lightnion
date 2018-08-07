@@ -34,7 +34,19 @@ if __name__ == '__main__':
     for router in cons['routers']:
         if len(further_hops) == circuit_length:
             break
-        if router['digest'] == authority['digest']: # don't pick our first hop
+
+        # Skip our first node & already picked ones (no loop)
+        if router['digest'] == authority['digest']:
+            continue
+        if router['digest'] in [h['digest'] for h in further_hops]:
+            continue
+
+        # Skip nodes that are not 'Fast' and 'Stable'
+        if 'Fast' not in router['flags'] or 'Stable' not in router['flags']:
+            continue
+
+        # Skip nodes with old Tor versions
+        if not router['version'].startswith('Tor 0.3.'):
             continue
 
         # Retrieve its descriptor
@@ -42,11 +54,11 @@ if __name__ == '__main__':
             endpoint, cons=router, flavor='unflavored')
         nhop = nhop[0] # (expect only one entry with a matching digest)
 
-        # Skip the entry if digests do not match (note: already sanity checked)
+        # Skip the entry if digests do not match (note: double-check here)
         if router['digest'] != nhop['digest']:
             continue
 
-        # Skip if not ed25519 identity key available
+        # Skip if no ed25519 identity key available
         if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
             continue
 
