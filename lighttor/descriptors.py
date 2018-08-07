@@ -349,7 +349,7 @@ def jsonify(descriptors, flavor='microdesc', encode=True):
         descriptors = b''
     return fields, descriptors
 
-def batch_query(items, prefix, separator='-', fixed_max_length=4096):
+def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     # About batches:
     #    https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392
 
