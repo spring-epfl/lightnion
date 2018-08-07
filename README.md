@@ -83,7 +83,7 @@ You'll find below some answers to some frequently asked questions:
  - [Why doing things in a browser?](#why-doing-things-in-a-browser)
  - [Why javascript? Is is then unsafe?](#why-javascript-is-is-then-unsafe)
  - [Does it protects me if I disable javascript?](#does-it-protects-me-if-i-disable-javascript)
- - [Why not hacking the official Tor client?](#why-not-hacking-the-official-Tor-client)
+ - [Why not hacking the official Tor client?](#why-not-hacking-the-official-tor-client)
  - [Why are you not using stem to do that?](#why-are-you-not-using-stem-to-do-that)
  - [Why are you not using a pluggable transport to do that?](#why-are-you-not-using-a-pluggable-transport-to-do-that)
 
@@ -210,7 +210,7 @@ used, mostly for the sensitive parts.
 _Because lighttor started before stem gained more client capabilities._
 
 Closely related to:
-[Why not hacking the official Tor client?](#why-not-hacking-the-official-Tor-client)
+[Why not hacking the official Tor client?](#why-not-hacking-the-official-tor-client)
 
 Note that some components of stem have been previously used and some are still
 used.
