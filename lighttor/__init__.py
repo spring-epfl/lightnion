@@ -11,3 +11,4 @@ import lighttor.hop
 
 import lighttor.consensus
 import lighttor.descriptors
+import lighttor.extend
