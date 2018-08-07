@@ -54,6 +54,34 @@ class _real_peer:
             self.close = (lambda: None)
             return self.peer.close()
 
+class _stat_peer(_real_peer):
+    def __init__(self, peer):
+        super().__init__(peer)
+        self._kbout = 0
+        self._kbin = 0
+
+    def disp(self):
+        print('Traffic: {:.2f} up {:.2f} down {} fails'.format(
+            self._kbout, self._kbin, self.fails), end='\r')
+
+    def recv(self, size):
+        data = super().recv(size)
+        self._kbin += len(data) / 1000
+        self.disp()
+        return data
+
+    def send(self, data):
+        bytes_send = super().send(data)
+        self._kbout += bytes_send / 1000
+        self.disp()
+        return bytes_send
+
+    def sendall(self, data):
+        bytes_send = super().sendall(data)
+        self._kbout += bytes_send / 1000
+        self.disp()
+        return bytes_send
+
 class _fake_peer:
     def __init__(self, io, buffer_size):
         self.buffer_size = buffer_size
@@ -161,6 +189,7 @@ class io:
             daemon=True, period=0.02, max_queue=2048, buffer_size=4096):
         peer.settimeout(period)
         peer = _real_peer(peer)
+        # peer = _stat_peer(peer)
 
         self.cellmaker = cellmaker(self, peer, max_queue, buffer_size)
         self.receiver = receiver(peer, max_queue, buffer_size)
