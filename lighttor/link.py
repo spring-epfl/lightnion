@@ -75,7 +75,7 @@ class link:
         self.circuits[circuit.id].put(payload)
 
     def get(self, circuit, block=True):
-        while block:
+        while block and not self.io.dead:
             try:
                 return self.circuits[circuit.id].get(block=False)
             except queue.Empty:
