@@ -186,7 +186,7 @@ class io:
     _join_timeout = 3
 
     def __init__(self, peer,
-            daemon=True, period=0.02, max_queue=2048, buffer_size=4096):
+            daemon=True, period=0.01, max_queue=2048, buffer_size=4096):
         peer.settimeout(period)
         peer = _real_peer(peer)
         # peer = _stat_peer(peer)
