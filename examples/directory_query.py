@@ -1,9 +1,10 @@
+import lighttor as ltor
+
 import argparse
 import time
 
-import lighttor as ltor
-
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     parser.add_argument('addr', nargs='?', default='127.0.0.1')
     parser.add_argument('port', nargs='?', type=int, default=9050)

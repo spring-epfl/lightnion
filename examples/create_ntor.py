@@ -1,4 +1,5 @@
 import lighttor as ltor
+
 import argparse
 
 if __name__ == '__main__':
