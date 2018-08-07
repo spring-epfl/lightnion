@@ -63,13 +63,18 @@ class state:
             raise RuntimeError(
                 'Unable to set RELAY_EARLY counter from the outer layers!')
 
-    def _wrap(self, inner):
+    def wrap(self, inner):
         '''Wraps an inner state w/ self as outer state (see lighttor.extend).
 
         Usage:
             1. A one-hop circuit is build with stateA.
             2. A key exchange is made through stateA to get stateB.
-            3. Then, call stateA.wrap(stateB) to properly wraps the onion.
+            3. Then, call stateA.wrap(stateB) to properly wrap the onion.
+
+        Usage:
+            1. A two-hop circuit is build with state{A,B}.
+            2. A key exchange is made through state{A,B} to get stateC.
+            3. Then, call statea.wrap(stateC) to properly wrap the onion.
 
         *Note: should not be called explicitly.*
         '''
@@ -77,7 +82,7 @@ class state:
             inner._early_count = self._early_count
             self._inner = inner
         else:
-            self._inner._wrap(inner)
+            self._inner.wrap(inner)
 
     def _reset_encryption(self, material):
         '''Initialize stateful stream cipher with cryptographic material.
@@ -302,7 +307,6 @@ def peel(state, cell, *, _sendme=True):
             rollback = _auto_sendme(rollback, cell)
         return rollback, cell
 
-    cell.relay.raw = rollback.backward_decryptor.update(cell.relay.raw)
     rollback._inner, cell = peel(rollback._inner, cell, _sendme=False)
 
     if _sendme:
