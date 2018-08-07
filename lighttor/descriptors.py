@@ -185,6 +185,12 @@ def consume_descriptors(descriptors, flavor='microdesc'):
         if keyword == 'fingerprint':
             content = consensus.parse_fingerprint(content)
 
+            # Enrich 'router' with 'identity' fingerprint for convenience
+            if 'router' in fields[-1]:
+                identity = bytes.fromhex(content.replace(' ', ''))
+                identity = str(base64.b64encode(identity), 'utf8')
+                fields[-1]['router']['identity'] = identity.replace('=', '')
+
         if keyword == 'uptime':
             content = int(content)
 

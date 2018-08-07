@@ -7,17 +7,10 @@ import curve25519
 import lighttor as ltor
 import lighttor.ntor_ref as ntor_ref
 
-def circuit(state, identity, descriptor):
-    # Expect the hash of node's identity as 20 bytes or as some base64
-    try:
-        if isinstance(identity, str):
-            identity = base64.b64decode(identity + '====')
-            assert len(identity) == 20 # base64 encoded NODE_ID_LENGTH bytes
-    except BaseException:
-        pass
-
+def circuit(state, descriptor):
     onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
     eidentity = descriptor['identity']['master-key'] # (assuming ed25519 here)
+    identity = base64.b64decode(descriptor['router']['identity'] + '====')
     addr = descriptor['router']['address']
     port = descriptor['router']['orport']
 

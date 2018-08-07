@@ -1,6 +1,7 @@
 import lighttor as ltor
 
 import argparse
+import random
 
 if __name__ == '__main__':
 
@@ -25,6 +26,10 @@ if __name__ == '__main__':
     # Randomly pick few nodes (!! NOT a sane behavior, only to showcase API !!)
     further_hops = []
     circuit_length = random.randint(2, 7) # (random circuit length to showcase)
+
+    print('Building {}-hop circuit (out of {} nodes):'.format(
+        circuit_length, len(cons['routers'])))
+
     random.shuffle(cons['routers'])
     for router in cons['routers']:
         if len(further_hops) == circuit_length:
@@ -45,25 +50,27 @@ if __name__ == '__main__':
         if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
             continue
 
-        # Keep the identity fingerprint for later (ntor) and the descriptor
-        further_hops.append((router['identity'], nhop))
+        # Keep the descriptor for later (to build the circuit)
+        further_hops.append(nhop)
+        print(' - Picked node named {} for {}th hop!'.format(
+            nhop['router']['nickname'], len(further_hops)))
 
     # Create a brand new circuit (to have spare RELAY_EARLY to extend it)
     endpoint = ltor.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
-    for identity, nhop in further_hops:
+    for nhop in further_hops:
         print('Extending to {}:'.format(nhop['router']['nickname']))
         print(' - remaining RELAY_EARLY: {}'.format(endpoint.early_count))
 
-        endpoint = ltor.extend.circuit(endpoint, identity, nhop)
+        endpoint = ltor.extend.circuit(endpoint, nhop)
         print(' - circuit extended, new depth: {}'.format(endpoint.depth))
 
     print('\nChecking...')
-    endpoint, nauth = ltor.descriptors.download_authority(endpoint)
+    endpoint, authority = ltor.descriptors.download_authority(endpoint)
     print("- endpoint's descriptor ({}) retrieved at depth {}!".format(
-        nauth['router']['nickname'], endpoint.depth))
+        authority['router']['nickname'], endpoint.depth))
 
     endpoint, ncons = ltor.consensus.download(endpoint)
     print("- micro-consensus (with {} nodes) retrieved at depth {}!".format(

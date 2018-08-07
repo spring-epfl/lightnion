@@ -86,34 +86,13 @@ def fast(link):
 
     return ltor.onion.state(link, final)
 
-def ntor(link, identity, onion_key):
+def ntor(link, descriptor):
     # Late imports (as this function is for testing purposes)
     import curve25519
-    import lighttor
     import lighttor.ntor_ref as ntor_ref
 
-    # Expect the hash of node's identity as 20 bytes or as some base64
-    try:
-        if isinstance(identity, str):
-            identity = base64.b64decode(identity + '====')
-            assert len(identity) == 20 # base64 encoded NODE_ID_LENGTH bytes
-    except BaseException:
-        pass
-
-    if not len(identity) == 20:
-        raise RuntimeError('Expecting identity of len {}, not {}!'.format(
-            20, len(identity)))
-
-    # Expect the node's ed25519 ntor-onion-key as 32 bytes or as some base64
-    try:
-        if isinstance(onion_key, str):
-            onion_key = base64.b64decode(onion_key + '====')
-    except BaseException:
-        pass
-
-    if not len(onion_key) == 32:
-        raise RuntimeError('Expecting onion_key of len {}, not {}!'.format(
-            32, len(onion_key)))
+    identity = base64.b64decode(descriptor['router']['identity'] + '====')
+    onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
 
     # Pick an available ID (link version > 3)
     circuit_id = 0x80000000
