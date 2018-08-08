@@ -331,11 +331,10 @@ def parse(descriptors, flavor='microdesc'):
         fields['http'] = http
 
     descriptors, entries = consume_descriptors(descriptors, flavor)
-    if entries is not None:
-        fields['descriptors'] = entries
+    if entries is None or len(entries) == 0:
+        entries = []
+    fields['descriptors'] = entries
 
-    if not 'descriptors' in fields:
-        raise RuntimeError('Unable to parse descriptors.')
     if not len(fields['descriptors']) == nbdesc:
         raise RuntimeError(
             'Unexpected or corrupted descriptor? ({}/{} found)'.format(
@@ -420,6 +419,11 @@ def download(state,
         new_batch, remaining = parse(answer, flavor=flavor)
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
+
+        if (len(new_batch['descriptors']) == 0
+            and not new_batch['http']['code'] == '404'):
+            raise RuntimeError(
+                'No descriptor listed. http={}.'.format(new_batch['http']))
 
         if new_batch is not None:
             descriptors += new_batch['descriptors']
