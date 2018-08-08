@@ -5,6 +5,7 @@ import lighttor.crypto
 import lighttor.cell
 
 import lighttor.cache
+import lighttor.socket
 
 import lighttor.link
 import lighttor.create

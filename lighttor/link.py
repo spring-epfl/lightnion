@@ -7,7 +7,7 @@ import lighttor as ltor
 class link:
     """An established Tor link, send and receive messages in separate threads.
 
-    :param io: cell.socket.io instance that wraps the TLS/SSLv3 connection
+    :param io: socket.io instance that wraps the TLS/SSLv3 connection
     :param int version: link version
 
     Usage::
@@ -177,8 +177,8 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     # VERSIONS handshake
     version = negotiate_version(peer, versions, as_initiator=True)
 
-    # Wraps with cell.socket.io
-    peer = ltor.cell.socket.io(peer)
+    # Wraps with socket.io
+    peer = ltor.socket.io(peer)
 
     # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
     certs_cell = ltor.cell.certs.cell(peer.recv())
