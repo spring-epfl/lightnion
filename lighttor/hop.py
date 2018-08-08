@@ -4,7 +4,7 @@ import queue
 
 import lighttor as ltor
 
-def recv(state, block=True, once=False):
+def recv(state, block=True, once=False, auto_sendme=True):
     '''Receive one or more RELAY{_EARLY,} cells from `state` attached circuit.
 
     :param state: a state object (see onion.state)
@@ -49,6 +49,9 @@ def recv(state, block=True, once=False):
         raise RuntimeError(
             'Got invalid (decrypted) RELAY cell: {}'.format(cell.raw))
 
+    if auto_sendme:
+        state = _auto_sendme(state, cell)
+
     cells = [cell]
     while not once:
         state, new_cells = recv(state, block=False, once=True)
@@ -56,6 +59,43 @@ def recv(state, block=True, once=False):
             break
         cells += new_cells
     return state, cells
+
+# TODO: better sendme handling
+def _auto_sendme(state, cell):
+    if not cell.relay.cmd == ltor.cell.relay.cmd.RELAY_DATA:
+        return state
+    link, circuit, flow = state.link, state.circuit, ltor.constants.flow
+
+    # Circuit-level sendme
+    #
+    if circuit.window is None:
+        circuit.window = flow.circuit.default
+
+    circuit.window -= 1
+    if circuit.window < flow.circuit.lowlimit:
+        circuit.window += flow.circuit.increment
+        state = send(state, ltor.cell.relay.cmd.RELAY_SENDME)
+
+    # Stream-level sendme
+    #
+    if not cell.relay.stream_id > 0:
+        return state
+
+    if circuit.stream_windows is None:
+        circuit.stream_windows = dict()
+
+    if not cell.relay.stream_id in circuit.stream_windows:
+        circuit.stream_windows[cell.relay.stream_id] = flow.stream.default
+
+    circuit.stream_windows[cell.relay.stream_id] -= 1
+    if not circuit.stream_windows[cell.relay.stream_id] < flow.stream.lowlimit:
+        return state
+
+    circuit.stream_windows[cell.relay.stream_id] += flow.stream.increment
+    state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
+        stream_id=cell.relay.stream_id)
+
+    return state
 
 def send(state, command, payload=b'', stream_id=0):
     '''Send one RELAY{_EARLY,} cell through `state` attached circuit.
