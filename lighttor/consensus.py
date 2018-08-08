@@ -83,7 +83,7 @@ def parse_address(address):
 def parse_range_once(value, expand=True):
     """
         Take Tor-formatted ranges, then returns it as a list of integers if
-        expanded or a mix of integers and ranges as (low, high) tuples.
+        expanded or a mix of integers and ranges as [low, high] tuples.
 
         For example, we use it to parse "p" fields:
             https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2322
@@ -91,7 +91,7 @@ def parse_range_once(value, expand=True):
         :param str value: input value to be processed
         :param bool expand: do we expand a range as integers? (default: True)
 
-        :returns: a list of integers or a mix of integers and range tuples
+        :returns: a list of integers or a mix of integers and range list/tuples
     """
     value = value.split(',')
     subvalues = []
@@ -103,7 +103,7 @@ def parse_range_once(value, expand=True):
             elif low == high - 1:
                 subvalues += [low, high]
             else:
-                subvalues += [(low, high)]
+                subvalues += [[low, high]]
         else:
             subvalues += [int(subvalue)]
     return subvalues
