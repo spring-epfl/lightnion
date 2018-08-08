@@ -60,37 +60,7 @@ header = view.like(header_view, 'header')
 header_legacy = view.like(header_legacy_view, 'header_legacy')
 header_variable = view.like(header_variable_view, 'header_variable')
 
-def _recv_given_size(peer, size):
-    payload = b''
-    while len(payload) < size:
-        payload += peer.recv(size - len(payload))
-    return payload
-
-def recv(peer):
-    payload = _recv_given_size(peer, header_view.width())
-
-    cell_header = header(payload)
-    if not cell_header.valid:
-        raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
-
-    if cell_header.cmd.is_fixed:
-        payload += _recv_given_size(peer, constants.payload_len)
-        return payload
-    remains = header_variable_view.width() - len(payload)
-    payload += _recv_given_size(peer, remains)
-
-    cell_header = header_variable(payload)
-    if not cell_header.valid:
-        raise RuntimeError(
-            'Invalid variable cell header: {}'.format(cell_header.raw))
-
-    length = cell_header.length
-    if length > constants.max_payload_len:
-        raise RuntimeError('Invalid cell length: {}'.format(length))
-
-    return payload + _recv_given_size(peer, length)
-
-def send(peer, payload, _sendall=lambda peer, data: peer.sendall(data)):
+def pad(payload):
     try:
         payload = payload.raw
     except AttributeError:
@@ -111,7 +81,7 @@ def send(peer, payload, _sendall=lambda peer, data: peer.sendall(data)):
         if length > constants.max_payload_len:
             raise RuntimeError('Invalid cell length: {}'.format(length))
 
-    return _sendall(peer, payload.ljust(length, b'\x00'))
+    return payload.ljust(length, b'\x00')
 
 from . import address
 from . import (

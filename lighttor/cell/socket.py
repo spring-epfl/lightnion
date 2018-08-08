@@ -5,82 +5,39 @@ import socket
 import queue
 import ssl
 
-# TODO: Remove ugly hacks done here!
+# TODO: Better network handling?
 
-class _real_peer:
-    # TODO: Properly handle ssl sockets:
-    #   https://mail.python.org/pipermail/python-list/2017-January/718926.html
-    #
-    def __init__(self, peer, max_fails=32):
-        self.peer = peer
-        self.lock = threading.RLock()
-        self.fails = 0
-        self.max_fails = max_fails
-        self.closed = False
-
-    def recv(self, size):
-        if self.fails > self.max_fails:
-            self.die()
-
-        with self.lock:
-            data = self.peer.recv(size)
-            self.fails = self.fails + 1 if len(data) == 0 else 0
-            return data
-
-    def send(self, data):
-        if self.fails > self.max_fails:
-            self.die()
-
-        with self.lock:
-            nbytes_send = self.peer.send(data)
-            self.fails = self.fails + 1 if nbytes_send == 0 else 0
-            return nbytes_send
-
-    def sendall(self, data):
-        if self.fails > self.max_fails:
-            self.die()
-
-        with self.lock:
-            nbytes_send = self.peer.sendall(data)
-            self.fails = self.fails + 1 if nbytes_send == 0 else 0
-            return nbytes_send
-
-    def die(self):
-        raise RuntimeError('Unable to interact with socket (closed?).')
-
-    def close(self):
-        with self.lock:
-            self.closed = True
-            self.close = (lambda: None)
-            return self.peer.close()
-
-class _stat_peer(_real_peer):
+class _stat_peer:
     def __init__(self, peer):
-        super().__init__(peer)
+        self.peer = peer
+
         self._kbout = 0
         self._kbin = 0
 
     def disp(self):
-        print('Traffic: {:.2f} up {:.2f} down {} fails'.format(
-            self._kbout, self._kbin, self.fails), end='\r')
+        print('Traffic: {:.2f} up {:.2f} down'.format(
+            self._kbout, self._kbin), end='\r')
 
     def recv(self, size):
-        data = super().recv(size)
+        data = self.peer.recv(size)
         self._kbin += len(data) / 1000
         self.disp()
         return data
 
     def send(self, data):
-        bytes_send = super().send(data)
+        bytes_send = self.peer.send(data)
         self._kbout += bytes_send / 1000
         self.disp()
         return bytes_send
 
     def sendall(self, data):
-        bytes_send = super().sendall(data)
+        bytes_send = self.peer.sendall(data)
         self._kbout += bytes_send / 1000
         self.disp()
         return bytes_send
+
+    def close(self):
+        return self.peer.close()
 
 class _fake_peer:
     def __init__(self, io, buffer_size):
@@ -94,13 +51,61 @@ class _fake_peer:
         payload, self.buffer = self.buffer[:size], self.buffer[size:]
         return payload
 
+def cell_slice(payload, once=False):
+    cell_header = ltor.cell.header(payload)
+    if len(payload) < cell_header.width: # (payload too small, need data)
+        return [], payload, True
+
+    if not cell_header.valid:
+        raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
+
+    length = cell_header.width + ltor.constants.payload_len
+    if not cell_header.cmd.is_fixed:
+        cell_header = ltor.cell.header_variable(payload)
+        if len(payload) < cell_header.width: # (payload too small, need data)
+            return [], payload, True
+
+        if not cell_header.valid:
+            raise RuntimeError(
+                'Invalid variable cell header: {}'.format(cell_header.raw))
+
+        length = cell_header.width + cell_header.length
+
+    if length > ltor.constants.max_payload_len:
+        raise RuntimeError('Invalid cell length: {}'.format(length))
+
+    if len(payload) < length:
+        return [], payload, True
+
+    cells = [payload[:length]]
+    payload = payload[length:]
+    celling = False
+
+    if once:
+        return cells, payload, celling
+
+    while not celling and len(payload) > 0:
+        new_cells, payload, celling = cell_slice(payload, once=True)
+        cells += new_cells
+    return cells, payload, celling
+
 class worker(threading.Thread):
-    def __init__(self, peer, max_queue=2048):
+    def __init__(self, peer, max_fails=32, max_queue=2048, buffer_size=4096):
         super().__init__()
 
+        self.buffer_size = buffer_size
+        self.max_queue = max_queue
+        self.max_fails = max_fails
         self.peer = peer
+
+        self.cell_queue = queue.Queue(max_queue)
+        self.send_queue = queue.Queue(max_queue)
+        self.recv_queue = queue.Queue(max_queue)
+        self.sending = b''
+        self.recving = b''
+        self.celling = False
+        self.fails = 0
         self.dead = False
-        self.queue = queue.Queue(max_queue)
 
     def close(self):
         self.peer.close()
@@ -113,117 +118,96 @@ class worker(threading.Thread):
         self.close()
         raise e
 
-    def put(self, item):
-        return self.queue.put(item)
+    def send(self, cell):
+        self.send_queue.put(ltor.cell.pad(cell))
 
-    def get(self, block=True):
-        return self.queue.get(block=block)
+    def recv(self, block=True):
+        return self.cell_queue.get(block=block)
 
-    @property
-    def full(self):
-        return self.queue.full()
+    def main(self):
+        if self.fails > self.max_fails:
+            cells, _, _ = cell_slice(self.recving)
+            for cell in cells:
+                self.cell_queue.put(cell)
+            self.die(RuntimeError('Too many fails, is the socket dead?'))
 
-    @property
-    def empty(self):
-        return self.queue.empty()
+        try:
+            if len(self.sending) < 1:
+                self.sending = self.send_queue.get(block=False)
+        except queue.Empty:
+            pass
 
-class sender(worker):
-    def __init__(self, peer, max_queue=2048):
-        super().__init__(peer, max_queue)
+        try:
+            if len(self.sending) > 0:
+                nbytes = self.peer.send(self.sending)
+                self.fails = self.fails + 1 if nbytes == 0 else 0
+                self.sending = self.sending[nbytes:]
+                return
+        except (socket.timeout, ssl.SSLError, BlockingIOError):
+            pass
 
-    def send(self, peer, data):
-        while len(data) > 0 and not self.dead and not self.peer.closed:
-            try:
-                sended = peer.send(data)
-                data = data[sended:]
-            except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
-                pass # print('send {}'.format(e))
+        try:
+            payload = self.peer.recv(self.buffer_size)
+            self.fails = self.fails + 1 if len(payload) == 0 else 0
+            self.recv_queue.put(payload)
+            if self.recv_queue.qsize() < self.max_queue // 4:
+                return
+        except (socket.timeout, ssl.SSLError, BlockingIOError):
+            pass
+
+        try:
+            if ((len(self.recving) < 1 or self.celling)
+                and len(self.recving) <= ltor.constants.max_payload_len):
+                self.recving += self.recv_queue.get(block=False)
+                self.celling = False
+        except queue.Empty:
+            pass
+
+        if len(self.recving) > 0 and not self.celling:
+            cells, self.recving, self.celling = cell_slice(self.recving)
+            for cell in cells:
+                self.cell_queue.put(cell)
 
     def run(self):
         try:
-            while not self.dead and not self.peer.closed:
-                ltor.cell.send(self.peer, self.get(),
-                    _sendall=lambda peer, data: self.send(peer, data))
+            while not self.dead:
+                self.main()
             self.dead = True
-
-        except BaseException as e:
-            self.die(e)
-
-class receiver(worker):
-    def __init__(self, peer, max_queue=2048, buffer_size=4096):
-        super().__init__(peer, max_queue)
-        self.buffer_size = buffer_size
-
-    def run(self):
-        try:
-            while not self.dead and not self.peer.closed:
-                try:
-                    payload = self.peer.recv(self.buffer_size)
-                    self.put(payload)
-                except (socket.timeout, ssl.SSLError, BlockingIOError) as e:
-                    pass # print('recv {}'.format(e))
-            self.dead = True
-
-        except BaseException as e:
-            self.die(e)
-
-# TODO: check if cellmaker is useful, if not remove it
-class cellmaker(worker):
-    def __init__(self, io, peer, max_queue=2048, buffer_size=4096):
-        super().__init__(peer, max_queue)
-        self.fake_peer = _fake_peer(io, buffer_size)
-
-    def run(self):
-        try:
-            while not self.dead and not self.peer.closed:
-                self.put(ltor.cell.recv(self.fake_peer))
-            self.dead = True
-
         except BaseException as e:
             self.die(e)
 
 class io:
     _join_timeout = 3
 
-    def __init__(self, peer,
-            daemon=True, period=0.01, max_queue=2048, buffer_size=4096):
+    def __init__(self,
+            peer,
+            daemon=True,
+            period=0.01,
+            max_fails=32,
+            max_queue=2048,
+            buffer_size=4096):
         peer.settimeout(period)
-        peer = _real_peer(peer)
-        # peer = _stat_peer(peer)
+        peer = _stat_peer(peer)
 
-        self.cellmaker = cellmaker(self, peer, max_queue, buffer_size)
-        self.receiver = receiver(peer, max_queue, buffer_size)
-        self.sender = sender(peer, max_queue)
-        self.queue = queue.Queue(max_queue)
-
+        self.worker = worker(peer, max_fails, max_queue, buffer_size)
         if daemon:
-            self.cellmaker.daemon = True
-            self.receiver.daemon = True
-            self.sender.daemon = True
+            self.worker.daemon = True
 
-        self.cellmaker.start()
-        self.receiver.start()
-        self.sender.start()
+        self.worker.start()
         self.peer = peer
 
     @property
     def dead(self):
-        return (self.peer.closed
-            or self.cellmaker.dead or self.sender.dead or self.receiver.dead)
+        return self.worker.dead
 
     def recv(self, block=True):
-        return self.cellmaker.get(block)
+        return self.worker.recv(block)
 
     def send(self, payload):
-        self.sender.put(payload)
+        self.worker.send(payload)
 
     def close(self):
-        self.sender.close()
-        self.receiver.close()
-        self.cellmaker.close()
-
-        self.sender.join(self._join_timeout)
-        self.receiver.join(self._join_timeout)
-        self.cellmaker.join(self._join_timeout)
-
         self.peer.close()
+
+        self.worker.close()
+        self.worker.join(self._join_timeout)
