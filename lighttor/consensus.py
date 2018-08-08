@@ -2,7 +2,6 @@ from base64 import b64encode, b64decode
 import datetime
 import binascii
 import time
-import json
 
 import lighttor as ltor
 
@@ -682,16 +681,15 @@ def consume_footer(consensus, flavor='unflavored'):
         fields[keyword] = content
     return consensus, fields
 
-def jsonify(consensus, flavor='unflavored', encode=True):
+def parse(consensus, flavor='unflavored'):
     """
-        Parse a raw consensus with the given flavor, then returns a sanitized
-        JSON-ified version (or an equivalent python dictionary if needed).
+        Parse a raw consensus with the given flavor, then returns sanitized
+        entries as a python dictionary.
 
         :param str consensus: input to be processed
         :param str flavor: consensus flavor ('unflavored' or 'microdesc')
-        :param bool encode: serialize output dictionary as JSON (default: True)
 
-        :returns: a JSON-encoded dictionary or an equivalent python dictionary
+        :returns: a python dictionary
     """
     fields = dict(flavor=flavor)
 
@@ -721,8 +719,6 @@ def jsonify(consensus, flavor='unflavored', encode=True):
         and 'footer' in fields):
         raise RuntimeError('Missing entry: {}'.format(list(fields)))
 
-    if encode:
-        return json.dumps(fields), consensus
     return fields, consensus
 
 def download(state, flavor='microdesc', cache=True):
@@ -742,7 +738,7 @@ def download(state, flavor='microdesc', cache=True):
 
     state, answer = ltor.hop.directory_query(state, endpoint)
 
-    consensus, remaining = jsonify(answer, flavor=flavor, encode=False)
+    consensus, remaining = parse(answer, flavor=flavor)
 
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')

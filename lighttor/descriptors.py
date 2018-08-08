@@ -1,4 +1,3 @@
-import json
 import base64
 import hashlib
 
@@ -323,7 +322,7 @@ def consume_descriptors(descriptors, flavor='microdesc'):
         fields[-1][keyword] = content
     return descriptors, fields
 
-def jsonify(descriptors, flavor='microdesc', encode=True):
+def parse(descriptors, flavor='microdesc'):
     fields = dict(flavor=flavor)
     nbdesc = descriptors.count(b'onion-key\n-----BEGIN')
 
@@ -345,9 +344,6 @@ def jsonify(descriptors, flavor='microdesc', encode=True):
     # Add flavor for convenience
     for idx in range(len(fields['descriptors'])):
         fields['descriptors'][idx]['flavor'] = flavor
-
-    if encode:
-        return json.dumps(fields), descriptors
 
     if descriptors == b'\n':
         descriptors = b''
@@ -421,7 +417,7 @@ def download(state,
         if answer is None or len(answer) == 0:
             continue
 
-        new_batch, remaining = jsonify(answer, flavor=flavor, encode=False)
+        new_batch, remaining = parse(answer, flavor=flavor)
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
 
@@ -460,7 +456,7 @@ def download_authority(state):
     if answer is None or len(answer) == 0:
         return state, None
 
-    result, remain = jsonify(answer, flavor='unflavored', encode=False)
+    result, remain = parse(answer, flavor='unflavored')
     if not (len(remain) == 0
         and result is not None
         and len(result['descriptors']) == 1):
