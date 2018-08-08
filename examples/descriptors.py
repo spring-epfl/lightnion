@@ -1,6 +1,7 @@
 import lighttor as ltor
 
 import argparse
+import pdb
 
 if __name__ == '__main__':
 
@@ -42,10 +43,12 @@ if __name__ == '__main__':
                 continue # TODO: check if missing 'identity' key here is sound
 
             if not isinstance(value, dict):
-                assert value == udesc[key]
+                if not value == udesc[key]:
+                    pdb.set_trace()
             else:
                 for skey, svalue in value.items():
-                    assert udesc[key][skey] == svalue
+                    if not udesc[key][skey] == svalue:
+                        pdb.set_trace()
 
     print('\nReady to use {} descriptors!'.format(len(descriptors)))
     for idx, d in enumerate(descriptors):
