@@ -86,7 +86,7 @@ def get_tor(control_port=9051, socks_port=9050, msg_handler=None):
 
     _cached_tor = tor
 
-def emitter(output_queue, control_port, target=128, nb_worker=4):
+def emitter(output_queue, control_port, target=64, nb_worker=4):
     barrier = threading.Barrier(nb_worker)
     path_queue = queue.Queue()
     batch_size = target // nb_worker + 1
