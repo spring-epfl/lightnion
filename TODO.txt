@@ -1,8 +1,9 @@
- - rewrite proper cell consumer/producer (.recv/.send)
- - rewrite parsers to make them simpler
+ 
+ - link authentication with CERTS & all
+ - consensus signatures
+ - descriptor signatures
+
+ - replace controlport-based hack for path selection with proper implementation
  - replace python implementation of ntor by a proper one (wrapped ctor?)
- - use collections.namedtuple instead of unnamed tuples?
- - use stem.client.datatype.Address for consensus.parse_address?
- - use ipaddress.ip_address instead of rolling our own?
- - remove rollback state and make all errors fatal?
- - remove optional sanity and make all errors fatal?
+ 
+ - rewrite parsers to make them simpler
