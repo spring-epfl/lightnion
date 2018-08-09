@@ -24,53 +24,54 @@ class clerk(threading.Thread):
         self.refresh_bootlink()
 
     def die(self, e):
-        self.dead = True
-        raise e
+        with self.lock:
+            self.dead = True
+            raise e
 
     def refresh_producer(self):
-        if self.producer is not None:
-            self.producer.close()
+        with self.lock:
+            if self.producer is not None:
+                self.producer.close()
 
-            for _ in range(refresh_timeout):
-                if self.producer.dead:
-                    break
-                time.sleep(1)
+                for _ in range(refresh_timeout):
+                    if self.producer.dead:
+                        break
+                    time.sleep(1)
 
-            if not self.producer.dead:
-                self.die(
-                    RuntimeError('Unable to kill path emitter, aborting!'))
+                if not self.producer.dead:
+                    self.die(
+                        RuntimeError('Unable to kill path emitter, aborting!'))
 
-        if self.slave_node is None:
-            self.producer = ltor.proxy.path.fetch()
-        else:
-            addr, port = self.slave_node
-            self.producer = ltor.proxy.path.fetch(
-                tor_process=False, control_host=addr, control_port=port)
+            if self.slave_node is None:
+                self.producer = ltor.proxy.path.fetch()
+            else:
+                addr, port = self.slave_node
+                self.producer = ltor.proxy.path.fetch(
+                    tor_process=False, control_host=addr, control_port=port)
 
     def refresh_bootlink(self):
-        if self.bootlink is not None:
-            self.bootlink.close()
+        with self.lock:
+            if self.bootlink is not None:
+                self.bootlink.close()
 
-            for _ in range(refresh_timeout):
-                if self.bootlink.io.dead:
-                    break
-                time.sleep(1)
+                for _ in range(refresh_timeout):
+                    if self.bootlink.io.dead:
+                        break
+                    time.sleep(1)
 
-            if not self.bootlink.io.dead:
-                self.die(
-                    RuntimeError('Unable to close bootstrap link, aborting!'))
+                if not self.bootlink.io.dead:
+                    self.die(RuntimeError(
+                        'Unable to close bootstrap link, aborting!'))
 
-        addr, port = self.bootstrap_node
-        self.bootlink = ltor.link.initiate(address=addr, port=port)
+            addr, port = self.bootstrap_node
+            self.bootlink = ltor.link.initiate(address=addr, port=port)
 
     def __enter__(self):
-        with self.lock:
-            self.start()
+        self.start()
         return self
 
     def __exit__(self, *kargs):
-        with self.lock:
-            self.dead = True
+        self.dead = True
         self.join()
 
     def main(self):
