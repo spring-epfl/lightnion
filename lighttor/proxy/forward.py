@@ -9,9 +9,25 @@ import lighttor as ltor
 import lighttor.proxy
 
 tick_rate = 0.1
+api_version = 0.1
 
 refresh_timeout = 5
 isalive_timeout = 30
+
+class _abort_lock:
+    def __init__(self, lock):
+        self._lock = lock
+        self.acquired = False
+
+    def __enter__(self):
+        if self._lock.acquire(blocking=False):
+            self.acquired = True
+            return
+        flask.abort(408)
+
+    def __exit__(self, *kargs):
+        if self.acquired:
+            return self._lock.release()
 
 class clerk(threading.Thread):
     def __init__(self, slave_node, bootstrap_node):
@@ -19,7 +35,7 @@ class clerk(threading.Thread):
         logging.info('Bootstrapping clerk.')
 
         self.session_binding = os.urandom(32)
-        self.lock = threading.RLock()
+        self._lock = threading.RLock()
         self.dead = False
         self.tick = 0
 
@@ -41,6 +57,10 @@ class clerk(threading.Thread):
         self.maintoken = None
         self.refresh_guardnode()
 
+    @property
+    def lock(self):
+        return _abort_lock(self._lock)
+
     def die(self, e):
         if isinstance(e, str):
             logging.error(e)
@@ -52,7 +72,7 @@ class clerk(threading.Thread):
     def refresh_producer(self):
         logging.info('Refreshing path emitter.')
 
-        with self.lock:
+        with self._lock:
             if self.producer is not None:
                 self.producer.close()
 
@@ -78,7 +98,7 @@ class clerk(threading.Thread):
     def refresh_bootnode(self):
         logging.info('Refreshing bootstrap node link.')
 
-        with self.lock:
+        with self._lock:
             if self.bootlink is not None:
                 self.bootlink.close()
 
@@ -99,7 +119,7 @@ class clerk(threading.Thread):
                 self.die('Unable to interact w/ bootstrap node, abort!')
 
     def refresh_consensus(self):
-        with self.lock:
+        with self._lock:
             if not self.isalive_bootnode():
                 self.refresh_bootnode()
 
@@ -116,7 +136,7 @@ class clerk(threading.Thread):
     def refresh_guardnode(self):
         logging.info('Refreshing guard node link.')
 
-        with self.lock:
+        with self._lock:
             if not self.isfresh_consensus():
                 self.refresh_consensus()
 
@@ -151,7 +171,7 @@ class clerk(threading.Thread):
     def refresh_maintoken(self):
         logging.info('Refreshing guard node link.')
 
-        with self.lock:
+        with self._lock:
             if not self.isalive_guardnode():
                 self.refresh_guardnode()
 
@@ -166,11 +186,11 @@ class clerk(threading.Thread):
             logging.debug('Shared tokenid: {}'.format(token.hex()))
 
     def isalive_producer(self):
-        with self.lock:
+        with self._lock:
             return not self.producer.dead
 
     def isalive_bootnode(self, force_check=False):
-        with self.lock:
+        with self._lock:
             if self.bootlink is None:
                 return False
 
@@ -195,12 +215,12 @@ class clerk(threading.Thread):
             return True
 
     def isfresh_consensus(self):
-        with self.lock:
+        with self._lock:
             fresh_until = self.consensus['headers']['fresh-until']['stamp']
             return not (fresh_until < time.time())
 
     def isalive_guardnode(self, force_check=False):
-        with self.lock:
+        with self._lock:
             if self.guardlink is None:
                 return False
 
@@ -257,7 +277,7 @@ class clerk(threading.Thread):
         if not self.isalive_guardnode():
             self.refresh_guardnode()
 
-        with self.lock:
+        with self._lock:
             self.tick += 1
 
         time.sleep(tick_rate)
@@ -270,12 +290,30 @@ class clerk(threading.Thread):
                 print(e)
 
 app = flask.Flask(__name__)
+base_url = '/lighttor/api/v{}'.format(api_version)
 
-@app.route('/')
-def index():
+@app.route(base_url + '/consensus')
+def get_consensus():
+    consensus = None
     with app.clerk.lock:
-        path = app.clerk.producer.get()
-        return "Hello, World! {} {}".format(app.clerk.tick, path)
+        consensus = app.clerk.consensus
+
+    if consensus is None:
+        flask.abort(404)
+
+    return flask.jsonify(consensus)
+
+@app.route(base_url + '/guard')
+def get_guard():
+    guard = None
+    with app.clerk.lock:
+        guard = app.clerk.guarddesc
+
+    if guard is None:
+        flask.abort(404)
+
+    return flask.jsonify(guard)
+
 
 def main(port, slave_node, bootstrap_node, purge_cache):
     if purge_cache:
