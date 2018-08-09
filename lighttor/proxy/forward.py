@@ -1,15 +1,19 @@
 import threading
+import traceback
+import secrets
 import logging
 import hashlib
+import base64
 import flask
+import queue
 import time
-import os
 
 import lighttor as ltor
 import lighttor.proxy
 
 debug = True
 tick_rate = 0.1
+queue_size = 5
 api_version = 0.1
 
 refresh_timeout = 5
@@ -24,20 +28,63 @@ class _abort_lock:
         if self._lock.acquire(blocking=False):
             self.acquired = True
             return
-        flask.abort(408)
+        flask.abort(503)
 
     def __exit__(self, *kargs):
         if self.acquired:
             return self._lock.release()
+
+class crypto:
+    from cryptography.exceptions import InvalidTag
+
+    def __init__(self):
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM as gcm
+
+        self.binding = secrets.token_bytes(32)
+        self.gcm = gcm(gcm.generate_key(bit_length=128))
+
+    def compute_token(self, circuit_id, binding):
+        circuit_id = ltor.cell.view.uint(4).write(b'', circuit_id)
+
+        nonce = secrets.token_bytes(12)
+        token = self.gcm.encrypt(nonce, circuit_id, self.binding + binding)
+        token = base64.urlsafe_b64encode(nonce + token)
+        return str(token.replace(b'=', b''), 'utf8')
+
+    def decrypt_token(self, token, binding):
+        try:
+            if not isinstance(token, str):
+                token = str(token, 'utf8')
+            token = base64.urlsafe_b64decode(token + '====')
+        except BaseException:
+            return None
+
+        if len(token) != 32:
+            return None
+
+        binding = self.binding + binding
+        nonce, token = token[:12], token[12:]
+        try:
+            circuit_id = self.gcm.decrypt(nonce, token, binding)
+        except self.InvalidTag:
+            return None
+
+        if len(circuit_id) != 4:
+            return None
+
+        return int.from_bytes(circuit_id, byteorder='big')
 
 class clerk(threading.Thread):
     def __init__(self, slave_node, bootstrap_node):
         super().__init__()
         logging.info('Bootstrapping clerk.')
 
-        self.session_binding = os.urandom(32)
+        self.crypto = crypto()
+
         self._lock = threading.RLock()
         self.dead = False
+
+        self.nb_create = 0
         self.tick = 0
 
         self.bootstrap_node = bootstrap_node
@@ -57,6 +104,9 @@ class clerk(threading.Thread):
         self.guardnode = None
         self.maintoken = None
         self.refresh_guardnode()
+
+        self._create_trigger = queue.Queue(maxsize=queue_size)
+        self._created_output = queue.Queue(maxsize=queue_size)
 
     @property
     def lock(self):
@@ -176,9 +226,8 @@ class clerk(threading.Thread):
             if not self.isalive_guardnode():
                 self.refresh_guardnode()
 
-            token = hashlib.sha256(self.session_binding
-                + bytes(self.guardnode['identity'], 'utf8')
-                + self.guardlink.io.binding()).digest()[:8]
+            token = hashlib.sha256(bytes(self.guardnode['identity'], 'utf8')
+                + self.guardlink.io.binding()).digest()
 
             if not token == self.maintoken:
                 logging.info('Shared tokenid updated.')
@@ -257,13 +306,33 @@ class clerk(threading.Thread):
 
             return True
 
-    def __enter__(self):
-        self.start()
-        return self
+    def perform_pending_create(self):
+        try:
+            request = self._create_trigger.get_nowait()
+            logging.debug('Got an incoming create channel request.')
+        except queue.Empty:
+            return False
 
-    def __exit__(self, *kargs):
-        self.dead = True
-        self.join()
+        circ = ltor.create.ntor(self.guardlink, self.guarddesc)
+        middle, exit = ltor.proxy.path.convert(*self.producer.get(),
+            consensus=self.consensus, expect='list')
+
+        token = self.crypto.compute_token(circ.circuit.id, self.maintoken)
+
+        logging.debug('Circuit created with circuit_id: {}'.format(
+            circ.circuit.id))
+        logging.debug('Path picked: {} -> {}'.format(
+            middle['nickname'], exit['nickname']))
+        logging.debug('Token emitted: {}'.format(token))
+
+        try:
+            self._created_output.put_nowait(
+                {'id': token, 'path': [middle, exit]})
+        except queue.Full:
+            logging.warning('Too many create channel requests, dropping.')
+            return False
+
+        return True
 
     def main(self):
         if not self.isalive_bootnode():
@@ -279,6 +348,8 @@ class clerk(threading.Thread):
             self.refresh_guardnode()
 
         with self._lock:
+            while self.perform_pending_create():
+                self.nb_create += 1
             self.tick += 1
 
         time.sleep(tick_rate)
@@ -288,7 +359,24 @@ class clerk(threading.Thread):
             try:
                 self.main()
             except BaseException as e:
-                print(e)
+                logging.critical(e)
+                if debug:
+                    traceback.print_exc()
+
+    def create(self, timeout=1):
+        try:
+            self._create_trigger.put([None], timeout=timeout)
+            return self._created_output.get(timeout=timeout)
+        except (queue.Empty, queue.Full):
+            flask.abort(503)
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *kargs):
+        self.dead = True
+        self.join()
 
 app = flask.Flask(__name__)
 base_url = '/lighttor/api/v{}'.format(api_version)
@@ -316,6 +404,10 @@ def get_guard():
         guard = app.clerk.guarddesc
 
     return flask.jsonify(guard)
+
+@app.route(base_url + '/channels', methods=['POST'])
+def create_channel():
+    return flask.jsonify(app.clerk.create()), 201 # Created
 
 def main(port, slave_node, bootstrap_node, purge_cache):
     if purge_cache:
