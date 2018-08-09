@@ -85,6 +85,7 @@ class clerk(threading.Thread):
         self.dead = False
 
         self.nb_create = 0
+        self.nb_delete = 0
         self.tick = 0
 
         self.bootstrap_node = bootstrap_node
@@ -105,6 +106,7 @@ class clerk(threading.Thread):
         self.maintoken = None
         self.refresh_guardnode()
 
+        self._delete_trigger = queue.Queue(maxsize=queue_size)
         self._create_trigger = queue.Queue(maxsize=queue_size)
         self._created_output = queue.Queue(maxsize=queue_size)
 
@@ -308,8 +310,8 @@ class clerk(threading.Thread):
 
     def perform_pending_create(self):
         try:
-            request = self._create_trigger.get_nowait()
-            logging.debug('Got an incoming create channel request.')
+            self._create_trigger.get_nowait()
+            logging.info('Got an incoming create channel request.')
         except queue.Empty:
             return False
 
@@ -334,6 +336,31 @@ class clerk(threading.Thread):
 
         return True
 
+    def perform_pending_delete(self):
+        try:
+            token = self._delete_trigger.get_nowait()
+            logging.info('Got an incoming delete channel.')
+        except queue.Empty:
+            return False
+
+        circuit_id = self.crypto.decrypt_token(token, self.maintoken)
+        if circuit_id is None:
+            logging.debug('Got an invalid token: {}'.format(token))
+            return True
+
+        if circuit_id not in self.guardlink.circuits:
+            logging.debug('Got an unknown circuit: {}'.format(circuit_id))
+            return True
+
+        circuit = self.guardlink.circuits[circuit_id]
+        self.guardlink.unregister(circuit)
+        logging.debug('Deleting circuit: {}'.format(circuit_id))
+
+        reason = ltor.cell.destroy.reason.REQUESTED
+        self.guardlink.send(ltor.cell.destroy.pack(circuit.id, reason))
+        logging.debug('Remaining circuits: {}'.format(list(
+            self.guardlink.circuits)))
+
     def main(self):
         if not self.isalive_bootnode():
             self.refresh_bootnode()
@@ -350,6 +377,8 @@ class clerk(threading.Thread):
         with self._lock:
             while self.perform_pending_create():
                 self.nb_create += 1
+            while self.perform_pending_delete():
+                self.nb_delete += 1
             self.tick += 1
 
         time.sleep(tick_rate)
@@ -368,6 +397,12 @@ class clerk(threading.Thread):
             self._create_trigger.put([None], timeout=timeout)
             return self._created_output.get(timeout=timeout)
         except (queue.Empty, queue.Full):
+            flask.abort(503)
+
+    def delete(self, uid, timeout=1):
+        try:
+            self._delete_trigger.put(uid, timeout=timeout)
+        except queue.Full:
             flask.abort(503)
 
     def __enter__(self):
@@ -408,6 +443,11 @@ def get_guard():
 @app.route(base_url + '/channels', methods=['POST'])
 def create_channel():
     return flask.jsonify(app.clerk.create()), 201 # Created
+
+@app.route(base_url + '/channels/<uid>', methods=['DELETE'])
+def delete_channel(uid):
+    app.clerk.delete(uid)
+    return flask.jsonify({}), 200
 
 def main(port, slave_node, bootstrap_node, purge_cache):
     if purge_cache:
