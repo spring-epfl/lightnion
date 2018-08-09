@@ -136,7 +136,7 @@ class clerk(threading.Thread):
     def isfresh_consensus(self):
         with self.lock:
             fresh_until = self.consensus['headers']['fresh-until']['stamp']
-            return (fresh_until < time.time())
+            return not (fresh_until < time.time())
 
     def __enter__(self):
         self.start()
