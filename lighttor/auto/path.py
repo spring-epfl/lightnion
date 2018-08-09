@@ -9,6 +9,8 @@ import stem
 import stem.process
 import stem.control
 
+default_nb_worker = 2
+
 class worker(threading.Thread):
     def __init__(self, port, barrier, path_queue, batch_size):
         super().__init__()
@@ -86,9 +88,16 @@ def get_tor(control_port=9051, socks_port=9050, msg_handler=None):
 
     _cached_tor = tor
 
-def emitter(output_queue, control_port, target=64, nb_worker=4):
+def emitter(
+        output_queue,
+        kill_queue,
+        control_port,
+        batch=32,
+        target=1024,
+        nb_worker=default_nb_worker):
+
     barrier = threading.Barrier(nb_worker)
-    path_queue = queue.Queue()
+    path_queue = queue.Queue(maxsize=batch)
     batch_size = target // nb_worker + 1
 
     workers = []
@@ -113,16 +122,65 @@ def emitter(output_queue, control_port, target=64, nb_worker=4):
             continue
 
         output_queue.put((middle, exit))
+        if kill_queue.qsize() > 0:
+            for w in workers:
+                w.finished = True
 
+    # (cleanup is useless as the process will die, but do it nonetheless)
+    barrier.abort()
     for w in workers:
         w.dead = True
+
+    try:
+        for i in range(path_queue.qsize()):
+            path_queue.get_nowait()
+    except queue.Empty:
+        pass
+
     for w in workers:
-        w.join()
+        w.join(0.1)
+
+class producer:
+    def __init__(self, process, path_queue, kill_queue, tor_process):
+        self.guard = path_queue.get()
+        self.process = process
+        self.path_queue = path_queue
+        self.kill_queue = kill_queue
+        self.tor_process = tor_process
+
+    @property
+    def dead(self):
+        return not self.process.is_alive()
+
+    @property
+    def empty(self):
+        return not (self.path_queue.qsize() > 0)
+
+    def get(self):
+        return self.path_queue.get()
+
+    def close(self):
+        try:
+            self.kill_queue.put_nowait([None])
+        except queue.Full:
+            pass
+
+        try:
+            self.path_queue.get_nowait()
+        except queue.Empty:
+            pass
 
 _default_tor = None
 _default_socks_port = None
 _default_control_port = None
-def fetch(number, tor_process=None, socks_port=None, control_port=None):
+def fetch(
+    batch=32,
+    target=1024,
+    nb_worker=2,
+    tor_process=None,
+    socks_port=None,
+    control_port=None):
+
     global _default_tor, _default_socks_port, _default_control_port
     if socks_port is None:
         if _default_socks_port is None:
@@ -142,20 +200,16 @@ def fetch(number, tor_process=None, socks_port=None, control_port=None):
                 msg_handler=None)
         tor_process = _default_tor
 
-    path_queue = multiprocessing.Queue()
+    path_queue = multiprocessing.Queue(maxsize=batch)
+    kill_queue = multiprocessing.Queue(maxsize=1)
     process = multiprocessing.Process(target=emitter,
-        args=(path_queue, control_port, number))
+        args=(path_queue, kill_queue, control_port, batch, target, nb_worker))
     process.start()
 
-    guard = path_queue.get()
-    paths = []
-    while process.is_alive():
-        try:
-            paths.append(path_queue.get_nowait())
-        except queue.Empty:
-            pass
+    if not tor_process:
+        tor_process = None
 
-    return (guard, paths)
+    return producer(process, path_queue, kill_queue, tor_process)
 
 # TODO: check if this conversion fingerprint->descriptor is safe?
 def convert(*entries, consensus, expect='fetch_format'):

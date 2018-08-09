@@ -36,15 +36,24 @@ if __name__ == '__main__':
         tor = ltor.auto.path.get_tor(
             msg_handler=lambda line: print(' ' * 4, line))
 
-        print('\nFetching at least {} paths now.'.format(sys_argv.target))
-        guard, paths = ltor.auto.path.fetch(sys_argv.target, tor_process=tor)
-
+        print('\nFetching paths now...'.format(sys_argv.target))
+        producer = ltor.auto.path.fetch(tor_process=tor)
     else:
         print('\nFetching at least {} paths now.'.format(sys_argv.target))
-        guard, paths = ltor.auto.path.fetch(sys_argv.target, tor_process=False,
+        producer = ltor.auto.path.fetch(sys_argv.target, tor_process=False,
             control_port=sys_argv.control_port)
 
+    # retrieve the required number of paths
+    paths = []
+    while not producer.dead and len(paths) < sys_argv.target:
+        paths.append(producer.get())
+        print(' - {}/{} paths'.format(len(paths), sys_argv.target), end='\r')
+
+    print('\n(now closing the path producer)\n')
+    producer.close()
+
     # convert (fingerprint, nickname) into a full consensus entry
+    guard = producer.guard
     guard, paths = ltor.auto.path.convert(guard, paths, consensus=consensus)
 
     print('With guard {}: {}'.format(guard['nickname'], guard['digest']))
