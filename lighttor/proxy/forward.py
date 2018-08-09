@@ -117,6 +117,11 @@ class clerk(threading.Thread):
         with self.lock:
             return not self.producer.dead
 
+    def isfresh_consensus(self):
+        with self.lock:
+            fresh_until = self.consensus['headers']['fresh-until']['stamp']
+            return (fresh_until < time.time())
+
     def __enter__(self):
         self.start()
         return self
@@ -132,7 +137,8 @@ class clerk(threading.Thread):
         if not self.isalive_producer():
             self.refresh_producer()
 
-        self.refresh_consensus()
+        if not self.isfresh_consensus():
+            self.refresh_consensus()
 
         with self.lock:
             self.tick += 1
