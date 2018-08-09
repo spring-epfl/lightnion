@@ -1,7 +1,9 @@
 import threading
 import logging
+import hashlib
 import flask
 import time
+import os
 
 import lighttor as ltor
 import lighttor.proxy
@@ -16,6 +18,7 @@ class clerk(threading.Thread):
         super().__init__()
         logging.info('Bootstrapping clerk.')
 
+        self.session_binding = os.urandom(32)
         self.lock = threading.RLock()
         self.dead = False
         self.tick = 0
@@ -35,6 +38,7 @@ class clerk(threading.Thread):
 
         self.guardlink = None
         self.guardnode = None
+        self.maintoken = None
         self.refresh_guardnode()
 
     def die(self, e):
@@ -139,8 +143,27 @@ class clerk(threading.Thread):
             self.guardlast = time.time()
             self.guarddesc = guarddesc[0]
 
+            self.refresh_maintoken()
+
             if not self.isalive_guardnode(force_check=True):
                 self.die('Unable to interact w/ guard node, abort!')
+
+    def refresh_maintoken(self):
+        logging.info('Refreshing guard node link.')
+
+        with self.lock:
+            if not self.isalive_guardnode():
+                self.refresh_guardnode()
+
+            token = hashlib.sha256(self.session_binding
+                + bytes(self.guardnode['identity'], 'utf8')
+                + self.guardlink.io.binding()).digest()[:8]
+
+            if not token == self.maintoken:
+                logging.info('Shared tokenid updated.')
+
+            self.maintoken = token
+            logging.debug('Shared tokenid: {}'.format(token.hex()))
 
     def isalive_producer(self):
         with self.lock:

@@ -36,6 +36,9 @@ class _stat_peer:
         self.disp()
         return bytes_send
 
+    def get_channel_binding(self, *kargs):
+        return self.peer.get_channel_binding(*kargs)
+
     def close(self):
         return self.peer.close()
 
@@ -205,6 +208,9 @@ class io:
 
     def send(self, payload):
         self.worker.send(payload)
+
+    def binding(self):
+        return self.peer.get_channel_binding()
 
     def close(self):
         self.peer.close()
