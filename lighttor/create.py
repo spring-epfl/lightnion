@@ -89,14 +89,7 @@ def fast(link):
 
     return ltor.onion.state(link, final)
 
-def ntor(link, descriptor):
-    # Late imports (as this function is for testing purposes)
-    import curve25519
-    import lighttor.ntor_ref as ntor_ref
-
-    identity = base64.b64decode(descriptor['router']['identity'] + '====')
-    onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
-
+def ntor_raw(link, payload):
     # Pick an available ID (link version > 3)
     circuit_id = 0x80000000
     while circuit_id in link.circuits:
@@ -109,10 +102,6 @@ def ntor(link, descriptor):
     except (OverflowError, AssertionError):
         raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
             circuit_id, packed))
-
-    # Perform the first part of our handshake
-    donna_onion_key = curve25519.keys.Public(onion_key)
-    ephemeral_key, payload = ntor_ref.client_part1(identity, donna_onion_key)
 
     # Build a CREATE2 cell containing this first handshake part
     link.send(ltor.cell.create2.pack(circuit_id, payload))
@@ -132,8 +121,24 @@ def ntor(link, descriptor):
     if not cell.valid:
         raise RuntimeError('Got invalid CREATED2 cell: {}'.format(cell.raw))
 
+    return circuit_id, cell.created2.data
+
+def ntor(link, descriptor):
+    # Late imports (as this function is for testing purposes)
+    import curve25519
+    import lighttor.ntor_ref as ntor_ref
+
+    identity = base64.b64decode(descriptor['router']['identity'] + '====')
+    onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
+
+    # Perform the first part of our handshake
+    donna_onion_key = curve25519.keys.Public(onion_key)
+    ephemeral_key, payload = ntor_ref.client_part1(identity, donna_onion_key)
+
+    circuit_id, payload = ntor_raw(link, payload)
+
     # Perform the last part of our handshake
-    material = ntor_ref.client_part2(ephemeral_key, cell.created2.data,
+    material = ntor_ref.client_part2(ephemeral_key, payload,
         identity, donna_onion_key, keyBytes=92)
 
     # Register the real circuit
