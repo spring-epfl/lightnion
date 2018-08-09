@@ -13,6 +13,8 @@ import lighttor.proxy
 
 debug = True
 tick_rate = 0.1
+send_batch = 32
+recv_batch = 32
 queue_size = 5
 query_time = 6
 
@@ -105,6 +107,7 @@ class clerk(threading.Thread):
         self.maintoken = None
         self.refresh_guardnode()
 
+        self._send_trigger = queue.Queue(maxsize=send_batch)
         self._delete_trigger = queue.Queue(maxsize=queue_size)
         self._create_trigger = queue.Queue(maxsize=queue_size)
         self._created_output = queue.Queue(maxsize=queue_size)
@@ -120,6 +123,22 @@ class clerk(threading.Thread):
 
         self.dead = True
         raise e
+
+    def get_circuit(self, uid, abort=False):
+        circuit_id = self.crypto.decrypt_token(uid, self.maintoken)
+        if circuit_id is None:
+            logging.debug('Got an invalid token: {}'.format(uid))
+            if abort:
+                flask.abort(404)
+            return None
+
+        if circuit_id not in self.guardlink.circuits:
+            logging.debug('Got an unknown circuit: {}'.format(circuit_id))
+            if abort:
+                flask.abort(404)
+            return None
+
+        return self.guardlink.circuits[circuit_id]
 
     def refresh_producer(self):
         logging.info('Refreshing path emitter.')
@@ -184,6 +203,11 @@ class clerk(threading.Thread):
                 logging.info('Consensus successfully refreshed.')
 
             self.consensus = census
+
+            # (cache descriptors for later use)
+            self.bootcirc, _ = ltor.descriptors.download(self.bootcirc,
+                census, flavor='unflavored')
+            logging.info('Descriptors successfully cached.')
 
     def refresh_guardnode(self):
         logging.info('Refreshing guard node link.')
@@ -325,48 +349,60 @@ class clerk(threading.Thread):
         middle, exit = ltor.proxy.path.convert(*self.producer.get(),
             consensus=self.consensus, expect='list')
 
+        self.bootcirc, middle = ltor.descriptors.download(self.bootcirc,
+            middle, flavor='unflavored', fail_on_missing=True)
+        self.bootcirc, exit = ltor.descriptors.download(self.bootcirc,
+            exit, flavor='unflavored', fail_on_missing=True)
+
         token = self.crypto.compute_token(circuit_id, self.maintoken)
         payload = str(base64.b64encode(payload), 'utf8')
 
         logging.debug('Circuit created with circuit_id: {}'.format(
             circuit_id))
         logging.debug('Path picked: {} -> {}'.format(
-            middle['nickname'], exit['nickname']))
+            middle[0]['router']['nickname'], exit[0]['router']['nickname']))
         logging.debug('Token emitted: {}'.format(token))
 
         try:
             self._created_output.put_nowait((rq,
-                {'id': token, 'path': [middle, exit], 'ntor': payload}))
+                {'id': token, 'path': [middle[0], exit[0]], 'ntor': payload}))
         except queue.Full:
             logging.warning('Too many create channel requests, dropping.')
             return False
 
         return True
 
-    def perform_pending_delete(self):
-        try:
-            token = self._delete_trigger.get_nowait()
-            logging.info('Got an incoming delete channel.')
-        except queue.Empty:
-            return False
-
-        circuit_id = self.crypto.decrypt_token(token, self.maintoken)
-        if circuit_id is None:
-            logging.debug('Got an invalid token: {}'.format(token))
-            return True
-
-        if circuit_id not in self.guardlink.circuits:
-            logging.debug('Got an unknown circuit: {}'.format(circuit_id))
-            return True
-
-        circuit = self.guardlink.circuits[circuit_id]
+    def perform_delete(self, circuit):
         self.guardlink.unregister(circuit)
-        logging.debug('Deleting circuit: {}'.format(circuit_id))
+        logging.debug('Deleting circuit: {}'.format(circuit.id))
 
         reason = ltor.cell.destroy.reason.REQUESTED
         self.guardlink.send(ltor.cell.destroy.pack(circuit.id, reason))
         logging.debug('Remaining circuits: {}'.format(list(
             self.guardlink.circuits)))
+
+        return True
+
+    def perform_pending_delete(self):
+        try:
+            uid = self._delete_trigger.get_nowait()
+            logging.info('Got an incoming delete channel.')
+        except queue.Empty:
+            return False
+
+        circuit = self.get_circuit(uid)
+        if circuit is None:
+            return True
+
+        return self.perform_delete(circuit)
+
+    def perform_pending_send(self):
+        try:
+            payload = self._send_trigger.get_nowait()
+            self.guardlink.send(payload)
+            return True
+        except queue.Empty:
+            return False
 
     def update_guard(self):
         try:
@@ -374,6 +410,21 @@ class clerk(threading.Thread):
             return True
         except queue.Full:
             return False
+
+    def update_link(self):
+        try:
+            return self.guardlink.pull(block=False)
+        except RuntimeError as e:
+            if 'queues are full' in str(e): # TODO: do better than this hack
+                sizes = [(k, c.queue.qsize())
+                     for k, c in self.guardlink.circuits.items()]
+                sizes.sort(key=lambda sz: -sz[1])
+
+                # Delete the most overfilled circuit
+                self.perform_delete(sizes[0][0])
+                return True
+            else:
+                raise e
 
     def main(self):
         if not self.isalive_bootnode():
@@ -392,7 +443,9 @@ class clerk(threading.Thread):
             while (False
                 or self.perform_pending_delete()
                 or self.perform_pending_create()
-                or self.update_guard()):
+                or self.perform_pending_send()
+                or self.update_guard()
+                or self.update_link()):
                     self.nb_actions += 1
             self.tick += 1
         time.sleep(tick_rate)
@@ -457,6 +510,30 @@ class clerk(threading.Thread):
         except queue.Empty:
             flask.abort(503)
 
+    def send(self, payload, circuit, timeout=1):
+        if len(payload) != ltor.constants.full_cell_len:
+            logging.debug('Got invalid size for cell.')
+            flask.abort(400)
+        payload = ltor.cell.header_view.write(payload, circuit_id=circuit.id)
+
+        try:
+            self._send_trigger.put(payload, timeout=timeout)
+        except queue.Full:
+            flask.abort(503)
+
+    def recv(self, circuit, timeout=1):
+        timeout = timeout / recv_batch
+        received = []
+        try:
+            for _ in range(recv_batch):
+                payload = circuit.queue.get(timeout=timeout)
+                payload = ltor.cell.header_view.write(payload, circuit_id=1)
+                received.append(str(base64.b64encode(payload), 'utf8'))
+        except queue.Empty:
+            pass
+
+        return dict(cells=received)
+
     def __enter__(self):
         self.start()
         return self
@@ -466,6 +543,7 @@ class clerk(threading.Thread):
         self.join()
 
 app = flask.Flask(__name__)
+base_url = ltor.proxy.base_url
 
 @app.route(base_url + '/consensus')
 def get_consensus():
@@ -490,6 +568,23 @@ def create_channel():
 
     data = base64.b64decode(flask.request.json['ntor'])
     return flask.jsonify(app.clerk.create(data)), 201 # Created
+
+@app.route(base_url + '/channels/<uid>', methods=['POST'])
+def write_channel(uid):
+    if not flask.request.json or 'event' not in flask.request.json:
+        flask.abort(400)
+    if not flask.request.json['event'] in ['send', 'recv']:
+        flask.abort(400)
+
+    circuit = app.clerk.get_circuit(uid, abort=True)
+    if flask.request.json['event'] == 'send':
+        if 'cell' not in flask.request.json:
+            flask.abort(400)
+
+        cell = base64.b64decode(flask.request.json['cell'])
+        app.clerk.send(cell, circuit)
+
+    return flask.jsonify(app.clerk.recv(circuit)), 201 # Created
 
 @app.route(base_url + '/channels/<uid>', methods=['DELETE'])
 def delete_channel(uid):

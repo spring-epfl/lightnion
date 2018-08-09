@@ -15,30 +15,58 @@ if __name__ == "__main__":
     base_url = 'http://{}:{}{}'.format(
         sys_argv.host, sys_argv.port, ltor.proxy.base_url)
 
-    # retrieve the guard descriptor
-    rq = requests.get(base_url + '/guard')
 
-    # parse the guard destriptor
+    # get the guard descriptor
+    rq = requests.get(base_url + '/guard')
     assert rq.status_code == 200
-    answer = json.loads(rq.text)
+    guard = json.loads(rq.text)
+    print('Guard descriptor retrieved through HTTP: {}'.format(
+        guard['router']['nickname']))
 
     # create a new channel
-    ntor, material = ltor.proxy.parts.ntor_get(answer)
+    rq = requests.get(base_url + '/guard')
+    ntor, material = ltor.proxy.parts.ntor_get(guard)
     data = json.dumps(dict(ntor=ntor))
     headers = {'Content-Type': 'application/json'}
     rq = requests.post(base_url + '/channels', data=data, headers=headers)
+    print('New channel (with ntor handshake) created:')
 
     # parse the id, path and ntor
     assert rq.status_code == 201
     answer = json.loads(rq.text)
     uid, ntor, path = answer['id'], answer['ntor'], answer['path']
+    print(' - Got following id: {}'.format(uid))
 
     # finish the ntor handshake
     material = ltor.proxy.parts.ntor_finish(ntor, material)
 
+    # create fake objects
+    io = ltor.proxy.http.io(base_url + '/channels/' + uid)
+    link = ltor.link.link(io, version='http')
+    circuit = ltor.create.circuit(1, material)
+    link.register(circuit)
+    state = ltor.onion.state(link, circuit)
+    print('\nCreated fake link to reuse internal API.')
+
+    # retrieve something
+    state, authority = ltor.descriptors.download_authority(state)
+    print('Successfully retrieved guard descriptor through HTTP channel.')
+
+    # extend the circuit
+    state = ltor.extend.circuit(state, path[0])
+    print('Successfully extended circuit to middle node through HTTP channel.')
+    state = ltor.extend.circuit(state, path[1])
+    print('Successfully extended circuit to exit node through HTTP channel.')
+
+    # retrieve something
+    state, authority = ltor.descriptors.download_authority(state)
+    print('Successfully retrieved exit node descriptor through HTTP channel.')
+
+    # retrieve something heavier
+    state, authority = ltor.consensus.download(state, cache=False)
+    print('Successfully retrieved full consensus through HTTP channel.')
+
     # destroy the channel
     rq = requests.delete(base_url + '/channels/{}'.format(uid))
     assert rq.status_code == 202
-
-    import pdb
-    pdb.set_trace()
+    print('Successfully destroyed HTTP channel.')

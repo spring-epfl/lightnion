@@ -11,6 +11,7 @@
 
 orport='9050' # -: relay will listen for connections on this port
 dirport='9051' # -: relay will advertise the directory service on this port
+controlport='8000' # -: relay will advertise the specified control port
 log_level='warn' # -: available levels: {debug, info, notice, warn, err}
 
 function cleanup()
@@ -37,6 +38,7 @@ rm -f "$tmpdir/.pid" "$tmpdir/.options"
     echo "SOCKSPort 0"                      # do not start a SOCKS server
     echo "ContactInfo none@example.com"     # (contact information)
     echo "DataDirectory $tmpdir"            # do not use ~/.tor
+    echo "ControlPort $controlport"         # advertised control port
     echo "ORPort $orport"                   # advertised relay port
     echo "DirPort $dirport"                 # advertised directory service port
 ) > "$tmpdir/.options"
