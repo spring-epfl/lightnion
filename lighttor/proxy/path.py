@@ -12,7 +12,7 @@ import stem.control
 default_nb_worker = 2
 
 class worker(threading.Thread):
-    def __init__(self, port, barrier, path_queue, batch_size):
+    def __init__(self, host, port, barrier, path_queue, batch_size):
         super().__init__()
 
         self.mini_batch = batch_size // 8 if batch_size // 8 > 0 else 1
@@ -23,9 +23,10 @@ class worker(threading.Thread):
         self.finished = False
         self.dead = False
         self.port = port
+        self.host = host
 
     def run(self):
-        ctrl = stem.control.Controller.from_port('127.0.0.1', port=self.port)
+        ctrl = stem.control.Controller.from_port(self.host, port=self.port)
         ctrl.authenticate()
 
         first = self.barrier.wait()
@@ -91,6 +92,7 @@ def get_tor(control_port=9051, socks_port=9050, msg_handler=None):
 def emitter(
         output_queue,
         kill_queue,
+        control_host,
         control_port,
         batch=32,
         target=1024,
@@ -104,6 +106,7 @@ def emitter(
     for _ in range(nb_worker):
         workers.append(
             worker(
+                control_host,
                 control_port,
                 barrier,
                 path_queue,
@@ -179,6 +182,7 @@ def fetch(
     nb_worker=2,
     tor_process=None,
     socks_port=None,
+    control_host='127.0.0.1',
     control_port=None):
 
     global _default_tor, _default_socks_port, _default_control_port
@@ -202,8 +206,14 @@ def fetch(
 
     path_queue = multiprocessing.Queue(maxsize=batch)
     kill_queue = multiprocessing.Queue(maxsize=1)
-    process = multiprocessing.Process(target=emitter,
-        args=(path_queue, kill_queue, control_port, batch, target, nb_worker))
+    process = multiprocessing.Process(target=emitter, args=(
+            path_queue,
+            kill_queue,
+            control_host,
+            control_port,
+            batch,
+            target,
+            nb_worker))
     process.start()
 
     if not tor_process:
