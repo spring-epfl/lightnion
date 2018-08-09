@@ -1,5 +1,6 @@
 import multiprocessing
 import threading
+import logging
 import atexit
 import base64
 import queue
@@ -97,6 +98,9 @@ def emitter(
         batch=32,
         target=1024,
         nb_worker=default_nb_worker):
+
+    # (shut up stem)
+    logging.getLogger(stem.__name__).setLevel(logging.ERROR)
 
     barrier = threading.Barrier(nb_worker)
     path_queue = queue.Queue(maxsize=batch)
