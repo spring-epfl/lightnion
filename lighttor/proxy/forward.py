@@ -14,6 +14,7 @@ import lighttor.proxy
 debug = True
 tick_rate = 0.1
 queue_size = 5
+query_time = 6
 api_version = 0.1
 
 refresh_timeout = 5
@@ -84,8 +85,7 @@ class clerk(threading.Thread):
         self._lock = threading.RLock()
         self.dead = False
 
-        self.nb_create = 0
-        self.nb_delete = 0
+        self.nb_actions = 0
         self.tick = 0
 
         self.bootstrap_node = bootstrap_node
@@ -218,6 +218,7 @@ class clerk(threading.Thread):
 
             self.refresh_maintoken()
 
+            self._guard_output = queue.Queue(maxsize=queue_size)
             if not self.isalive_guardnode(force_check=True):
                 self.die('Unable to interact w/ guard node, abort!')
 
@@ -310,26 +311,33 @@ class clerk(threading.Thread):
 
     def perform_pending_create(self):
         try:
-            self._create_trigger.get_nowait()
+            rq, data = self._create_trigger.get_nowait()
             logging.info('Got an incoming create channel request.')
         except queue.Empty:
             return False
 
-        circ = ltor.create.ntor(self.guardlink, self.guarddesc)
+        try:
+            circuit_id, payload = ltor.create.ntor_raw(self.guardlink, data)
+            self.guardlink.register(ltor.create.circuit(circuit_id, None))
+        except BaseException as e:
+            logging.info('Got an invalid handshake, cause: {}'.format(e))
+            payload = b''
+
         middle, exit = ltor.proxy.path.convert(*self.producer.get(),
             consensus=self.consensus, expect='list')
 
-        token = self.crypto.compute_token(circ.circuit.id, self.maintoken)
+        token = self.crypto.compute_token(circuit_id, self.maintoken)
+        payload = str(base64.b64encode(payload), 'utf8')
 
         logging.debug('Circuit created with circuit_id: {}'.format(
-            circ.circuit.id))
+            circuit_id))
         logging.debug('Path picked: {} -> {}'.format(
             middle['nickname'], exit['nickname']))
         logging.debug('Token emitted: {}'.format(token))
 
         try:
-            self._created_output.put_nowait(
-                {'id': token, 'path': [middle, exit]})
+            self._created_output.put_nowait((rq,
+                {'id': token, 'path': [middle, exit], 'ntor': payload}))
         except queue.Full:
             logging.warning('Too many create channel requests, dropping.')
             return False
@@ -361,6 +369,13 @@ class clerk(threading.Thread):
         logging.debug('Remaining circuits: {}'.format(list(
             self.guardlink.circuits)))
 
+    def update_guard(self):
+        try:
+            self._guard_output.put_nowait(self.guarddesc)
+            return True
+        except queue.Full:
+            return False
+
     def main(self):
         if not self.isalive_bootnode():
             self.refresh_bootnode()
@@ -375,12 +390,12 @@ class clerk(threading.Thread):
             self.refresh_guardnode()
 
         with self._lock:
-            while self.perform_pending_create():
-                self.nb_create += 1
-            while self.perform_pending_delete():
-                self.nb_delete += 1
+            while (False
+                or self.perform_pending_delete()
+                or self.perform_pending_create()
+                or self.update_guard()):
+                    self.nb_actions += 1
             self.tick += 1
-
         time.sleep(tick_rate)
 
     def run(self):
@@ -392,17 +407,55 @@ class clerk(threading.Thread):
                 if debug:
                     traceback.print_exc()
 
-    def create(self, timeout=1):
+    _create_trigger_cache = None
+    _create_trigger_count = 0
+    def create(self, data, timeout=3):
+        timeout = timeout / (1 + queue_size)
+
+        self._create_trigger_count += 1
+        rq = self._create_trigger_count
+
         try:
-            self._create_trigger.put([None], timeout=timeout)
-            return self._created_output.get(timeout=timeout)
-        except (queue.Empty, queue.Full):
+            self._create_trigger.put((rq, data), timeout=timeout)
+        except queue.Full:
             flask.abort(503)
+
+        for _ in range(queue_size):
+            if self._create_trigger_cache is None:
+                self._create_trigger_cache = dict()
+
+            try:
+                key, data = self._created_output.get(timeout=timeout)
+                self._create_trigger_cache[key] = (data, time.time())
+            except queue.Empty:
+                pass
+
+            to_delete = []
+            rq_target = None
+            for key, (data, date) in self._create_trigger_cache.items():
+                if time.time() - date:
+                    to_delete.append(key)
+                if key == rq:
+                    rq_target = data
+
+            for key in to_delete:
+                del self._create_trigger_cache[key]
+
+            if rq_target is not None:
+                return rq_target
+
+        flask.abort(503)
 
     def delete(self, uid, timeout=1):
         try:
             self._delete_trigger.put(uid, timeout=timeout)
         except queue.Full:
+            flask.abort(503)
+
+    def get_guard(self, timeout=1):
+        try:
+            return self._guard_output.get(timeout=timeout)
+        except queue.Empty:
             flask.abort(503)
 
     def __enter__(self):
@@ -430,24 +483,20 @@ def get_consensus():
 
 @app.route(base_url + '/guard')
 def get_guard():
-    global debug
-    if not debug:
-        flask.abort(404)
-
-    guard = None
-    with app.clerk.lock:
-        guard = app.clerk.guarddesc
-
-    return flask.jsonify(guard)
+    return flask.jsonify(app.clerk.get_guard()), 200
 
 @app.route(base_url + '/channels', methods=['POST'])
 def create_channel():
-    return flask.jsonify(app.clerk.create()), 201 # Created
+    if not flask.request.json or not 'ntor' in flask.request.json:
+        flask.abort(400)
+
+    data = base64.b64decode(flask.request.json['ntor'])
+    return flask.jsonify(app.clerk.create(data)), 201 # Created
 
 @app.route(base_url + '/channels/<uid>', methods=['DELETE'])
 def delete_channel(uid):
     app.clerk.delete(uid)
-    return flask.jsonify({}), 200
+    return flask.jsonify({}), 202 # Deleted
 
 def main(port, slave_node, bootstrap_node, purge_cache):
     if purge_cache:

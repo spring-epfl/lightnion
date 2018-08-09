@@ -1,3 +1,4 @@
 cryptography
 curve25519-donna
+requests
 flask
