@@ -22,16 +22,20 @@ class clerk(threading.Thread):
 
         self.bootstrap_node = bootstrap_node
         self.slave_node = slave_node
+
         self.producer = None
+        self.refresh_producer()
+
         self.bootlink = None
         self.bootnode = None
-
-        self.refresh_producer()
         self.refresh_bootnode()
 
         self.consensus = dict(headers=None)
-
         self.refresh_consensus()
+
+        self.guardlink = None
+        self.guardnode = None
+        self.refresh_guardnode()
 
     def die(self, e):
         if isinstance(e, str):
@@ -95,14 +99,52 @@ class clerk(threading.Thread):
             if not self.isalive_bootnode():
                 self.refresh_bootnode()
 
-            self.bootcirc, census = ltor.consensus.download(self.bootcirc)
+            self.bootcirc, census = ltor.consensus.download(self.bootcirc,
+                flavor='unflavored')
+
             if census['headers']['valid-until']['stamp'] < time.time():
                 self.die('Unable to get a fresh consensus, abort!')
-
             if not census['headers'] == self.consensus['headers']:
                 logging.info('Consensus successfully refreshed.')
 
             self.consensus = census
+
+    def refresh_guardnode(self):
+        logging.info('Refreshing guard node link.')
+
+        with self.lock:
+            if not self.isfresh_consensus():
+                self.refresh_consensus()
+
+            if not self.isalive_producer():
+                self.refresh_producer()
+
+            guardnode = ltor.proxy.path.convert(self.producer.guard,
+                consensus=self.consensus, expect='list')[0]
+
+            if not self.guardnode == guardnode:
+                logging.info('New guard: {}'.format(guardnode['nickname']))
+            self.guardnode = guardnode
+
+            if not self.isalive_bootnode():
+                self.refresh_bootnode()
+
+            self.bootcirc, guarddesc = ltor.descriptors.download(self.bootcirc,
+                self.guardnode, flavor='unflavored', fail_on_missing=True)
+
+            # TODO: link authentication instead of NTOR handshakes!
+            addr, port = self.guardnode['address'], self.guardnode['orport']
+            self.guardlink = ltor.link.initiate(address=addr, port=port)
+            self.guardcirc = ltor.create.ntor(self.guardlink, guarddesc[0])
+            self.guardlast = time.time()
+            self.guarddesc = guarddesc[0]
+
+            if not self.isalive_guardnode(force_check=True):
+                self.die('Unable to interact w/ guard node, abort!')
+
+    def isalive_producer(self):
+        with self.lock:
+            return not self.producer.dead
 
     def isalive_bootnode(self, force_check=False):
         with self.lock:
@@ -129,14 +171,47 @@ class clerk(threading.Thread):
 
             return True
 
-    def isalive_producer(self):
-        with self.lock:
-            return not self.producer.dead
-
     def isfresh_consensus(self):
         with self.lock:
             fresh_until = self.consensus['headers']['fresh-until']['stamp']
             return not (fresh_until < time.time())
+
+    def isalive_guardnode(self, force_check=False):
+        with self.lock:
+            if self.guardlink is None:
+                return False
+
+            if self.guardlink.io.dead:
+                logging.warning('Guard node link seems dead.')
+                return False
+
+            if self.guardcirc.circuit.destroyed:
+                logging.warning('Guard keepalive circuit got destroyed.')
+                return False
+
+            if force_check or (time.time() - self.guardlast) > isalive_timeout:
+                logging.debug('Get guard node descriptor (health check).')
+
+                circ, guard = ltor.descriptors.download_authority(
+                    self.guardcirc)
+
+                if self.guardnode['identity'] != guard['router']['identity']:
+                    logging.warning('Guard changed its identity, renew!')
+
+                    self.refresh_producer()
+                    self.refresh_guardnode()
+                    return self.isalive_guardnode()
+
+                if not self.guarddesc['digest'] == guard['digest']:
+                    logging.info('Guard changed its descriptor.')
+
+                    self.refresh_guardnode()
+                    return self.isalive_guardnode()
+
+                self.guardlast = time.time()
+                self.guardcirc = circ
+
+            return True
 
     def __enter__(self):
         self.start()
@@ -155,6 +230,9 @@ class clerk(threading.Thread):
 
         if not self.isfresh_consensus():
             self.refresh_consensus()
+
+        if not self.isalive_guardnode():
+            self.refresh_guardnode()
 
         with self.lock:
             self.tick += 1
