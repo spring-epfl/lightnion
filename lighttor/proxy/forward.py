@@ -207,7 +207,6 @@ class clerk(threading.Thread):
             # (cache descriptors for later use)
             self.bootcirc, _ = ltor.descriptors.download(self.bootcirc,
                 census, flavor='unflavored')
-            logging.info('Descriptors successfully cached.')
 
     def refresh_guardnode(self):
         logging.info('Refreshing guard node link.')
@@ -321,11 +320,13 @@ class clerk(threading.Thread):
                     self.refresh_guardnode()
                     return self.isalive_guardnode()
 
-                if not self.guarddesc['digest'] == guard['digest']:
-                    logging.info('Guard changed its descriptor.')
+                for key in ['ntor-onion-key', 'identity', 'router']:
+                    if not (self.guarddesc[key] == guard[key]):
+                        logging.info('Guard changed its {} field.'.format(key))
 
-                    self.refresh_guardnode()
-                    return self.isalive_guardnode()
+                        self.refresh_producer()
+                        self.refresh_guardnode()
+                        return self.isalive_guardnode()
 
                 self.guardlast = time.time()
                 self.guardcirc = circ
