@@ -187,7 +187,7 @@ class io:
             max_queue=2048,
             buffer_size=4096):
         peer.settimeout(period)
-        peer = _stat_peer(peer)
+        # peer = _stat_peer(peer) # uncomment for extra statistics
 
         self.worker = worker(peer, max_fails, max_queue, buffer_size)
         if daemon:
