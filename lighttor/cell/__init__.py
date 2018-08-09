@@ -85,5 +85,5 @@ def pad(payload):
 
 from . import address
 from . import (
-    padding, relay, create_fast, created_fast, versions, netinfo, relay_early,
-    create2, created2, certs, challenge)
+    padding, relay, destroy, create_fast, created_fast, versions, netinfo,
+    relay_early, create2, created2, certs, challenge)

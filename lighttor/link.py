@@ -48,9 +48,14 @@ class link:
         # TODO: property handle DESTROY cells
         circuit = self.circuits[header.circuit_id]
         if header.cmd is ltor.cell.cmd.DESTROY:
+            cell = ltor.cell.destroy.cell(payload)
+            if not cell.valid:
+                raise RuntimeError('Got invalid DESTROY cell: {}'.format(
+                    cell.truncated))
+
             self.put(circuit, payload)
             circuit.destroyed = True
-            circuit.reason = payload
+            circuit.reason = cell.reason
             self.unregister(circuit)
             return False
 
