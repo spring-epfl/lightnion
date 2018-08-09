@@ -46,6 +46,16 @@ if __name__ == '__main__':
     argv.b = _validate_host(argv.b)
     argv.s = _validate_host(argv.s)
 
+    # For now, we rely on having a trusted local Tor node that checks
+    # signatures for us & everything else.
+    #
+    if argv.b[0] != '127.0.0.1':
+        logging.error(
+            'No authenticated links, using {} is unsafe!'.format(argv.b))
+    if argv.s[0] != '127.0.0.1':
+        logging.error(
+            'No authenticated controllers, using {} is unsafe!'.format(argv.s))
+
     lighttor.proxy.forward.main(
         port=argv.p,
         slave_node=argv.s if not argv.spawn_slave else None,
