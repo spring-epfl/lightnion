@@ -1,6 +1,11 @@
 import lighttor.proxy.forward
+
 import argparse
 import ipaddress
+import logging
+
+log_format = "%(levelname)s: %(message)s"
+log_levels = {None: logging.ERROR, 1: logging.WARNING, 2: logging.INFO}
 
 def _validate_host(addr):
     if not (addr.count(':') == 1):
@@ -22,7 +27,7 @@ if __name__ == '__main__':
         metavar='port', help='Listen to port for HTTP requests.'
         + ' (default: 4990)')
     parser.add_argument('-b', required=False, default='127.0.0.1:5000',
-        metavar='ip:or_port', help='Tor node for first consensus.'
+        metavar='ip:or_port', help='Tor node for dir. requests.'
         + ' (default: 127.0.0.1:5000)')
     parser.add_argument('-s', required=False, default='127.0.0.1:8000',
         metavar='ip:control_port', help='Slave node for path selection.'
@@ -31,8 +36,13 @@ if __name__ == '__main__':
         help='If specified, purge cache before starting.')
     parser.add_argument('--spawn-slave', action='store_true',
         help='If specified, ignore -s and spawn local slave.')
+    parser.add_argument('-v', action='count',
+                        help='Verbose output (up to -vvv)')
 
     argv = parser.parse_args()
+    logging.basicConfig(
+        format=log_format, level=log_levels.get(argv.v, logging.DEBUG))
+
     argv.b = _validate_host(argv.b)
     argv.s = _validate_host(argv.s)
 

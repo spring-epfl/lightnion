@@ -1,4 +1,5 @@
 import threading
+import logging
 import flask
 import time
 
@@ -13,6 +14,7 @@ isalive_timeout = 30
 class clerk(threading.Thread):
     def __init__(self, slave_node, bootstrap_node):
         super().__init__()
+        logging.info('Bootstrapping clerk.')
 
         self.lock = threading.RLock()
         self.dead = False
@@ -27,19 +29,21 @@ class clerk(threading.Thread):
         self.refresh_producer()
         self.refresh_bootnode()
 
-        self.consensus = None
+        self.consensus = dict(headers=None)
 
         self.refresh_consensus()
 
     def die(self, e):
         if isinstance(e, str):
+            logging.error(e)
             e = RuntimeError(e)
 
-        with self.lock:
-            self.dead = True
-            raise e
+        self.dead = True
+        raise e
 
     def refresh_producer(self):
+        logging.info('Refreshing path emitter.')
+
         with self.lock:
             if self.producer is not None:
                 self.producer.close()
@@ -52,6 +56,8 @@ class clerk(threading.Thread):
                 if not self.producer.dead:
                     self.die('Unable to kill path emitter, abort!')
 
+                logging.debug('Previous producer successfully terminated.')
+
             if self.slave_node is None:
                 self.producer = ltor.proxy.path.fetch()
             else:
@@ -59,7 +65,11 @@ class clerk(threading.Thread):
                 self.producer = ltor.proxy.path.fetch(
                     tor_process=False, control_host=addr, control_port=port)
 
+            logging.debug('Producer successfully created.')
+
     def refresh_bootnode(self):
+        logging.info('Refreshing bootstrap node link.')
+
         with self.lock:
             if self.bootlink is not None:
                 self.bootlink.close()
@@ -89,6 +99,9 @@ class clerk(threading.Thread):
             if census['headers']['valid-until']['stamp'] < time.time():
                 self.die('Unable to get a fresh consensus, abort!')
 
+            if not census['headers'] == self.consensus['headers']:
+                logging.info('Consensus successfully refreshed.')
+
             self.consensus = census
 
     def isalive_bootnode(self, force_check=False):
@@ -97,14 +110,17 @@ class clerk(threading.Thread):
                 return False
 
             if self.bootlink.io.dead:
+                logging.warning('Bootstrap node link seems dead.')
                 return False
 
             if self.bootcirc.circuit.destroyed:
+                logging.warning('Bootstrap node circuit got destroyed.')
                 return False
 
             if force_check or (time.time() - self.bootlast) > isalive_timeout:
-                circ, node = ltor.descriptors.download_authority(self.bootcirc)
+                logging.debug('Get bootstrap node descriptor (heath check).')
 
+                circ, node = ltor.descriptors.download_authority(self.bootcirc)
                 if self.bootnode not in (None, node['identity']):
                     self.die('Bootstrap node changed its identity, abort!')
 
@@ -165,4 +181,5 @@ def main(port, slave_node, bootstrap_node, purge_cache):
         ltor.cache.purge()
 
     with clerk(slave_node, bootstrap_node) as app.clerk:
-        app.run(port=port, debug=True)
+        logging.info('Bootstrapping HTTP server.')
+        app.run(port=port, debug=True, use_reloader=False)
