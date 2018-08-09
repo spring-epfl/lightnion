@@ -8,6 +8,7 @@ import os
 import lighttor as ltor
 import lighttor.proxy
 
+debug = True
 tick_rate = 0.1
 api_version = 0.1
 
@@ -294,26 +295,27 @@ base_url = '/lighttor/api/v{}'.format(api_version)
 
 @app.route(base_url + '/consensus')
 def get_consensus():
+    global debug
+    if not debug:
+        flask.abort(404)
+
     consensus = None
     with app.clerk.lock:
         consensus = app.clerk.consensus
-
-    if consensus is None:
-        flask.abort(404)
 
     return flask.jsonify(consensus)
 
 @app.route(base_url + '/guard')
 def get_guard():
+    global debug
+    if not debug:
+        flask.abort(404)
+
     guard = None
     with app.clerk.lock:
         guard = app.clerk.guarddesc
 
-    if guard is None:
-        flask.abort(404)
-
     return flask.jsonify(guard)
-
 
 def main(port, slave_node, bootstrap_node, purge_cache):
     if purge_cache:
@@ -321,4 +323,4 @@ def main(port, slave_node, bootstrap_node, purge_cache):
 
     with clerk(slave_node, bootstrap_node) as app.clerk:
         logging.info('Bootstrapping HTTP server.')
-        app.run(port=port, debug=True, use_reloader=False)
+        app.run(port=port, debug=debug, use_reloader=False)
