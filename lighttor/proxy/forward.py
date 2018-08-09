@@ -5,6 +5,8 @@ import time
 import lighttor as ltor
 import lighttor.proxy
 
+tick_rate = 0.1
+
 refresh_timeout = 5
 isalive_timeout = 30
 
@@ -134,6 +136,8 @@ class clerk(threading.Thread):
 
         with self.lock:
             self.tick += 1
+
+        time.sleep(tick_rate)
 
     def run(self):
         while not self.dead:
