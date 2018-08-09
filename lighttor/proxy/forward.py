@@ -6,6 +6,7 @@ import lighttor as ltor
 import lighttor.proxy
 
 refresh_timeout = 5
+isalive_timeout = 30
 
 class clerk(threading.Thread):
     def __init__(self, slave_node, bootstrap_node):
@@ -19,11 +20,15 @@ class clerk(threading.Thread):
         self.slave_node = slave_node
         self.producer = None
         self.bootlink = None
+        self.bootnode = None
 
         self.refresh_producer()
-        self.refresh_bootlink()
+        self.refresh_bootnode()
 
     def die(self, e):
+        if isinstance(e, str):
+            e = RuntimeError(e)
+
         with self.lock:
             self.dead = True
             raise e
@@ -39,8 +44,7 @@ class clerk(threading.Thread):
                     time.sleep(1)
 
                 if not self.producer.dead:
-                    self.die(
-                        RuntimeError('Unable to kill path emitter, aborting!'))
+                    self.die('Unable to kill path emitter, abort!')
 
             if self.slave_node is None:
                 self.producer = ltor.proxy.path.fetch()
@@ -49,7 +53,7 @@ class clerk(threading.Thread):
                 self.producer = ltor.proxy.path.fetch(
                     tor_process=False, control_host=addr, control_port=port)
 
-    def refresh_bootlink(self):
+    def refresh_bootnode(self):
         with self.lock:
             if self.bootlink is not None:
                 self.bootlink.close()
@@ -60,11 +64,41 @@ class clerk(threading.Thread):
                     time.sleep(1)
 
                 if not self.bootlink.io.dead:
-                    self.die(RuntimeError(
-                        'Unable to close bootstrap link, aborting!'))
+                    self.die('Unable to close bootstrap link, abort!')
 
             addr, port = self.bootstrap_node
             self.bootlink = ltor.link.initiate(address=addr, port=port)
+            self.bootcirc = ltor.create.fast(self.bootlink)
+            self.bootlast = time.time()
+
+            if not self.isalive_bootnode(force_check=True):
+                self.die('Unable to interact w/ bootstrap node, abort!')
+
+    def isalive_bootnode(self, force_check=False):
+        with self.lock:
+            if self.bootlink is None:
+                return False
+
+            if self.bootlink.io.dead:
+                return False
+
+            if self.bootcirc.circuit.destroyed:
+                return False
+
+            if force_check or (time.time() - self.bootlast) > isalive_timeout:
+                circ, node = ltor.descriptors.download_authority(self.bootcirc)
+
+                if self.bootnode not in (None, node['identity']):
+                    self.die('Bootstrap node changed its identity, abort!')
+
+                self.bootlast = time.time()
+                self.bootcirc, self.bootnode = circ, node['identity']
+
+            return True
+
+    def isalive_producer(self):
+        with self.lock:
+            return not self.producer.dead
 
     def __enter__(self):
         self.start()
@@ -75,6 +109,12 @@ class clerk(threading.Thread):
         self.join()
 
     def main(self):
+        if not self.isalive_bootnode():
+            self.refresh_bootnode()
+
+        if not self.isalive_producer():
+            self.refresh_producer()
+
         with self.lock:
             self.tick += 1
 
