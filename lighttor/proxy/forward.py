@@ -15,7 +15,6 @@ debug = True
 tick_rate = 0.1
 queue_size = 5
 query_time = 6
-api_version = 0.1
 
 refresh_timeout = 5
 isalive_timeout = 30
@@ -467,7 +466,6 @@ class clerk(threading.Thread):
         self.join()
 
 app = flask.Flask(__name__)
-base_url = '/lighttor/api/v{}'.format(api_version)
 
 @app.route(base_url + '/consensus')
 def get_consensus():
