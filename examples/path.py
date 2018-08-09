@@ -15,6 +15,10 @@ if __name__ == '__main__':
     parser.add_argument('control_port', nargs='?', type=int, default=9051)
     sys_argv = parser.parse_args()
 
+    if sys_argv.tor_local == 0:
+        # probably using chutney here, thus purge consensus cache just in case
+        ltor.cache.purge()
+
     link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 

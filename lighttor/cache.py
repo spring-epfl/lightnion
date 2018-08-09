@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import shutil
 import base64
 
 cache_directory = 'lighttor-cache'
@@ -21,6 +22,11 @@ def directory(base_dir=None):
             'Unable to fetch cache directory: {}'.format(base_dir))
 
     return base_dir
+
+def purge():
+    base_dir = directory()
+    print('Note: removing {} to purge cache.'.format(base_dir))
+    shutil.rmtree(base_dir)
 
 class descriptors:
     @staticmethod
