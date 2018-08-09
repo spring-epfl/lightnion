@@ -1,9 +1,9 @@
 import os
-import sys
 import time
 import json
 import shutil
 import base64
+import logging
 
 cache_directory = 'lighttor-cache'
 
@@ -13,8 +13,8 @@ def directory(base_dir=None):
     base_dir = os.path.join(base_dir, cache_directory)
 
     if not os.path.isdir(base_dir):
-        print('Note: creating {} to cache descriptors.'.format(base_dir),
-            file=sys.stderr)
+        logging.info(
+            'Note: creating {} to cache descriptors.'.format(base_dir))
         os.mkdir(base_dir)
 
     if not os.path.isdir(base_dir):
@@ -25,7 +25,7 @@ def directory(base_dir=None):
 
 def purge():
     base_dir = directory()
-    print('Note: removing {} to purge cache.'.format(base_dir))
+    logging.warning('Note: removing {} to purge cache.'.format(base_dir))
     shutil.rmtree(base_dir)
 
 class descriptors:
@@ -104,8 +104,8 @@ class consensus:
         if not fields['flavor'] == flavor:
             raise ValueError('Mismatched flavor.')
 
-        if fields['headers']['valid-until']['stamp'] < time.time():
+        if fields['headers']['fresh-until']['stamp'] < time.time():
             raise ValueError('Consensus need to be refreshed: {} < {}'.format(
-                fields['headers']['valid-until']['stamp'], time.time()))
+                fields['headers']['fresh-until']['stamp'], time.time()))
 
         return fields
