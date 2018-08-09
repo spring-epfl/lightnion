@@ -1,5 +1,5 @@
 import lighttor as ltor
-import lighttor.auto
+import lighttor.proxy
 
 import multiprocessing
 import argparse
@@ -33,14 +33,14 @@ if __name__ == '__main__':
 
         # here, we do it manually to pass a nice debug print
         print('\nCreating a local, ephemeral Tor node (via stem)...')
-        tor = ltor.auto.path.get_tor(
+        tor = ltor.proxy.path.get_tor(
             msg_handler=lambda line: print(' ' * 4, line))
 
         print('\nFetching paths now...'.format(sys_argv.target))
-        producer = ltor.auto.path.fetch(tor_process=tor)
+        producer = ltor.proxy.path.fetch(tor_process=tor)
     else:
         print('\nFetching at least {} paths now.'.format(sys_argv.target))
-        producer = ltor.auto.path.fetch(sys_argv.target, tor_process=False,
+        producer = ltor.proxy.path.fetch(sys_argv.target, tor_process=False,
             control_port=sys_argv.control_port)
 
     # retrieve the required number of paths
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     # convert (fingerprint, nickname) into a full consensus entry
     guard = producer.guard
-    guard, paths = ltor.auto.path.convert(guard, paths, consensus=consensus)
+    guard, paths = ltor.proxy.path.convert(guard, paths, consensus=consensus)
 
     print('With guard {}: {}'.format(guard['nickname'], guard['digest']))
     for middle, exit in paths:
