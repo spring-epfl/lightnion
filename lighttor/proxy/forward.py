@@ -25,6 +25,10 @@ class clerk(threading.Thread):
         self.refresh_producer()
         self.refresh_bootnode()
 
+        self.consensus = None
+
+        self.refresh_consensus()
+
     def die(self, e):
         if isinstance(e, str):
             e = RuntimeError(e)
@@ -74,6 +78,17 @@ class clerk(threading.Thread):
             if not self.isalive_bootnode(force_check=True):
                 self.die('Unable to interact w/ bootstrap node, abort!')
 
+    def refresh_consensus(self):
+        with self.lock:
+            if not self.isalive_bootnode():
+                self.refresh_bootnode()
+
+            self.bootcirc, census = ltor.consensus.download(self.bootcirc)
+            if census['headers']['valid-until']['stamp'] < time.time():
+                self.die('Unable to get a fresh consensus, abort!')
+
+            self.consensus = census
+
     def isalive_bootnode(self, force_check=False):
         with self.lock:
             if self.bootlink is None:
@@ -114,6 +129,8 @@ class clerk(threading.Thread):
 
         if not self.isalive_producer():
             self.refresh_producer()
+
+        self.refresh_consensus()
 
         with self.lock:
             self.tick += 1
