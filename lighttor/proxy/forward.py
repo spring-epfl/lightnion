@@ -23,21 +23,6 @@ nonce_size = 12
 refresh_timeout = 5
 isalive_timeout = 30
 
-class _abort_lock:
-    def __init__(self, lock):
-        self._lock = lock
-        self.acquired = False
-
-    def __enter__(self):
-        if self._lock.acquire(blocking=False):
-            self.acquired = True
-            return
-        flask.abort(503)
-
-    def __exit__(self, *kargs):
-        if self.acquired:
-            return self._lock.release()
-
 class crypto:
     from cryptography.exceptions import InvalidTag
 
@@ -107,10 +92,6 @@ class clerk(threading.Thread):
         self._delete_trigger = queue.Queue(maxsize=queue_size)
         self._create_trigger = queue.Queue(maxsize=queue_size)
         self._created_output = queue.Queue(maxsize=queue_size)
-
-    @property
-    def lock(self):
-        return _abort_lock(self._lock)
 
     def die(self, e):
         if isinstance(e, str):
