@@ -25,7 +25,6 @@ if __name__ == "__main__":
         guard['router']['nickname']))
 
     # create a new channel
-    rq = requests.get(base_url + '/guard')
     ntor, material = ltor.http.ntor.hand(guard)
     data = json.dumps(dict(ntor=ntor))
     headers = {'Content-Type': 'application/json'}
