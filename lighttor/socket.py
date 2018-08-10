@@ -42,18 +42,6 @@ class _stat_peer:
     def close(self):
         return self.peer.close()
 
-class _fake_peer:
-    def __init__(self, io, buffer_size):
-        self.buffer_size = buffer_size
-        self.buffer = b''
-        self.io = io
-
-    def recv(self, size):
-        while len(self.buffer) < size:
-            self.buffer += self.io.receiver.get()
-        payload, self.buffer = self.buffer[:size], self.buffer[size:]
-        return payload
-
 def cell_slice(payload, once=False):
     cell_header = ltor.cell.header(payload)
     if len(payload) < cell_header.width: # (payload too small, need data)
