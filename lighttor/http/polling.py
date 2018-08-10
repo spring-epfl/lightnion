@@ -5,7 +5,7 @@ import queue
 import json
 import time
 
-headers = {'Content-Type': 'application/json'}
+from .. import http
 
 class worker(threading.Thread):
     def __init__(self, endpoint, period, max_queue=2048):
@@ -48,9 +48,10 @@ class worker(threading.Thread):
             cell = self.send_queue.get(block=False)
             data = json.dumps(dict(event='send', cell=str(cell, 'utf8')))
 
-            rq = requests.post(self.endpoint, data=data, headers=headers)
+            rq = requests.post(self.endpoint, data=data, headers=http.headers)
             if not rq.status_code == 201:
-                raise RuntimeError('Got {} status (send)!'.format(rq.status_code))
+                raise RuntimeError(
+                    'Got {} status (send)!'.format(rq.status_code))
 
             answer = json.loads(rq.text)
             for cell in answer['cells']:
@@ -61,7 +62,7 @@ class worker(threading.Thread):
             pass
 
         data = json.dumps(dict(event='recv'))
-        rq = requests.post(self.endpoint, data=data, headers=headers)
+        rq = requests.post(self.endpoint, data=data, headers=http.headers)
         if not rq.status_code == 201:
             raise RuntimeError('Got {} status! (recv)'.format(rq.status_code))
 
