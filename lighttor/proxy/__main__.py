@@ -26,16 +26,14 @@ if __name__ == '__main__':
     parser.add_argument('-p', type=int, required=False, default=4990,
         metavar='port', help='Listen to port for HTTP requests.'
         + ' (default: 4990)')
-    parser.add_argument('-b', required=False, default='127.0.0.1:5000',
-        metavar='ip:or_port', help='Tor node for dir. requests.'
+    parser.add_argument('-s', required=False, default='127.0.0.1:5000',
+        metavar='ip:or_port', help='Tor node used as slave.'
         + ' (default: 127.0.0.1:5000)')
-    parser.add_argument('-s', required=False, default='127.0.0.1:8000',
-        metavar='ip:control_port', help='Slave node for path selection.'
-        + ' (default: 127.0.0.1:8000)')
+    parser.add_argument('-c', required=False, default='8000',
+        metavar='control_port', help='Control port for path selection.'
+        + ' (default: 8000)')
     parser.add_argument('--purge-cache', action='store_true',
         help='If specified, purge cache before starting.')
-    parser.add_argument('--spawn-slave', action='store_true',
-        help='If specified, ignore -s and spawn local slave.')
     parser.add_argument('-v', action='count',
                         help='Verbose output (up to -vvv)')
 
@@ -43,21 +41,18 @@ if __name__ == '__main__':
     logging.basicConfig(
         format=log_format, level=log_levels.get(argv.v, logging.DEBUG))
 
-    argv.b = _validate_host(argv.b)
-    argv.s = _validate_host(argv.s)
 
     # For now, we rely on having a trusted local Tor node that checks
     # signatures for us & everything else.
     #
-    if argv.b[0] != '127.0.0.1':
-        logging.error(
-            'No authenticated links, using {} is unsafe!'.format(argv.b))
+    argv.s = _validate_host(argv.s)
     if argv.s[0] != '127.0.0.1':
         logging.error(
-            'No authenticated controllers, using {} is unsafe!'.format(argv.s))
+            'No authentication for slave, using {} is unsafe!'.format(argv.s))
+    _, argv.c = _validate_host('{}:{}'.format(argv.s[0], argv.c))
 
     lighttor.proxy.forward.main(
         port=argv.p,
-        slave_node=argv.s if not argv.spawn_slave else None,
-        bootstrap_node=argv.b,
+        slave_node=argv.s,
+        control_port=argv.c,
         purge_cache=argv.purge_cache)

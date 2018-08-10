@@ -8,6 +8,7 @@ import lighttor as ltor
 default_qsize = 3
 default_expiracy = 3
 
+isalive_period = 30
 refresh_timeout = 3
 
 class expired(BaseException):
@@ -157,7 +158,7 @@ class producer(basic):
 
                 logging.debug('Previous path emitter successfully terminated.')
 
-            addr, port = self.clerk.slave_node
+            addr, port = self.clerk.slave_node[0], self.clerk.control_port
             self.child = ltor.proxy.path.fetch(tor_process=False,
                 control_host=addr, control_port=port)
             self.guard = self.child.guard
@@ -192,9 +193,102 @@ class producer(basic):
 
         return True
 
-    def perform(self, timeout=1):
-        return self.get(timeout=timeout)
-
     def close(self):
         with self.private_lock:
             self.child.close()
+
+class slave(basic):
+    def __init__(self, clerk, qsize=default_qsize):
+        self.link = None
+        self.circ = None
+        self.desc = None
+        self.identity = None
+        super().__init__(clerk=clerk, qsize=qsize)
+
+    def get(self):
+        raise NotImplementedError
+
+    def put(self, job):
+        raise NotImplementedError
+
+    def get_job(self):
+        raise NotImplementedError
+
+    def put_job(self, job):
+        raise NotImplementedError
+
+    def reset(self):
+        super().reset()
+
+        logging.info('Resetting slave node link.')
+        with self.private_lock:
+            if self.link is not None:
+                self.link.close()
+
+                for _ in range(refresh_timeout):
+                    if self.link.io.dead:
+                        break
+                    time.sleep(1)
+
+                if not self.link.io.dead:
+                    raise RuntimeError('Unable to close slave link, abort!')
+
+                logging.debug('Previous slave link successfully terminated.')
+
+            addr, port = self.clerk.slave_node
+            self.link = ltor.link.initiate(addr, port)
+            self.circ = ltor.create.fast(self.link)
+            self.last = time.time()
+
+        if not self.isalive(force_check=True):
+            raise RuntimeError('Unable to interact with slave node, abort!')
+
+    def authority(self, check_alive=True):
+        if check_alive and not self.isalive():
+            self.reset()
+        self.circ, self.desc = ltor.descriptors.download_authority(self.circ)
+        return self.desc
+
+    def descriptors(self, query, fail_on_missing=True, check_alive=True):
+        if check_alive and not self.isalive():
+            self.reset()
+
+        self.circ, descs = ltor.descriptors.download(self.circ, query,
+            flavor='unflavored', fail_on_missing=fail_on_missing)
+        return descs
+
+    def consensus(self, check_alive=True):
+        if check_alive and not self.isalive():
+            self.reset()
+
+        self.circ, cons = ltor.consensus.download(self.circ,
+            flavor='unflavored')
+        return cons
+
+    def isalive(self, force_check=False):
+        with self.private_lock:
+            if self.link is None:
+                return False
+
+            if self.link.io.dead:
+                logging.warning('Slave node link seems dead.')
+                return False
+
+            if self.circ.circuit.destroyed:
+                logging.warning('Bootstrap node circuit got destroyed.')
+                return False
+
+            if force_check or (time.time() - self.last) > isalive_period:
+                logging.debug('Update slave node descriptor (heath check).')
+
+                desc = self.authority(check_alive=False)
+                if self.identity not in (None, desc['identity']):
+                    raise RuntimeError('Slave node changed identity, abort!')
+
+                self.last = time.time()
+                self.identity = desc['identity']
+            return True
+
+    def close(self):
+        with self.private_lock:
+            self.link.close()
