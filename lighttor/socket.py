@@ -191,6 +191,10 @@ class io:
     def dead(self):
         return self.worker.dead
 
+    @property
+    def pending(self):
+        return self.worker.cell_queue.qsize()
+
     def recv(self, block=True):
         return self.worker.recv(block)
 
