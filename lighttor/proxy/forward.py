@@ -92,8 +92,7 @@ class clerk(threading.Thread):
         self.bootstrap_node = bootstrap_node
         self.slave_node = slave_node
 
-        self.producer = None
-        self.refresh_producer()
+        self.producer = ltor.proxy.jobs.producer(self)
 
         self.bootlink = None
         self.bootnode = None
@@ -139,32 +138,6 @@ class clerk(threading.Thread):
             return None
 
         return self.guardlink.circuits[circuit_id]
-
-    def refresh_producer(self):
-        logging.info('Refreshing path emitter.')
-
-        with self._lock:
-            if self.producer is not None:
-                self.producer.close()
-
-                for _ in range(refresh_timeout):
-                    if self.producer.dead:
-                        break
-                    time.sleep(1)
-
-                if not self.producer.dead:
-                    self.die('Unable to kill path emitter, abort!')
-
-                logging.debug('Previous producer successfully terminated.')
-
-            if self.slave_node is None:
-                self.producer = ltor.proxy.path.fetch()
-            else:
-                addr, port = self.slave_node
-                self.producer = ltor.proxy.path.fetch(
-                    tor_process=False, control_host=addr, control_port=port)
-
-            logging.debug('Producer successfully created.')
 
     def refresh_bootnode(self):
         logging.info('Refreshing bootstrap node link.')
@@ -215,8 +188,8 @@ class clerk(threading.Thread):
             if not self.isfresh_consensus():
                 self.refresh_consensus()
 
-            if not self.isalive_producer():
-                self.refresh_producer()
+            if not self.producer.isalive():
+                self.producer.reset()
 
             guardnode = ltor.proxy.path.convert(self.producer.guard,
                 consensus=self.consensus, expect='list')[0]
@@ -316,7 +289,7 @@ class clerk(threading.Thread):
                 if self.guardnode['identity'] != guard['router']['identity']:
                     logging.warning('Guard changed its identity, renew!')
 
-                    self.refresh_producer()
+                    self.producer.reset()
                     self.refresh_guardnode()
                     return self.isalive_guardnode()
 
@@ -324,7 +297,7 @@ class clerk(threading.Thread):
                     if not (self.guarddesc[key] == guard[key]):
                         logging.info('Guard changed its {} field.'.format(key))
 
-                        self.refresh_producer()
+                        self.producer.reset()
                         self.refresh_guardnode()
                         return self.isalive_guardnode()
 
@@ -431,8 +404,8 @@ class clerk(threading.Thread):
         if not self.isalive_bootnode():
             self.refresh_bootnode()
 
-        if not self.isalive_producer():
-            self.refresh_producer()
+        if not self.producer.isalive():
+            self.producer.reset()
 
         if not self.isfresh_consensus():
             self.refresh_consensus()
@@ -442,6 +415,7 @@ class clerk(threading.Thread):
 
         with self._lock:
             while (False
+                or self.producer.refresh()
                 or self.perform_pending_delete()
                 or self.perform_pending_create()
                 or self.perform_pending_send()
