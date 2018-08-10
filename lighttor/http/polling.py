@@ -19,6 +19,7 @@ class worker(threading.Thread):
         self.dead = False
 
     def close(self):
+        requests.delete(self.endpoint)
         self.dead = True
 
     def die(self, e):
