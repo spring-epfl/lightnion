@@ -81,7 +81,7 @@ class clerk(threading.Thread):
         self.producer = ltor.proxy.jobs.producer(self)
         self.slave = ltor.proxy.jobs.slave(self)
 
-        self.consensuser = ltor.proxy.jobs.consensus(self)
+        self.consensus_getter = ltor.proxy.jobs.consensus(self)
 
         self.guardlink = None
         self.guardnode = None
@@ -121,8 +121,8 @@ class clerk(threading.Thread):
         logging.info('Refreshing guard node link.')
 
         with self._lock:
-            if not self.consensuser.isalive():
-                self.consensuser.reset()
+            if not self.consensus_getter.isalive():
+                self.consensus_getter.reset()
 
             if not self.producer.isalive():
                 self.producer.reset()
@@ -297,14 +297,14 @@ class clerk(threading.Thread):
                 raise e
 
     def main(self):
-        for job in [self.slave, self.producer, self.consensuser]:
+        for job in [self.slave, self.producer, self.consensus_getter]:
             if not job.isalive():
                 job.reset()
 
         if not self.isalive_guardnode():
             self.refresh_guardnode()
 
-        for job in [self.producer, self.consensuser]:
+        for job in [self.producer, self.consensus_getter]:
             if job.isfresh():
                 continue
 
@@ -424,7 +424,7 @@ base_url = ltor.proxy.base_url
 @app.route(base_url + '/consensus')
 def get_consensus():
     try:
-        return flask.jsonify(app.clerk.consensuser.perform()), 200
+        return flask.jsonify(app.clerk.consensus_getter.perform()), 200
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
