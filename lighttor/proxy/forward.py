@@ -528,7 +528,9 @@ class clerk(threading.Thread):
         try:
             for _ in range(recv_batch):
                 payload = circuit.queue.get(timeout=timeout)
-                payload = ltor.cell.header_view.write(payload, circuit_id=1)
+                payload = ltor.cell.header_view.write(payload,
+                    circuit_id=ltor.proxy.fake_circuit_id)
+
                 received.append(str(base64.b64encode(payload), 'utf8'))
         except queue.Empty:
             pass

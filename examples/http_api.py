@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # create fake objects
     io = ltor.http.polling.io(base_url + '/channels/' + uid)
     link = ltor.link.link(io, version='http')
-    circuit = ltor.create.circuit(1, material)
+    circuit = ltor.create.circuit(ltor.proxy.fake_circuit_id, material)
     link.register(circuit)
     state = ltor.onion.state(link, circuit)
     print('\nCreated fake link to reuse internal API.')
