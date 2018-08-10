@@ -1,4 +1,3 @@
-import threading
 import logging
 import queue
 import time
@@ -19,8 +18,6 @@ class basic:
         self.clerk = clerk
         self.qsize = qsize
 
-        self.private_lock = threading.Lock()
-        self.public_lock = threading.Lock()
         self.reset()
 
     def reset(self):
@@ -42,20 +39,18 @@ class basic:
         raise expired
 
     def get_job(self):
-        with self.private_lock:
-            try:
-                return self._in.get_nowait()
-            except queue.Empty:
-                pass
-            raise expired
+        try:
+            return self._in.get_nowait()
+        except queue.Empty:
+            pass
+        raise expired
 
     def put_job(self, job):
-        with self.private_lock:
-            try:
-                return self._out.put_nowait(job)
-            except queue.Full:
-                pass
-            raise expired
+        try:
+            return self._out.put_nowait(job)
+        except queue.Full:
+            pass
+        raise expired
 
     def isfresh(self):
         raise NotImplementedError
@@ -80,10 +75,8 @@ def ordered(basic):
         self.last_job = 0
 
     def put(self, job, timeout=1):
-        jid = None
-        with self.public_lock:
-            _last_job += 1
-            jid = _last_job
+        _last_job += 1
+        jid = _last_job
 
         date = time.time()
         super().put(self, (job, jid, date), timeout=timeout)
@@ -97,14 +90,12 @@ def ordered(basic):
                 if time.time() - date > self.expiracy:
                     raise expired
 
-                with self.public_lock:
-                    self.pending_jobs.pop(job_id, None)
+                self.pending_jobs.pop(job_id, None)
                 return job
 
             try:
                 job, jid, date = super().get(self, timeout=timeout)
-                with self.public_lock:
-                    self.pending_jobs[jid] = (job, date)
+                self.pending_jobs[jid] = (job, date)
             except expired:
                 continue
 
@@ -113,9 +104,8 @@ def ordered(basic):
                 if time.time() - date > self.expiracy:
                     olds.append(jid)
 
-            with self.public_lock:
-                for jid in olds:
-                    self.pending_jobs.pop(jid, None)
+            for jid in olds:
+                self.pending_jobs.pop(jid, None)
 
     def get_job(self):
         jid, job, date = super().get_job()
@@ -144,26 +134,25 @@ class producer(basic):
         super().reset()
 
         logging.info('Resetting path emitter.')
-        with self.private_lock:
-            if self.child is not None:
-                self.child.close()
+        if self.child is not None:
+            self.child.close()
 
-                for _ in range(refresh_timeout):
-                    if self.child.dead:
-                        break
-                    time.sleep(1)
+            for _ in range(refresh_timeout):
+                if self.child.dead:
+                    break
+                time.sleep(1)
 
-                if not self.child.dead:
-                    raise RuntimeError('Unable to kill path emitter, abort!')
+            if not self.child.dead:
+                raise RuntimeError('Unable to kill path emitter, abort!')
 
-                logging.debug('Previous path emitter successfully terminated.')
+            logging.debug('Previous path emitter successfully terminated.')
 
-            addr, port = self.clerk.slave_node[0], self.clerk.control_port
-            self.child = ltor.proxy.path.fetch(tor_process=False,
-                control_host=addr, control_port=port)
-            self.guard = self.child.guard
+        addr, port = self.clerk.slave_node[0], self.clerk.control_port
+        self.child = ltor.proxy.path.fetch(tor_process=False,
+            control_host=addr, control_port=port)
+        self.guard = self.child.guard
 
-            logging.debug('Path emitter successfully started.')
+        logging.debug('Path emitter successfully started.')
 
     def isalive(self):
         return (not self.child.dead
@@ -173,32 +162,25 @@ class producer(basic):
         return not (self._out.qsize() < self.qsize)
 
     def refresh(self):
-        path = None
         try:
-            with self.private_lock:
-                path = self._path
+            if self._path is not None:
+                self.put_job(self._path)
                 self._path = None
-
-            if path is not None:
-                self.put_job(path)
+                return True
         except expired:
-            if path is not None:
-                with self.private_lock:
-                    self._path = path
-            return False
+            pass
 
         try:
-            path = self.child.path_queue.get_nowait()
-            with self.private_lock:
-                self._path = path
+            if self._path is None:
+                self._path = self.child.path_queue.get_nowait()
+                return True
         except queue.Empty:
             return False
 
-        return True
+        return False
 
     def close(self):
-        with self.private_lock:
-            self.child.close()
+        self.child.close()
 
 class slave(basic):
     def __init__(self, clerk, qsize=default_qsize):
@@ -224,24 +206,23 @@ class slave(basic):
         super().reset()
 
         logging.info('Resetting slave node link.')
-        with self.private_lock:
-            if self.link is not None:
-                self.link.close()
+        if self.link is not None:
+            self.link.close()
 
-                for _ in range(refresh_timeout):
-                    if self.link.io.dead:
-                        break
-                    time.sleep(1)
+            for _ in range(refresh_timeout):
+                if self.link.io.dead:
+                    break
+                time.sleep(1)
 
-                if not self.link.io.dead:
-                    raise RuntimeError('Unable to close slave link, abort!')
+            if not self.link.io.dead:
+                raise RuntimeError('Unable to close slave link, abort!')
 
-                logging.debug('Previous slave link successfully terminated.')
+            logging.debug('Previous slave link successfully terminated.')
 
-            addr, port = self.clerk.slave_node
-            self.link = ltor.link.initiate(addr, port)
-            self.circ = ltor.create.fast(self.link)
-            self.last = time.time()
+        addr, port = self.clerk.slave_node
+        self.link = ltor.link.initiate(addr, port)
+        self.circ = ltor.create.fast(self.link)
+        self.last = time.time()
 
         if not self.isalive(force_check=True):
             raise RuntimeError('Unable to interact with slave node, abort!')
@@ -269,32 +250,30 @@ class slave(basic):
         return cons
 
     def isalive(self, force_check=False):
-        with self.private_lock:
-            if self.link is None:
-                return False
+        if self.link is None:
+            return False
 
-            if self.link.io.dead:
-                logging.warning('Slave node link seems dead.')
-                return False
+        if self.link.io.dead:
+            logging.warning('Slave node link seems dead.')
+            return False
 
-            if self.circ.circuit.destroyed:
-                logging.warning('Bootstrap node circuit got destroyed.')
-                return False
+        if self.circ.circuit.destroyed:
+            logging.warning('Bootstrap node circuit got destroyed.')
+            return False
 
-            if force_check or (time.time() - self.last) > isalive_period:
-                logging.debug('Update slave node descriptor (heath check).')
+        if force_check or (time.time() - self.last) > isalive_period:
+            logging.debug('Update slave node descriptor (heath check).')
 
-                desc = self.authority(check_alive=False)
-                if self.identity not in (None, desc['identity']):
-                    raise RuntimeError('Slave node changed identity, abort!')
+            desc = self.authority(check_alive=False)
+            if self.identity not in (None, desc['identity']):
+                raise RuntimeError('Slave node changed identity, abort!')
 
-                self.last = time.time()
-                self.identity = desc['identity']
-            return True
+            self.last = time.time()
+            self.identity = desc['identity']
+        return True
 
     def close(self):
-        with self.private_lock:
-            self.link.close()
+        self.link.close()
 
 class consensus(basic):
     def __init__(self, clerk, qsize=default_qsize):
@@ -319,8 +298,7 @@ class consensus(basic):
             super().reset()
             logging.info('Consensus successfully refreshed.')
 
-        with self.private_lock:
-            self.clerk.consensus = census
+        self.clerk.consensus = census
 
         # (cache descriptors for later use)
         self.clerk.slave.descriptors(census, fail_on_missing=False)
