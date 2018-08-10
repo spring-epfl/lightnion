@@ -13,6 +13,7 @@ import lighttor.proxy
 
 debug = True
 tick_rate = 0.1
+job_batch = 8
 send_batch = 32
 recv_batch = 32
 queue_size = 5
@@ -94,8 +95,7 @@ class clerk(threading.Thread):
         self.producer = ltor.proxy.jobs.producer(self)
         self.slave = ltor.proxy.jobs.slave(self)
 
-        self.consensus = dict(headers=None)
-        self.refresh_consensus()
+        self.consensuser = ltor.proxy.jobs.consensus(self)
 
         self.guardlink = None
         self.guardnode = None
@@ -135,30 +135,12 @@ class clerk(threading.Thread):
 
         return self.guardlink.circuits[circuit_id]
 
-    def refresh_consensus(self):
-        with self._lock:
-            if not self.slave.isalive():
-                self.slave.reset()
-
-
-            census = self.slave.consensus()
-
-            if census['headers']['valid-until']['stamp'] < time.time():
-                self.die('Unable to get a fresh consensus, abort!')
-            if not census['headers'] == self.consensus['headers']:
-                logging.info('Consensus successfully refreshed.')
-
-            self.consensus = census
-
-            # (cache descriptors for later use)
-            self.slave.descriptors(census, fail_on_missing=False)
-
     def refresh_guardnode(self):
         logging.info('Refreshing guard node link.')
 
         with self._lock:
-            if not self.isfresh_consensus():
-                self.refresh_consensus()
+            if not self.consensuser.isalive():
+                self.consensuser.reset()
 
             if not self.producer.isalive():
                 self.producer.reset()
@@ -200,15 +182,6 @@ class clerk(threading.Thread):
 
             self.maintoken = token
             logging.debug('Shared tokenid: {}'.format(token.hex()))
-
-    def isalive_producer(self):
-        with self._lock:
-            return not self.producer.dead
-
-    def isfresh_consensus(self):
-        with self._lock:
-            fresh_until = self.consensus['headers']['fresh-until']['stamp']
-            return not (fresh_until < time.time())
 
     def isalive_guardnode(self, force_check=False):
         with self._lock:
@@ -342,21 +315,24 @@ class clerk(threading.Thread):
                 raise e
 
     def main(self):
-        if not self.slave.isalive():
-            self.slave.reset()
-
-        if not self.producer.isalive():
-            self.producer.reset()
-
-        if not self.isfresh_consensus():
-            self.refresh_consensus()
+        for job in [self.slave, self.producer, self.consensuser]:
+            if not job.isalive():
+                job.reset()
 
         if not self.isalive_guardnode():
             self.refresh_guardnode()
 
+        for job in [self.producer, self.consensuser]:
+            if job.isfresh():
+                continue
+
+            for _ in range(job_batch):
+                if job.refresh():
+                    continue
+                break
+
         with self._lock:
             while (False
-                or self.producer.refresh()
                 or self.perform_pending_delete()
                 or self.perform_pending_create()
                 or self.perform_pending_send()
@@ -465,15 +441,10 @@ base_url = ltor.proxy.base_url
 
 @app.route(base_url + '/consensus')
 def get_consensus():
-    global debug
-    if not debug:
-        flask.abort(404)
-
-    consensus = None
-    with app.clerk.lock:
-        consensus = app.clerk.consensus
-
-    return flask.jsonify(consensus)
+    try:
+        return flask.jsonify(app.clerk.consensuser.perform()), 200
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
 
 @app.route(base_url + '/guard')
 def get_guard():

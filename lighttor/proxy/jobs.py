@@ -70,7 +70,7 @@ class basic:
         raise NotImplementedError
 
     def close(self):
-        raise NotImplementedError
+        pass
 
 def ordered(basic):
     def __init__(self, clerk, expiracy=default_expiracy, qsize=default_qsize):
@@ -168,6 +168,9 @@ class producer(basic):
     def isalive(self):
         return (not self.child.dead
             and self.guard == self.child.guard)
+
+    def isfresh(self):
+        return not (self._out.qsize() < self.qsize)
 
     def refresh(self):
         path = None
@@ -292,3 +295,49 @@ class slave(basic):
     def close(self):
         with self.private_lock:
             self.link.close()
+
+class consensus(basic):
+    def __init__(self, clerk, qsize=default_qsize):
+        clerk.consensus = dict(headers=None)
+        super().__init__(clerk=clerk, qsize=qsize)
+
+    def put(self, job):
+        raise NotImplementedError
+
+    def get_job(self):
+        raise NotImplementedError
+
+    def reset(self):
+        if not self.clerk.slave.isalive():
+            self.clerk.slave.reset()
+
+        census = self.clerk.slave.consensus()
+
+        if census['headers']['valid-until']['stamp'] < time.time():
+            raise RuntimeError('Unable to get a fresh consensus, abort!')
+        if not census['headers'] == self.clerk.consensus['headers']:
+            super().reset()
+            logging.info('Consensus successfully refreshed.')
+
+        with self.private_lock:
+            self.clerk.consensus = census
+
+        # (cache descriptors for later use)
+        self.clerk.slave.descriptors(census, fail_on_missing=False)
+
+    def isalive(self):
+        fresh_until = self.clerk.consensus['headers']['fresh-until']['stamp']
+        return not (fresh_until < time.time())
+
+    def isfresh(self):
+        return not (self._out.qsize() < self.qsize)
+
+    def refresh(self):
+        try:
+            self.put_job(self.clerk.consensus)
+            return True
+        except expired:
+            return False
+
+    def perform(self, timeout=1):
+        return self.get(timeout=timeout)
