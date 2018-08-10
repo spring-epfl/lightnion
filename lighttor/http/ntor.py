@@ -4,7 +4,7 @@ import lighttor.ntor_ref as ntor_ref
 import curve25519
 import base64
 
-def ntor_get(guard):
+def hand(guard):
     identity = base64.b64decode(guard['router']['identity'] + '====')
     onion_key = base64.b64decode(guard['ntor-onion-key'] + '====')
 
@@ -14,7 +14,7 @@ def ntor_get(guard):
     payload = str(base64.b64encode(payload), 'utf8')
     return payload, (donna_onion_key, ephemeral_key, identity)
 
-def ntor_finish(payload, material):
+def shake(payload, material):
     payload = base64.b64decode(payload)
     donna_onion_key, ephemeral_key, identity = material
 

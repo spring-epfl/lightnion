@@ -6,12 +6,12 @@ import json
 import time
 
 headers = {'Content-Type': 'application/json'}
-pooling_speed = 0.01 # pooling FTW
 
 class worker(threading.Thread):
-    def __init__(self, endpoint, max_queue=2048):
+    def __init__(self, endpoint, period, max_queue=2048):
         super().__init__()
         self.endpoint = endpoint
+        self.period = period
 
         self.send_queue = queue.Queue(max_queue)
         self.recv_queue = queue.Queue(max_queue)
@@ -68,7 +68,7 @@ class worker(threading.Thread):
         for cell in answer['cells']:
             self.recv_queue.put(cell)
 
-        time.sleep(pooling_speed)
+        time.sleep(self.period)
 
     def run(self):
         try:
@@ -81,8 +81,8 @@ class worker(threading.Thread):
 class io:
     _join_timeout = 3
 
-    def __init__(self, endpoint, daemon=True, max_queue=2048):
-        self.worker = worker(endpoint, max_queue)
+    def __init__(self, endpoint, period=0.1, daemon=True, max_queue=2048):
+        self.worker = worker(endpoint, period, max_queue)
         if daemon:
             self.worker.daemon = True
 

@@ -1,5 +1,6 @@
 import lighttor as ltor
 import lighttor.proxy
+import lighttor.http
 
 import argparse
 import requests
@@ -25,7 +26,7 @@ if __name__ == "__main__":
 
     # create a new channel
     rq = requests.get(base_url + '/guard')
-    ntor, material = ltor.proxy.parts.ntor_get(guard)
+    ntor, material = ltor.http.ntor.hand(guard)
     data = json.dumps(dict(ntor=ntor))
     headers = {'Content-Type': 'application/json'}
     rq = requests.post(base_url + '/channels', data=data, headers=headers)
@@ -38,10 +39,10 @@ if __name__ == "__main__":
     print(' - Got following id: {}'.format(uid))
 
     # finish the ntor handshake
-    material = ltor.proxy.parts.ntor_finish(ntor, material)
+    material = ltor.http.ntor.shake(ntor, material)
 
     # create fake objects
-    io = ltor.proxy.http.io(base_url + '/channels/' + uid)
+    io = ltor.http.polling.io(base_url + '/channels/' + uid)
     link = ltor.link.link(io, version='http')
     circuit = ltor.create.circuit(1, material)
     link.register(circuit)
