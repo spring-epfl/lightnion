@@ -18,6 +18,7 @@ send_batch = 32
 recv_batch = 32
 queue_size = 5
 query_time = 6
+nonce_size = 12
 
 refresh_timeout = 5
 isalive_timeout = 30
@@ -49,7 +50,7 @@ class crypto:
     def compute_token(self, circuit_id, binding):
         circuit_id = ltor.cell.view.uint(4).write(b'', circuit_id)
 
-        nonce = secrets.token_bytes(12)
+        nonce = secrets.token_bytes(nonce_size)
         token = self.gcm.encrypt(nonce, circuit_id, self.binding + binding)
         token = base64.urlsafe_b64encode(nonce + token)
         return str(token.replace(b'=', b''), 'utf8')
@@ -66,7 +67,7 @@ class crypto:
             return None
 
         binding = self.binding + binding
-        nonce, token = token[:12], token[12:]
+        nonce, token = token[:nonce_size], token[nonce_size:]
         try:
             circuit_id = self.gcm.decrypt(nonce, token, binding)
         except self.InvalidTag:
