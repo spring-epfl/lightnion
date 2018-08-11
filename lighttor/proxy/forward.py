@@ -82,10 +82,17 @@ class clerk(threading.Thread):
         self.consensus_getter = ltor.proxy.jobs.consensus(self)
         self.guard = ltor.proxy.jobs.guard(self)
 
+        self.create = ltor.proxy.jobs.create(self)
+
         self._send_trigger = queue.Queue(maxsize=send_batch)
         self._delete_trigger = queue.Queue(maxsize=queue_size)
-        self._create_trigger = queue.Queue(maxsize=queue_size)
-        self._created_output = queue.Queue(maxsize=queue_size)
+
+        self.jobs = [
+            self.slave,
+            self.producer,
+            self.consensus_getter,
+            self.guard,
+            self.create]
 
     def die(self, e):
         if isinstance(e, str):
@@ -110,44 +117,6 @@ class clerk(threading.Thread):
             return None
 
         return self.guard.link.circuits[circuit_id]
-
-    def perform_pending_create(self):
-        try:
-            rq, data = self._create_trigger.get_nowait()
-            logging.info('Got an incoming create channel request.')
-        except queue.Empty:
-            return False
-
-        try:
-            circuit_id, payload = ltor.create.ntor_raw(self.guard.link, data)
-            self.guard.link.register(ltor.create.circuit(circuit_id, None))
-        except BaseException as e:
-            logging.info('Got an invalid handshake, cause: {}'.format(e))
-            payload = b''
-
-        middle, exit = ltor.proxy.path.convert(*self.producer.get(),
-            consensus=self.consensus, expect='list')
-
-        middle = self.slave.descriptors(middle)
-        exit = self.slave.descriptors(exit)
-
-        token = self.crypto.compute_token(circuit_id, self.maintoken)
-        payload = str(base64.b64encode(payload), 'utf8')
-
-        logging.debug('Circuit created with circuit_id: {}'.format(
-            circuit_id))
-        logging.debug('Path picked: {} -> {}'.format(
-            middle[0]['router']['nickname'], exit[0]['router']['nickname']))
-        logging.debug('Token emitted: {}'.format(token))
-
-        try:
-            self._created_output.put_nowait((rq,
-                {'id': token, 'path': [middle[0], exit[0]], 'ntor': payload}))
-        except queue.Full:
-            logging.warning('Too many create channel requests, dropping.')
-            return False
-
-        return True
 
     def perform_delete(self, circuit):
         self.guard.link.unregister(circuit)
@@ -182,12 +151,11 @@ class clerk(threading.Thread):
             return False
 
     def main(self):
-        for job in [
-            self.slave, self.producer, self.consensus_getter, self.guard]:
+        for job in self.jobs:
             if not job.isalive():
                 job.reset()
 
-        for job in [self.producer, self.consensus_getter, self.guard]:
+        for job in self.jobs:
             if job.isfresh():
                 continue
 
@@ -199,7 +167,6 @@ class clerk(threading.Thread):
         with self._lock:
             while (False
                 or self.perform_pending_delete()
-                or self.perform_pending_create()
                 or self.perform_pending_send()):
                 self.tick += 1
         time.sleep(tick_rate)
@@ -212,45 +179,6 @@ class clerk(threading.Thread):
                 logging.critical(e)
                 if debug:
                     traceback.print_exc()
-
-    _create_trigger_cache = None
-    _create_trigger_count = 0
-    def create(self, data, timeout=3):
-        timeout = timeout / (1 + queue_size)
-
-        self._create_trigger_count += 1
-        rq = self._create_trigger_count
-
-        try:
-            self._create_trigger.put((rq, data), timeout=timeout)
-        except queue.Full:
-            flask.abort(503)
-
-        for _ in range(queue_size):
-            if self._create_trigger_cache is None:
-                self._create_trigger_cache = dict()
-
-            try:
-                key, data = self._created_output.get(timeout=timeout)
-                self._create_trigger_cache[key] = (data, time.time())
-            except queue.Empty:
-                pass
-
-            to_delete = []
-            rq_target = None
-            for key, (data, date) in self._create_trigger_cache.items():
-                if time.time() - date:
-                    to_delete.append(key)
-                if key == rq:
-                    rq_target = data
-
-            for key in to_delete:
-                del self._create_trigger_cache[key]
-
-            if rq_target is not None:
-                return rq_target
-
-        flask.abort(503)
 
     def delete(self, uid, timeout=1):
         try:
@@ -314,8 +242,11 @@ def create_channel():
     if not flask.request.json or not 'ntor' in flask.request.json:
         flask.abort(400)
 
-    data = base64.b64decode(flask.request.json['ntor'])
-    return flask.jsonify(app.clerk.create(data)), 201 # Created
+    try:
+        data = flask.request.json['ntor']
+        return flask.jsonify(app.clerk.create.perform(data)), 201 # Created
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
 
 @app.route(base_url + '/channels/<uid>', methods=['POST'])
 def write_channel(uid):

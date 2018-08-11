@@ -1,6 +1,7 @@
 import logging
 import hashlib
 import queue
+import base64
 import time
 
 import lighttor as ltor
@@ -55,10 +56,10 @@ class basic:
         raise expired
 
     def isfresh(self):
-        raise NotImplementedError
+        return True
 
     def isalive(self):
-        raise NotImplementedError
+        return True
 
     def refresh(self):
         raise NotImplementedError
@@ -69,19 +70,20 @@ class basic:
     def close(self):
         pass
 
-def ordered(basic):
+class ordered(basic):
     def __init__(self, clerk, expiracy=default_expiracy, qsize=default_qsize):
         super().__init__(clerk=clerk, qsize=qsize)
-        self.pending_jobs = None
+        self.pending_jobs = dict()
         self.expiracy = expiracy
         self.last_job = 0
 
     def put(self, job, timeout=1):
-        _last_job += 1
-        jid = _last_job
+        self.last_job += 1
+        jid = self.last_job
 
         date = time.time()
-        super().put(self, (job, jid, date), timeout=timeout)
+        super().put((job, jid, date), timeout=timeout)
+        return jid
 
     def get(self, job_id, timeout=1):
         timeout = timeout / self.qsize
@@ -96,7 +98,7 @@ def ordered(basic):
                 return job
 
             try:
-                job, jid, date = super().get(self, timeout=timeout)
+                job, jid, date = super().get(timeout=timeout)
                 self.pending_jobs[jid] = (job, date)
             except expired:
                 continue
@@ -460,3 +462,61 @@ class guard(basic):
 
     def perform(self, timeout=1):
         return self.get(timeout=timeout)
+
+class create(ordered):
+    def isfresh(self):
+        return not (self._in.qsize() > 0)
+
+    def refresh(self):
+        try:
+            job_id, data = self.get_job()
+            logging.info('Got an incoming create channel request.')
+        except expired:
+            return False
+
+        try:
+            circid, data = ltor.create.ntor_raw(self.clerk.guard.link, data)
+            data = str(base64.b64encode(data), 'utf8')
+        except BaseException as e:
+            logging.info('Got an invalid create ntor handshake: {}'.format(e))
+            return True
+
+        if not self.clerk.guard.isalive():
+            self.clerk.guard.reset()
+
+        self.clerk.guard.link.register(ltor.create.circuit(circid, None))
+
+        if not self.clerk.producer.isalive():
+            self.clerk.producer.reset()
+
+        if not self.clerk.consensus_getter.isalive():
+            self.clerk.consensus_getter.reset()
+
+        middle, exit = ltor.proxy.path.convert(*self.clerk.producer.get(),
+            consensus=self.clerk.consensus, expect='list')
+
+        middle = self.clerk.slave.descriptors(middle)[0]
+        exit = self.clerk.slave.descriptors(exit)[0]
+
+        token = self.clerk.crypto.compute_token(circid, self.clerk.maintoken)
+
+        logging.debug('Circuit created with circuit_id: {}'.format(
+            circid))
+        logging.debug('Path picked: {} -> {}'.format(
+            middle['router']['nickname'], exit['router']['nickname']))
+        logging.debug('Token emitted: {}'.format(token))
+
+        try:
+            self.put_job({'id': token, 'path': [middle, exit], 'ntor': data},
+                job_id)
+        except expired:
+            logging.warning('Too many create channel requests, dropping.')
+            return False
+        return True
+
+    def perform(self, data, timeout=3):
+        timeout = timeout / 2
+
+        data = base64.b64decode(data)
+        job_id = self.put(data, timeout=timeout/2)
+        return self.get(job_id, timeout=timeout/2)
