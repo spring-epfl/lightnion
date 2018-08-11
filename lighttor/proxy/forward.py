@@ -102,19 +102,15 @@ class clerk(threading.Thread):
         self.dead = True
         raise e
 
-    def get_circuit(self, uid, abort=False):
+    def circuit_from_uid(self, uid):
         circuit_id = self.crypto.decrypt_token(uid, self.maintoken)
         if circuit_id is None:
             logging.debug('Got an invalid token: {}'.format(uid))
-            if abort:
-                flask.abort(404)
-            return None
+            raise RuntimeError('Invalid token.')
 
         if circuit_id not in self.guard.link.circuits:
             logging.debug('Got an unknown circuit: {}'.format(circuit_id))
-            if abort:
-                flask.abort(404)
-            return None
+            raise RuntimeError('Unknown circuit: {}'.format(circuit_id))
 
         return self.guard.link.circuits[circuit_id]
 
@@ -131,14 +127,10 @@ class clerk(threading.Thread):
 
     def perform_pending_delete(self):
         try:
-            uid = self._delete_trigger.get_nowait()
+            circuit = self._delete_trigger.get_nowait()
             logging.info('Got an incoming delete channel.')
         except queue.Empty:
             return False
-
-        circuit = self.get_circuit(uid)
-        if circuit is None:
-            return True
 
         return self.perform_delete(circuit)
 
@@ -255,7 +247,11 @@ def write_channel(uid):
     if not flask.request.json['event'] in ['send', 'recv']:
         flask.abort(400)
 
-    circuit = app.clerk.get_circuit(uid, abort=True)
+    try:
+        circuit = app.clerk.circuit_from_uid(uid)
+    except RuntimeError:
+        flask.abort(404)
+
     if flask.request.json['event'] == 'send':
         if 'cell' not in flask.request.json:
             flask.abort(400)
@@ -267,7 +263,12 @@ def write_channel(uid):
 
 @app.route(base_url + '/channels/<uid>', methods=['DELETE'])
 def delete_channel(uid):
-    app.clerk.delete(uid)
+    try:
+        circuit = app.clerk.circuit_from_uid(uid)
+    except RuntimeError:
+        flask.abort(404)
+
+    app.clerk.delete(circuit)
     return flask.jsonify({}), 202 # Deleted
 
 def main(port, slave_node, control_port, purge_cache):
