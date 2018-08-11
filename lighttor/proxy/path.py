@@ -10,6 +10,8 @@ import stem
 import stem.process
 import stem.control
 
+# TODO: replace the whole content of this file with proper stuff!
+
 default_nb_worker = 2
 
 class worker(threading.Thread):
