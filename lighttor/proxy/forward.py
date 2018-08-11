@@ -2,7 +2,6 @@ import threading
 import traceback
 import secrets
 import logging
-import hashlib
 import base64
 import flask
 import queue
@@ -13,7 +12,6 @@ import lighttor.proxy
 
 debug = True
 tick_rate = 0.1
-job_batch = 8
 send_batch = 32
 recv_batch = 32
 queue_size = 5
@@ -82,11 +80,7 @@ class clerk(threading.Thread):
         self.slave = ltor.proxy.jobs.slave(self)
 
         self.consensus_getter = ltor.proxy.jobs.consensus(self)
-
-        self.guardlink = None
-        self.guardnode = None
-        self.maintoken = None
-        self.refresh_guardnode()
+        self.guard = ltor.proxy.jobs.guard(self)
 
         self._send_trigger = queue.Queue(maxsize=send_batch)
         self._delete_trigger = queue.Queue(maxsize=queue_size)
@@ -109,100 +103,13 @@ class clerk(threading.Thread):
                 flask.abort(404)
             return None
 
-        if circuit_id not in self.guardlink.circuits:
+        if circuit_id not in self.guard.link.circuits:
             logging.debug('Got an unknown circuit: {}'.format(circuit_id))
             if abort:
                 flask.abort(404)
             return None
 
-        return self.guardlink.circuits[circuit_id]
-
-    def refresh_guardnode(self):
-        logging.info('Refreshing guard node link.')
-
-        with self._lock:
-            if not self.consensus_getter.isalive():
-                self.consensus_getter.reset()
-
-            if not self.producer.isalive():
-                self.producer.reset()
-
-            guardnode = ltor.proxy.path.convert(self.producer.guard,
-                consensus=self.consensus, expect='list')[0]
-
-            if not self.guardnode == guardnode:
-                logging.info('New guard: {}'.format(guardnode['nickname']))
-            self.guardnode = guardnode
-
-            guarddesc = self.slave.descriptors(self.guardnode)
-
-            # TODO: link authentication instead of NTOR handshakes!
-            addr, port = self.guardnode['address'], self.guardnode['orport']
-            self.guardlink = ltor.link.initiate(address=addr, port=port)
-            self.guardcirc = ltor.create.ntor(self.guardlink, guarddesc[0])
-            self.guardlast = time.time()
-            self.guarddesc = guarddesc[0]
-
-            self.refresh_maintoken()
-
-            self._guard_output = queue.Queue(maxsize=queue_size)
-            if not self.isalive_guardnode(force_check=True):
-                self.die('Unable to interact w/ guard node, abort!')
-
-    def refresh_maintoken(self):
-        logging.info('Refreshing guard node link.')
-
-        with self._lock:
-            if not self.isalive_guardnode():
-                self.refresh_guardnode()
-
-            token = hashlib.sha256(bytes(self.guardnode['identity'], 'utf8')
-                + self.guardlink.io.binding()).digest()
-
-            if not token == self.maintoken:
-                logging.info('Shared tokenid updated.')
-
-            self.maintoken = token
-            logging.debug('Shared tokenid: {}'.format(token.hex()))
-
-    def isalive_guardnode(self, force_check=False):
-        with self._lock:
-            if self.guardlink is None:
-                return False
-
-            if self.guardlink.io.dead:
-                logging.warning('Guard node link seems dead.')
-                return False
-
-            if self.guardcirc.circuit.destroyed:
-                logging.warning('Guard keepalive circuit got destroyed.')
-                return False
-
-            if force_check or (time.time() - self.guardlast) > isalive_timeout:
-                logging.debug('Get guard node descriptor (health check).')
-
-                circ, guard = ltor.descriptors.download_authority(
-                    self.guardcirc)
-
-                if self.guardnode['identity'] != guard['router']['identity']:
-                    logging.warning('Guard changed its identity, renew!')
-
-                    self.producer.reset()
-                    self.refresh_guardnode()
-                    return self.isalive_guardnode()
-
-                for key in ['ntor-onion-key', 'identity', 'router']:
-                    if not (self.guarddesc[key] == guard[key]):
-                        logging.info('Guard changed its {} field.'.format(key))
-
-                        self.producer.reset()
-                        self.refresh_guardnode()
-                        return self.isalive_guardnode()
-
-                self.guardlast = time.time()
-                self.guardcirc = circ
-
-            return True
+        return self.guard.link.circuits[circuit_id]
 
     def perform_pending_create(self):
         try:
@@ -212,8 +119,8 @@ class clerk(threading.Thread):
             return False
 
         try:
-            circuit_id, payload = ltor.create.ntor_raw(self.guardlink, data)
-            self.guardlink.register(ltor.create.circuit(circuit_id, None))
+            circuit_id, payload = ltor.create.ntor_raw(self.guard.link, data)
+            self.guard.link.register(ltor.create.circuit(circuit_id, None))
         except BaseException as e:
             logging.info('Got an invalid handshake, cause: {}'.format(e))
             payload = b''
@@ -243,13 +150,13 @@ class clerk(threading.Thread):
         return True
 
     def perform_delete(self, circuit):
-        self.guardlink.unregister(circuit)
+        self.guard.link.unregister(circuit)
         logging.debug('Deleting circuit: {}'.format(circuit.id))
 
         reason = ltor.cell.destroy.reason.REQUESTED
-        self.guardlink.send(ltor.cell.destroy.pack(circuit.id, reason))
+        self.guard.link.send(ltor.cell.destroy.pack(circuit.id, reason))
         logging.debug('Remaining circuits: {}'.format(list(
-            self.guardlink.circuits)))
+            self.guard.link.circuits)))
 
         return True
 
@@ -269,46 +176,22 @@ class clerk(threading.Thread):
     def perform_pending_send(self):
         try:
             payload = self._send_trigger.get_nowait()
-            self.guardlink.send(payload)
+            self.guard.link.send(payload)
             return True
         except queue.Empty:
             return False
 
-    def update_guard(self):
-        try:
-            self._guard_output.put_nowait(self.guarddesc)
-            return True
-        except queue.Full:
-            return False
-
-    def update_link(self):
-        try:
-            return self.guardlink.pull(block=False)
-        except RuntimeError as e:
-            if 'queues are full' in str(e): # TODO: do better than this hack
-                sizes = [(k, c.queue.qsize())
-                     for k, c in self.guardlink.circuits.items()]
-                sizes.sort(key=lambda sz: -sz[1])
-
-                # Delete the most overfilled circuit
-                self.perform_delete(sizes[0][0])
-                return True
-            else:
-                raise e
-
     def main(self):
-        for job in [self.slave, self.producer, self.consensus_getter]:
+        for job in [
+            self.slave, self.producer, self.consensus_getter, self.guard]:
             if not job.isalive():
                 job.reset()
 
-        if not self.isalive_guardnode():
-            self.refresh_guardnode()
-
-        for job in [self.producer, self.consensus_getter]:
+        for job in [self.producer, self.consensus_getter, self.guard]:
             if job.isfresh():
                 continue
 
-            for _ in range(job_batch):
+            for _ in range(ltor.proxy.jobs.refresh_batches):
                 if job.refresh():
                     continue
                 break
@@ -317,11 +200,8 @@ class clerk(threading.Thread):
             while (False
                 or self.perform_pending_delete()
                 or self.perform_pending_create()
-                or self.perform_pending_send()
-                or self.update_guard()
-                or self.update_link()):
-                    self.nb_actions += 1
-            self.tick += 1
+                or self.perform_pending_send()):
+                self.tick += 1
         time.sleep(tick_rate)
 
     def run(self):
@@ -378,12 +258,6 @@ class clerk(threading.Thread):
         except queue.Full:
             flask.abort(503)
 
-    def get_guard(self, timeout=1):
-        try:
-            return self._guard_output.get(timeout=timeout)
-        except queue.Empty:
-            flask.abort(503)
-
     def send(self, payload, circuit, timeout=1):
         if len(payload) != ltor.constants.full_cell_len:
             logging.debug('Got invalid size for cell.')
@@ -430,7 +304,10 @@ def get_consensus():
 
 @app.route(base_url + '/guard')
 def get_guard():
-    return flask.jsonify(app.clerk.get_guard()), 200
+    try:
+        return flask.jsonify(app.clerk.guard.perform()), 200
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
 
 @app.route(base_url + '/channels', methods=['POST'])
 def create_channel():

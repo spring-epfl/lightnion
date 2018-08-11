@@ -1,4 +1,5 @@
 import logging
+import hashlib
 import queue
 import time
 
@@ -9,6 +10,7 @@ default_expiracy = 3
 
 isalive_period = 30
 refresh_timeout = 3
+refresh_batches = 8
 
 class expired(BaseException):
     pass
@@ -316,6 +318,145 @@ class consensus(basic):
             return True
         except expired:
             return False
+
+    def perform(self, timeout=1):
+        return self.get(timeout=timeout)
+
+class guard(basic):
+    def __init__(self, clerk, qsize=default_qsize):
+        self.link = None
+        self.circ = None
+        self.desc = None
+        self.identity = None
+        clerk.maintoken = None
+        super().__init__(clerk=clerk, qsize=qsize)
+
+    def put(self, job):
+        raise NotImplementedError
+
+    def get_job(self):
+        raise NotImplementedError
+
+    def router(self, check_alive=True):
+        if check_alive and not self.clerk.consensus_getter.isalive():
+            self.clerk.consensus_getter.reset()
+
+        try:
+            guard = ltor.proxy.path.convert(
+                self.clerk.producer.guard,
+                consensus=self.clerk.consensus,
+                expect='list')[0]
+        except BaseException:
+            self.clerk.producer.reset()
+
+        return guard
+
+    def maintoken(self):
+        logging.info('Resetting guard node link.')
+
+        token = hashlib.sha256(bytes(self.identity, 'utf8')
+            + self.link.io.binding()).digest()
+
+        if not token == self.clerk.maintoken:
+            logging.info('Shared tokenid updated.')
+
+        logging.debug('Shared tokenid: {}'.format(token.hex()))
+        self.clerk.maintoken = token
+
+    def authority(self, check_alive=True):
+        if check_alive and not self.isalive():
+            self.reset()
+        self.circ, desc = ltor.descriptors.download_authority(self.circ)
+        return desc
+
+    def reset(self):
+        logging.info('Resetting guard node link.')
+
+        router = self.router()
+        if not self.router == router:
+            logging.info('New guard: {}'.format(router['nickname']))
+        self.identity = router['identity']
+
+        # TODO: link authentication instead of NTOR handshakes!
+        addr, port = router['address'], router['orport']
+        self.link = ltor.link.initiate(address=addr, port=port)
+
+        self.desc = self.clerk.slave.descriptors(router)[0]
+        self.circ = ltor.create.ntor(self.link, self.desc)
+
+        self.last = time.time()
+        self.maintoken()
+
+        super().reset()
+        if not self.isalive(force_check=True):
+            raise RuntimeError('Unable to interact with guard node, abort!')
+
+    def isalive(self, force_check=False):
+        if self.link is None:
+            return False
+
+        if self.link.io.dead:
+            logging.warning('Guard node link seems dead.')
+            return False
+
+        if self.circ.circuit.destroyed:
+            logging.warning('Guard keepalive circuit got destroyed.')
+            return False
+
+        router = self.router()
+        if not self.identity == router['identity']:
+            logging.warning('Guard may have changed, need reset!')
+            return False
+        self.identity = router['identity']
+
+        if force_check or (time.time() - self.last) > isalive_period:
+            logging.debug('Update guard descriptor (health check).')
+
+            desc = self.authority(check_alive=False)
+            if self.identity != desc['router']['identity']:
+                logging.warning('Guard changed its identity, need reset!')
+
+                self.clerk.producer.reset()
+                return False
+
+            for key in ['ntor-onion-key', 'identity', 'router']:
+                if not (self.desc[key] == desc[key]):
+                    logging.info('Guard changed {}, need reset!.'.format(key))
+
+                    self.clerk.producer.reset()
+                    return False
+
+            self.last = time.time()
+        return True
+
+    def isfresh(self):
+        return not (self.link.io.pending > 0 or self._out.qsize() < self.qsize)
+
+    def refresh(self):
+        redo = False
+        try:
+            self.put_job(self.desc)
+            redo = True
+        except expired:
+            pass
+
+        try:
+            for _ in range(refresh_batches):
+                if not self.link.pull(block=False):
+                    return (redo or False)
+            return True
+
+        except RuntimeError as e:
+            if 'queues are full' in str(e): # TODO: do better than this hack
+                sizes = [(k, c.queue.qsize())
+                     for k, c in self.link.circuits.items()]
+                sizes.sort(key=lambda sz: -sz[1])
+
+                # Delete the most overfilled circuit
+                self.perform_delete(sizes[0][0])
+                return True
+            else:
+                raise e
 
     def perform(self, timeout=1):
         return self.get(timeout=timeout)
