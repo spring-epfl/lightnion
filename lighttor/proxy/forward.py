@@ -83,16 +83,17 @@ class clerk(threading.Thread):
         self.guard = ltor.proxy.jobs.guard(self)
 
         self.create = ltor.proxy.jobs.create(self)
+        self.delete = ltor.proxy.jobs.delete(self)
 
         self._send_trigger = queue.Queue(maxsize=send_batch)
-        self._delete_trigger = queue.Queue(maxsize=queue_size)
 
         self.jobs = [
             self.slave,
             self.producer,
             self.consensus_getter,
             self.guard,
-            self.create]
+            self.create,
+            self.delete]
 
     def die(self, e):
         if isinstance(e, str):
@@ -113,26 +114,6 @@ class clerk(threading.Thread):
             raise RuntimeError('Unknown circuit: {}'.format(circuit_id))
 
         return self.guard.link.circuits[circuit_id]
-
-    def perform_delete(self, circuit):
-        self.guard.link.unregister(circuit)
-        logging.debug('Deleting circuit: {}'.format(circuit.id))
-
-        reason = ltor.cell.destroy.reason.REQUESTED
-        self.guard.link.send(ltor.cell.destroy.pack(circuit.id, reason))
-        logging.debug('Remaining circuits: {}'.format(list(
-            self.guard.link.circuits)))
-
-        return True
-
-    def perform_pending_delete(self):
-        try:
-            circuit = self._delete_trigger.get_nowait()
-            logging.info('Got an incoming delete channel.')
-        except queue.Empty:
-            return False
-
-        return self.perform_delete(circuit)
 
     def perform_pending_send(self):
         try:
@@ -158,7 +139,6 @@ class clerk(threading.Thread):
 
         with self._lock:
             while (False
-                or self.perform_pending_delete()
                 or self.perform_pending_send()):
                 self.tick += 1
         time.sleep(tick_rate)
@@ -171,12 +151,6 @@ class clerk(threading.Thread):
                 logging.critical(e)
                 if debug:
                     traceback.print_exc()
-
-    def delete(self, uid, timeout=1):
-        try:
-            self._delete_trigger.put(uid, timeout=timeout)
-        except queue.Full:
-            flask.abort(503)
 
     def send(self, payload, circuit, timeout=1):
         if len(payload) != ltor.constants.full_cell_len:
@@ -268,8 +242,10 @@ def delete_channel(uid):
     except RuntimeError:
         flask.abort(404)
 
-    app.clerk.delete(circuit)
-    return flask.jsonify({}), 202 # Deleted
+    try:
+        return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
 
 def main(port, slave_node, control_port, purge_cache):
     if purge_cache:

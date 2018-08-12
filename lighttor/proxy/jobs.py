@@ -6,8 +6,8 @@ import time
 
 import lighttor as ltor
 
-default_qsize = 3
-default_expiracy = 3
+default_qsize = 5
+default_expiracy = 6
 
 isalive_period = 30
 refresh_timeout = 3
@@ -110,6 +110,7 @@ class ordered(basic):
 
             for jid in olds:
                 self.pending_jobs.pop(jid, None)
+        raise expired
 
     def get_job(self):
         jid, job, date = super().get_job()
@@ -450,12 +451,15 @@ class guard(basic):
 
         except RuntimeError as e:
             if 'queues are full' in str(e): # TODO: do better than this hack
-                sizes = [(k, c.queue.qsize())
-                     for k, c in self.link.circuits.items()]
+                sizes = [(c, c.queue.qsize())
+                     for _, c in self.link.circuits.items()]
                 sizes.sort(key=lambda sz: -sz[1])
 
                 # Delete the most overfilled circuit
-                self.perform_delete(sizes[0][0])
+                self.clerk.delete.perform(sizes[0][0])
+                while (not self.clerk.delete.isfresh()
+                    and self.clerk.delete.refresh()):
+                    pass
                 return True
             else:
                 raise e
@@ -520,3 +524,32 @@ class create(ordered):
         data = base64.b64decode(data)
         job_id = self.put(data, timeout=timeout/2)
         return self.get(job_id, timeout=timeout/2)
+
+class delete(basic):
+    def isfresh(self):
+        return not (self._in.qsize() > 0)
+
+    def refresh(self):
+        try:
+            circuit = self.get_job()
+            logging.info('Got an incoming delete channel request.')
+        except expired:
+            return False
+
+        if not self.clerk.guard.isalive():
+            self.clerk.guard.reset()
+            return False
+
+        self.clerk.guard.link.unregister(circuit)
+        logging.debug('Deleting circuit: {}'.format(circuit.id))
+
+        reason = ltor.cell.destroy.reason.REQUESTED
+        self.clerk.guard.link.send(ltor.cell.destroy.pack(circuit.id, reason))
+        logging.debug('Remaining circuits: {}'.format(list(
+            self.clerk.guard.link.circuits)))
+
+        return True
+
+    def perform(self, circuit, timeout=1):
+        self.put(circuit)
+        return {}

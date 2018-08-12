@@ -18,9 +18,12 @@ def client(host, port=80, *, io, prefix='http', **kwargs):
 
     guard = None
     try:
-        rq = requests.get(base_url + '/guard')
-        if not rq.status_code == 200:
-            raise RuntimeError('Error code: {}'.format(rq.status_code))
+        code = 503
+        while code == 503:
+            rq = requests.get(base_url + '/guard')
+            if not rq.status_code in [200, 503]:
+                raise RuntimeError('Error code: {}'.format(rq.status_code))
+            code = rq.status_code
         guard = json.loads(rq.text)
 
     except BaseException as e:
@@ -33,9 +36,13 @@ def client(host, port=80, *, io, prefix='http', **kwargs):
         handshake, material = ntor.hand(guard)
         data = json.dumps(dict(ntor=handshake))
 
-        rq = requests.post(base_url + '/channels', data=data, headers=headers)
-        if not rq.status_code == 201:
-            raise RuntimeError('Error code: {}'.format(rq.status_code))
+        code = 503
+        while code == 503:
+            rq = requests.post(base_url + '/channels',
+                data=data, headers=headers)
+            if not rq.status_code in [201, 503]:
+                raise RuntimeError('Error code: {}'.format(rq.status_code))
+            code = rq.status_code
 
         data = json.loads(rq.text)
         uid, handshake, path = data['id'], data['ntor'], data['path']
