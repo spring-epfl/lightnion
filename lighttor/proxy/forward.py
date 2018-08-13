@@ -1,6 +1,5 @@
 import threading
 import traceback
-import secrets
 import logging
 import base64
 import flask
@@ -13,59 +12,15 @@ import lighttor.proxy
 debug = True
 tick_rate = 0.1 # (sleeps when nothing to do)
 
-class crypto:
-    from cryptography.exceptions import InvalidTag
-
-    def __init__(self):
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM as gcm
-
-        self.binding = secrets.token_bytes(32)
-        self.gcm = gcm(gcm.generate_key(bit_length=128))
-
-    def compute_token(self, circuit_id, binding):
-        circuit_id = ltor.cell.view.uint(4).write(b'', circuit_id)
-
-        nonce = secrets.token_bytes(12)
-        token = self.gcm.encrypt(nonce, circuit_id, self.binding + binding)
-        token = base64.urlsafe_b64encode(nonce + token)
-        return str(token.replace(b'=', b''), 'utf8')
-
-    def decrypt_token(self, token, binding):
-        try:
-            if not isinstance(token, str):
-                token = str(token, 'utf8')
-            token = base64.urlsafe_b64decode(token + '====')
-        except BaseException:
-            return None
-
-        if len(token) != 32:
-            return None
-
-        binding = self.binding + binding
-        nonce, token = token[:12], token[12:]
-        try:
-            circuit_id = self.gcm.decrypt(nonce, token, binding)
-        except self.InvalidTag:
-            return None
-
-        if len(circuit_id) != 4:
-            return None
-
-        return int.from_bytes(circuit_id, byteorder='big')
-
 class clerk(threading.Thread):
     def __init__(self, slave_node, control_port):
         super().__init__()
         logging.info('Bootstrapping clerk.')
-        self.control_port = control_port
-        self.slave_node = slave_node
-
-        self.crypto = crypto()
-
-        self._lock = threading.RLock()
+        self.crypto = ltor.proxy.parts.crypto()
         self.dead = False
 
-        self.nb_actions = 0
+        self.control_port = control_port
+        self.slave_node = slave_node
 
         self.producer           = ltor.proxy.jobs.producer(self)
         self.slave              = ltor.proxy.jobs.slave(self)
@@ -106,14 +61,6 @@ class clerk(threading.Thread):
         channel.used = time.time()
         channel.circuit.used = time.time()
         return channel
-
-    def perform_pending_send(self):
-        try:
-            payload = self._send_trigger.get_nowait()
-            self.guard.link.send(payload)
-            return True
-        except queue.Empty:
-            return False
 
     def main(self):
         channels = [channel for _, channel in self.channels.items()]
