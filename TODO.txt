@@ -1,3 +1,5 @@
+
+ - download consensus via HTTP whenever possible
  
  - link authentication with CERTS & all
  - consensus signatures
