@@ -11,9 +11,12 @@ import lighttor as ltor
 import lighttor.proxy
 
 debug = True
-tick_rate = 0.1
-send_batch = 32
-recv_batch = 32
+
+per_request_max_cell = 120
+send_batch = ltor.proxy.jobs.default_qsize * per_request_max_cell
+recv_batch = ltor.proxy.jobs.default_qsize * per_request_max_cell
+
+tick_rate = 0.01 if not debug else 0.1
 queue_size = 5
 query_time = 6
 nonce_size = 12
@@ -218,9 +221,7 @@ def create_channel():
 
 @app.route(base_url + '/channels/<uid>', methods=['POST'])
 def write_channel(uid):
-    if not flask.request.json or 'event' not in flask.request.json:
-        flask.abort(400)
-    if not flask.request.json['event'] in ['send', 'recv']:
+    if not flask.request.json or 'cells' not in flask.request.json:
         flask.abort(400)
 
     try:
@@ -228,11 +229,11 @@ def write_channel(uid):
     except RuntimeError:
         flask.abort(404)
 
-    if flask.request.json['event'] == 'send':
-        if 'cell' not in flask.request.json:
-            flask.abort(400)
+    if len(flask.request.json['cells']) > per_request_max_cell:
+        flask.abort(404)
 
-        cell = base64.b64decode(flask.request.json['cell'])
+    for cell in flask.request.json['cells']:
+        cell = base64.b64decode(cell)
         app.clerk.send(cell, circuit)
 
     return flask.jsonify(app.clerk.recv(circuit)), 201 # Created

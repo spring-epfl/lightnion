@@ -7,6 +7,8 @@ import time
 
 from .. import http
 
+send_batch = 120
+
 class worker(threading.Thread):
     def __init__(self, endpoint, period, max_queue=2048):
         super().__init__()
@@ -45,8 +47,16 @@ class worker(threading.Thread):
 
     def main(self):
         try:
-            cell = self.send_queue.get(block=False)
-            data = json.dumps(dict(event='send', cell=str(cell, 'utf8')))
+            cells = []
+            for _ in range(send_batch):
+                try:
+                    cells.append(self.send_queue.get(block=False))
+                except queue.Empty as e:
+                    if len(cells) == 0:
+                        raise e
+
+            data = json.dumps(
+                dict(cells=[str(cell, 'utf8') for cell in cells]))
 
             rq = requests.post(self.endpoint, data=data, headers=http.headers)
             if not rq.status_code == 201:
@@ -61,7 +71,7 @@ class worker(threading.Thread):
         except queue.Empty:
             pass
 
-        data = json.dumps(dict(event='recv'))
+        data = json.dumps(dict(cells=[]))
         rq = requests.post(self.endpoint, data=data, headers=http.headers)
         if not rq.status_code == 201:
             raise RuntimeError('Got {} status! (recv)'.format(rq.status_code))
