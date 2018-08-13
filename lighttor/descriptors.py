@@ -96,7 +96,8 @@ def consume_descriptors(descriptors, flavor='microdesc'):
             b'ntor-onion-key-crosscert', b'hidden-service-dir', b'contact',
             b'ntor-onion-key', b'reject', b'accept', b'tunnelled-dir-server',
             b'router-sig-ed25519', b'router-signature', b'ipv6-policy',
-            b'family', b'protocols', b'or-address', b'allow-single-hop-exits']
+            b'family', b'protocols', b'or-address', b'allow-single-hop-exits',
+            b'hibernating']
     aliases = {'p': 'policy', 'p6': 'ipv6-policy', 'id': 'identity'}
 
     def end_of_field(line):
@@ -174,7 +175,7 @@ def consume_descriptors(descriptors, flavor='microdesc'):
         if keyword == 'protocols':
             pass
 
-        if keyword == 'allow-single-hop-exits':
+        if keyword in ['allow-single-hop-exits', 'hibernating']:
             content = True
 
         if keyword == 'published':
