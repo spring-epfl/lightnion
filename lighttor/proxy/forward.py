@@ -14,7 +14,7 @@ import lighttor.proxy
 
 debug = True
 tick_rate = 0.1 # (sleeps when nothing to do)
-async_rate = 0.1 # (async.sleep while websocket-ing)
+async_rate = 0.01 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
     def __init__(self, slave_node, control_port):
@@ -194,6 +194,8 @@ async def channel_output(websocket, channel):
                     cells = channel.get(timeout=async_rate/4)
             for cell in cells:
                 await websocket.send(cell)
+
+            channel.used = time.time()
             cells = None
 
             await asyncio.sleep(0)

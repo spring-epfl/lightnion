@@ -8,7 +8,7 @@ import lighttor as ltor
 
 default_qsize = 30
 default_expiracy = 6
-circuit_expiracy = 30
+circuit_expiracy = 60
 request_max_cells = 120
 
 isalive_period = 30
@@ -687,8 +687,9 @@ class channel(basic):
         try:
             if len(self.cells) < 1:
                 self.cells = self.get_job()
-                self.used = time.time()
                 redo = True
+                self.used = time.time()
+                self.circuit.used = time.time()
         except expired:
             pass
 

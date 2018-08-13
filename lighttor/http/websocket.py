@@ -104,8 +104,8 @@ class io:
     _join_timeout = 3
 
     def __init__(self, endpoint, period=0.1, daemon=True, max_queue=2048):
-        endpoint = endpoint.replace('http://', 'ws://')
-        endpoint = endpoint.replace(':4990/', ':8765/')
+        endpoint = endpoint.replace('http', 'ws')
+        endpoint = endpoint.replace(':4990/', ':8765/') # TODO: work same port
 
         self.worker = worker(endpoint, period, max_queue)
         if daemon:
