@@ -6,8 +6,9 @@ import time
 
 import lighttor as ltor
 
-default_qsize = 5
+default_qsize = 30
 default_expiracy = 6
+circuit_expiracy = 30
 
 isalive_period = 30
 refresh_timeout = 3
@@ -82,7 +83,7 @@ class ordered(basic):
         jid = self.last_job
 
         date = time.time()
-        super().put((job, jid, date), timeout=timeout)
+        super().put((jid, job, date), timeout=timeout)
         return jid
 
     def get(self, job_id, timeout=1):
@@ -98,7 +99,7 @@ class ordered(basic):
                 return job
 
             try:
-                job, jid, date = super().get(timeout=timeout)
+                jid, job, date = super().get(timeout=timeout)
                 self.pending_jobs[jid] = (job, date)
             except expired:
                 continue
@@ -114,13 +115,18 @@ class ordered(basic):
 
     def get_job(self):
         jid, job, date = super().get_job()
-        if time.time() - date > self.expiracy:
-            raise expired
-        return job, jid
+
+        qsize = self._in.qsize()
+        while (False
+            or (time.time() - date > self.expiracy)
+            or (jid % 2 > 0 and qsize > self.qsize // 2)
+            or (jid % 4 > 0 and qsize > 3 * self.qsize // 4)):
+            jid, job, date = super().get_job()
+        return jid, job
 
     def put_job(self, job, job_id):
         date = time.time()
-        super().put_job((job, job_id, date))
+        super().put_job((job_id, job, date))
 
 class producer(basic):
     def __init__(self, clerk, qsize=default_qsize):
@@ -148,6 +154,16 @@ class producer(basic):
                 time.sleep(1)
 
             if not self.child.dead:
+                logging.warning('Enforcing path emitter death.')
+                self.child.process.terminate()
+
+                for _ in range(refresh_timeout):
+                    if self.child.dead:
+                        break
+                    self.child.process.terminate()
+                    time.sleep(1)
+
+            if not self.child.dead:
                 raise RuntimeError('Unable to kill path emitter, abort!')
 
             logging.debug('Previous path emitter successfully terminated.')
@@ -164,7 +180,7 @@ class producer(basic):
             and self.guard == self.child.guard)
 
     def isfresh(self):
-        return not (self._out.qsize() < self.qsize)
+        return not (self._out.qsize() < self.qsize - 1)
 
     def refresh(self):
         try:
@@ -388,6 +404,7 @@ class guard(basic):
         self.circ = ltor.create.ntor(self.link, self.desc)
 
         self.last = time.time()
+        self.used = None
         self.maintoken()
 
         super().reset()
@@ -428,8 +445,33 @@ class guard(basic):
 
                     self.clerk.producer.reset()
                     return False
-
             self.last = time.time()
+
+            olds = []
+            news = []
+            clen = len(self.link.circuits)
+            for key, circuit in self.link.circuits.items():
+                if not hasattr(circuit, 'used'):
+                    continue
+
+                if time.time() - circuit.used > circuit_expiracy:
+                    logging.debug('Destroy {} (old age/unused).'.format(key))
+                    olds.append(circuit)
+                else:
+                    news.append(circuit)
+
+            for circuit in olds:
+                try:
+                    self.clerk.delete.perform(circuit)
+                except expired:
+                    pass
+
+            if (len(news) < 1
+                and self.used is not None
+                and time.time() - self.used > isalive_period):
+                logging.info('Resetting guard link to clean up.')
+                return False
+
         return True
 
     def isfresh(self):
@@ -478,17 +520,17 @@ class create(ordered):
         except expired:
             return False
 
+        if not self.clerk.guard.isalive():
+            self.clerk.guard.reset()
+
         try:
-            circid, data = ltor.create.ntor_raw(self.clerk.guard.link, data)
+            circid, data = ltor.create.ntor_raw(
+                self.clerk.guard.link, data, timeout=0.5)
+            circuit = ltor.create.circuit(circid, None)
             data = str(base64.b64encode(data), 'utf8')
         except BaseException as e:
             logging.info('Got an invalid create ntor handshake: {}'.format(e))
             return True
-
-        if not self.clerk.guard.isalive():
-            self.clerk.guard.reset()
-
-        self.clerk.guard.link.register(ltor.create.circuit(circid, None))
 
         if not self.clerk.producer.isalive():
             self.clerk.producer.reset()
@@ -496,8 +538,11 @@ class create(ordered):
         if not self.clerk.consensus_getter.isalive():
             self.clerk.consensus_getter.reset()
 
-        middle, exit = ltor.proxy.path.convert(*self.clerk.producer.get(),
-            consensus=self.clerk.consensus, expect='list')
+        try:
+            middle, exit = ltor.proxy.path.convert(*self.clerk.producer.get(),
+                consensus=self.clerk.consensus, expect='list')
+        except expired:
+            return False
 
         middle = self.clerk.slave.descriptors(middle)[0]
         exit = self.clerk.slave.descriptors(exit)[0]
@@ -511,14 +556,21 @@ class create(ordered):
         logging.debug('Token emitted: {}'.format(token))
 
         try:
-            self.put_job({'id': token, 'path': [middle, exit], 'ntor': data},
-                job_id)
+            self.put_job((circuit,
+                {'id': token, 'path': [middle, exit], 'ntor': data}), job_id)
+            self.clerk.guard.link.register(circuit)
         except expired:
             logging.warning('Too many create channel requests, dropping.')
             return False
         return True
 
-    def perform(self, data, timeout=3):
+    def get(self, job_id, timeout=1):
+        circuit, data = super().get(job_id, timeout=timeout)
+        self.clerk.guard.used = time.time()
+        circuit.used = time.time()
+        return data
+
+    def perform(self, data, timeout=(1+2*default_expiracy)):
         timeout = timeout / 2
 
         data = base64.b64decode(data)

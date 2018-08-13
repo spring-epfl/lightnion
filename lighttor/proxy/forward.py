@@ -113,7 +113,9 @@ class clerk(threading.Thread):
             logging.debug('Got an unknown circuit: {}'.format(circuit_id))
             raise RuntimeError('Unknown circuit: {}'.format(circuit_id))
 
-        return self.guard.link.circuits[circuit_id]
+        circuit = self.guard.link.circuits[circuit_id]
+        circuit.used = time.time()
+        return circuit
 
     def perform_pending_send(self):
         try:
@@ -137,10 +139,10 @@ class clerk(threading.Thread):
                     continue
                 break
 
-        with self._lock:
-            while (False
-                or self.perform_pending_send()):
-                self.tick += 1
+        for _ in range(ltor.proxy.jobs.refresh_batches):
+            if self.perform_pending_send():
+                continue
+            break
         time.sleep(tick_rate)
 
     def run(self):
@@ -148,7 +150,7 @@ class clerk(threading.Thread):
             try:
                 self.main()
             except BaseException as e:
-                logging.critical(e)
+                logging.warning('Exception:', e)
                 if debug:
                     traceback.print_exc()
 
