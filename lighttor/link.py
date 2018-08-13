@@ -24,6 +24,7 @@ class link:
     def __init__(self, io, version, circuits=[0], max_queue=2048):
         self.max_queue = 2048
         self.version = version
+        self.last_id = 0
         self.io = io
 
         self.circuits = dict()

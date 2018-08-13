@@ -43,8 +43,9 @@ def fast(link):
     """
 
     # Pick an available ID (link version > 3)
-    circuit_id = 0x80000000
+    circuit_id = 0x80000000 + link.last_id
     while circuit_id in link.circuits:
+        link.last_id += 1
         circuit_id += 1
 
     # Sanity checks
@@ -52,6 +53,7 @@ def fast(link):
         packed = ltor.cell.view.uint(4).write(value=circuit_id)
         assert circuit_id == ltor.cell.view.uint(4).value(packed)
     except (OverflowError, AssertionError):
+        link.last_id = 0
         raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
             circuit_id, packed))
 
@@ -92,8 +94,9 @@ def fast(link):
 
 def ntor_raw(link, payload, timeout=None):
     # Pick an available ID (link version > 3)
-    circuit_id = 0x80000000
+    circuit_id = 0x80000000 + link.last_id
     while circuit_id in link.circuits:
+        link.last_id += 1
         circuit_id += 1
 
     # Sanity checks
@@ -101,6 +104,7 @@ def ntor_raw(link, payload, timeout=None):
         packed = ltor.cell.view.uint(4).write(value=circuit_id)
         assert circuit_id == ltor.cell.view.uint(4).value(packed)
     except (OverflowError, AssertionError):
+        link.last_id = 0
         raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
             circuit_id, packed))
 
