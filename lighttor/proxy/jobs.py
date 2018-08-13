@@ -6,8 +6,8 @@ import time
 
 import lighttor as ltor
 
-default_qsize = 30
-default_expiracy = 6
+default_qsize = 128
+default_expiracy = 10
 circuit_expiracy = 60
 request_max_cells = 120
 
@@ -326,8 +326,8 @@ class consensus(basic):
         self.clerk.slave.descriptors(census, fail_on_missing=False)
 
     def isalive(self):
-        fresh_until = self.clerk.consensus['headers']['fresh-until']['stamp']
-        return not (fresh_until < time.time())
+        valid_until = self.clerk.consensus['headers']['valid-until']['stamp']
+        return not (valid_until < time.time())
 
     def isfresh(self):
         return not (self._out.qsize() < self.qsize)
@@ -542,6 +542,7 @@ class create(ordered):
             middle, exit = ltor.proxy.path.convert(*self.clerk.producer.get(),
                 consensus=self.clerk.consensus, expect='list')
         except expired:
+            logging.debug('Unable to get a path from producer.')
             return False
 
         middle = self.clerk.slave.descriptors(middle)[0]

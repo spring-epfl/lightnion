@@ -41,7 +41,9 @@ if __name__ == "__main__":
         print('\nSuccessfully retrieved exit node descriptor through channel.')
 
         # retrieve something heavier
-        state, authority = ltor.consensus.download(state, cache=False)
+        state, _ = ltor.hop.directory_query(state,
+            '/tor/status-vote/current/consensus',
+            compression='identity') # (no cache nor parsing nor compression)
         print('Successfully retrieved full consensus through channel.')
 
     # destroy the channel

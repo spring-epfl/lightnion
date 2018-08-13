@@ -104,8 +104,8 @@ class consensus:
         if not fields['flavor'] == flavor:
             raise ValueError('Mismatched flavor.')
 
-        if fields['headers']['fresh-until']['stamp'] < time.time():
+        if fields['headers']['valid-until']['stamp'] < time.time():
             raise ValueError('Consensus need to be refreshed: {} < {}'.format(
-                fields['headers']['fresh-until']['stamp'], time.time()))
+                fields['headers']['valid-until']['stamp'], time.time()))
 
         return fields
