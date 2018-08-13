@@ -86,10 +86,14 @@ class link:
                 return self.circuits[circuit.id].get(block=False)
             except queue.Empty:
                 pass
+
             self.pull()
+            while self.pull(block=False):
+                pass
         else:
             if not self.io.dead:
-                self.pull(block=False)
+                while self.pull(block=False):
+                    pass
                 return self.circuits[circuit.id].get(block=False)
             raise RuntimeError('Seems that link.io is dead!')
 
