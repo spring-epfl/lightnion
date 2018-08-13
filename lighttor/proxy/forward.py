@@ -6,11 +6,15 @@ import flask
 import queue
 import time
 
+import websockets
+import asyncio
+
 import lighttor as ltor
 import lighttor.proxy
 
 debug = True
 tick_rate = 0.1 # (sleeps when nothing to do)
+async_rate = 0.1 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
     def __init__(self, slave_node, control_port):
@@ -162,10 +166,82 @@ def delete_channel(uid):
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
+async def channel_input(websocket, channel):
+    cell = None
+    while True:
+        try:
+            if cell is None:
+                cell = await websocket.recv()
+            channel.put([cell], timeout=async_rate/2)
+            cell = None
+
+            await asyncio.sleep(0)
+            continue
+        except ltor.proxy.jobs.expired:
+            pass
+
+        await asyncio.sleep(async_rate / 2)
+
+async def channel_output(websocket, channel):
+    cells = None
+    while True:
+        try:
+            if cells is None:
+                try:
+                    cells = channel.get(timeout=0)
+                except ltor.proxy.jobs.expired:
+                    channel.put([], timeout=async_rate/4)
+                    cells = channel.get(timeout=async_rate/4)
+            for cell in cells:
+                await websocket.send(cell)
+            cells = None
+
+            await asyncio.sleep(0)
+            continue
+        except ltor.proxy.jobs.expired:
+            pass
+
+        await asyncio.sleep(async_rate / 2)
+
+def channel_handler(clerk):
+    async def _handler(websocket, path):
+        if not path.startswith(url + '/channels/'):
+            return
+
+        path = path[len(url + '/channels/'):]
+        if len(path) > 50:
+            return
+        channel = clerk.channel_from_uid(path)
+
+        for task in [channel_input, channel_output]:
+            channel.tasks.append(
+                asyncio.ensure_future(task(websocket, channel)))
+
+        done, pending = await asyncio.wait(channel.tasks,
+            return_when=asyncio.FIRST_COMPLETED)
+
+        for task in pending:
+            task.cancel()
+    return _handler
+
+class sockets(threading.Thread):
+    def __init__(self, clerk):
+        super().__init__()
+        self.handler = channel_handler(clerk)
+
+    def run(self):
+        logging.getLogger(websockets.__name__).setLevel(logging.ERROR)
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+        server = websockets.serve(self.handler, 'localhost', 8765)
+        asyncio.get_event_loop().run_until_complete(server)
+        asyncio.get_event_loop().run_forever()
+
 def main(port, slave_node, control_port, purge_cache):
     if purge_cache:
         ltor.cache.purge()
 
     with clerk(slave_node, control_port) as app.clerk:
         logging.info('Bootstrapping HTTP server.')
+        sockets(app.clerk).start()
         app.run(port=port, debug=debug, use_reloader=False)

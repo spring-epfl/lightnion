@@ -617,6 +617,7 @@ class channel(basic):
         self.circuit = circuit
         self.cells = []
         self.packs = []
+        self.tasks = []
         self.used = time.time()
         self.link = link
         self.born = False
@@ -650,6 +651,8 @@ class channel(basic):
             except ValueError:
                 pass
 
+            for task in self.tasks:
+                task.cancel()
             return
 
         logging.info('Channel for circuit {} opened.'.format(self.circuit.id))
@@ -718,7 +721,7 @@ class channel(basic):
 
         return redo
 
-    def perform(self, cells, timeout=1):
+    def perform(self, cells, timeout=0.2):
         self.put(cells, timeout=timeout)
         if len(cells) > 0:
             timeout = 0

@@ -1,4 +1,6 @@
-cryptography
 curve25519-donna
+cryptography
+websockets
 requests
+asyncio
 flask

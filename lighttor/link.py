@@ -88,8 +88,10 @@ class link:
                 pass
             self.pull()
         else:
-            self.pull(block=False)
-            return self.circuits[circuit.id].get(block=False)
+            if not self.io.dead:
+                self.pull(block=False)
+                return self.circuits[circuit.id].get(block=False)
+            raise RuntimeError('Seems that link.io is dead!')
 
     def register(self, circuit):
         if circuit.id in self.circuits:

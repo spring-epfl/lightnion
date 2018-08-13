@@ -7,7 +7,7 @@ headers = {'Content-Type': 'application/json'}
 import lighttor as ltor
 import lighttor.proxy
 
-from . import polling, ntor
+from . import polling, websocket, ntor
 
 class channel(collections.namedtuple('channel',
     ['id', 'guard', 'middle', 'exit'])):
