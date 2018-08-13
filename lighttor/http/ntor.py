@@ -4,14 +4,15 @@ import lighttor.ntor_ref as ntor_ref
 import curve25519
 import base64
 
-def hand(guard):
+def hand(guard, encode=True):
     identity = base64.b64decode(guard['router']['identity'] + '====')
     onion_key = base64.b64decode(guard['ntor-onion-key'] + '====')
 
     donna_onion_key = curve25519.keys.Public(onion_key)
     ephemeral_key, payload = ntor_ref.client_part1(identity, donna_onion_key)
 
-    payload = str(base64.b64encode(payload), 'utf8')
+    if encode:
+        payload = str(base64.b64encode(payload), 'utf8')
     return payload, (donna_onion_key, ephemeral_key, identity)
 
 def shake(payload, material):

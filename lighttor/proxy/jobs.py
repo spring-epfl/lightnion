@@ -5,6 +5,7 @@ import base64
 import time
 
 import lighttor as ltor
+import lighttor.http
 
 default_qsize = 128
 default_expiracy = 10
@@ -510,6 +511,58 @@ class guard(basic):
         return self.get(timeout=timeout)
 
 class create(ordered):
+    def __init__(self, clerk, qsize=default_qsize):
+        self.last = time.time()
+        self.alive_job_id = None
+        self.alive_material = None
+        super().__init__(clerk, qsize=qsize)
+
+    def isalive(self):
+        delta = time.time() - self.last
+        if not delta > isalive_period:
+            return True
+
+        if self.alive_job_id is None:
+            logging.info('Handshaking with guard to check liveness...')
+            try:
+                data, self.alive_material = ltor.http.ntor.hand(
+                    self.clerk.guard.desc, encode=False)
+                self.alive_job_id = self.put(data)
+            except expired:
+                logging.info('Unable to trigger handshaking.')
+                return True
+
+        if not delta > isalive_period + default_expiracy / 4:
+            return True
+
+        logging.info('Finishing handshake with guard to check liveness...')
+        if self.alive_job_id is None:
+            logging.info('Ignored handshake.')
+            self.last = time.time()
+            return True
+
+        try:
+            data = self.get(self.alive_job_id)['ntor']
+            some = ltor.http.ntor.shake(data, self.alive_material)
+            if some is None:
+                logging.info('Handshake failed.')
+                return False
+        except expired:
+            logging.info('Handshake expired.')
+            return False
+
+        self.alive_job_id = None
+        self.last = time.time()
+
+        logging.info('Handshake success.')
+        return True
+
+    def reset(self):
+        super().reset()
+        if self.alive_job_id is not None:
+            logging.info('Handshake failed, resetting guard.')
+            self.clerk.guard.reset()
+
     def isfresh(self):
         return not (self._in.qsize() > 0)
 
