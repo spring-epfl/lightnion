@@ -43,9 +43,9 @@ def fast(link):
     """
 
     # Pick an available ID (link version > 3)
+    link.last_id += 1
     circuit_id = 0x80000000 + link.last_id
     while circuit_id in link.circuits:
-        link.last_id += 1
         circuit_id += 1
 
     # Sanity checks
@@ -94,9 +94,9 @@ def fast(link):
 
 def ntor_raw(link, payload, timeout=None):
     # Pick an available ID (link version > 3)
+    link.last_id += 1
     circuit_id = 0x80000000 + link.last_id
     while circuit_id in link.circuits:
-        link.last_id += 1
         circuit_id += 1
 
     # Sanity checks

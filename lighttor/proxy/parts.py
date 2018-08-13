@@ -34,7 +34,7 @@ class crypto:
         nonce, token = token[:12], token[12:]
         try:
             circuit_id = self.gcm.decrypt(nonce, token, binding)
-        except self.InvalidTag:
+        except InvalidTag:
             return None
 
         if len(circuit_id) != 4:

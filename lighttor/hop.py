@@ -126,7 +126,7 @@ def directory_query(
         state,
         query=None,
         compression='deflate',
-        timeout=10,
+        timeout=30,
         **kwargs):
     if compression not in ['identity', 'deflate', 'gzip']:
         raise NotImplementedError(

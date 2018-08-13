@@ -7,6 +7,8 @@ import time
 import lighttor as ltor
 import lighttor.http
 
+# TODO: rewrite everything? (with less complexity? using asyncio only?)
+
 default_qsize = 128
 default_expiracy = 10
 circuit_expiracy = 60
@@ -511,8 +513,10 @@ class guard(basic):
         return self.get(timeout=timeout)
 
 class create(ordered):
-    def __init__(self, clerk, qsize=default_qsize):
+    def __init__(self, clerk, max_fails=5, qsize=default_qsize):
         self.last = time.time()
+        self.fails = 0
+        self.max_fails = max_fails
         self.alive_job_id = None
         self.alive_material = None
         super().__init__(clerk, qsize=qsize)
@@ -532,7 +536,7 @@ class create(ordered):
                 logging.info('Unable to trigger handshaking.')
                 return True
 
-        if not delta > isalive_period + default_expiracy / 4:
+        if not delta > isalive_period + default_expiracy / 2:
             return True
 
         logging.info('Finishing handshake with guard to check liveness...')
@@ -542,16 +546,25 @@ class create(ordered):
             return True
 
         try:
-            data = self.get(self.alive_job_id)['ntor']
-            some = ltor.http.ntor.shake(data, self.alive_material)
+            data = self.get(self.alive_job_id)
+            some = ltor.http.ntor.shake(data['ntor'], self.alive_material)
             if some is None:
                 logging.info('Handshake failed.')
                 return False
+
+            channel = self.clerk.channel_from_uid(data['id'])
+            channel.delete()
         except expired:
             logging.info('Handshake expired.')
             return False
+        except BaseException as e:
+            logging.debug('Failed: {}'.format(e))
+            logging.info('Handshake failed: guard link died?')
+            return False
 
+        self.clerk.guard.used = None
         self.alive_job_id = None
+        self.fails = 0
         self.last = time.time()
 
         logging.info('Handshake success.')
@@ -560,8 +573,15 @@ class create(ordered):
     def reset(self):
         super().reset()
         if self.alive_job_id is not None:
-            logging.info('Handshake failed, resetting guard.')
-            self.clerk.guard.reset()
+            logging.info('Handshake failed, increasing failure.')
+            self.fails += 1
+            if self.fails > self.max_fails:
+                logging.error('Unable to create circuits, resetting guard.')
+                self.clerk.guard.reset()
+                self.fails = 0
+
+            self.alive_job_id = None
+            self.last = time.time()
 
     def isfresh(self):
         return not (self._in.qsize() > 0)
@@ -578,7 +598,7 @@ class create(ordered):
 
         try:
             circid, data = ltor.create.ntor_raw(
-                self.clerk.guard.link, data, timeout=0.5)
+                self.clerk.guard.link, data, timeout=1)
             circuit = ltor.create.circuit(circid, None)
             data = str(base64.b64encode(data), 'utf8')
         except BaseException as e:
