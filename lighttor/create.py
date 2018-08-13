@@ -1,6 +1,7 @@
 import collections
 import base64
 import queue
+import time
 
 import lighttor as ltor
 
@@ -89,7 +90,7 @@ def fast(link):
 
     return ltor.onion.state(link, final)
 
-def ntor_raw(link, payload):
+def ntor_raw(link, payload, timeout=None):
     # Pick an available ID (link version > 3)
     circuit_id = 0x80000000
     while circuit_id in link.circuits:
@@ -111,8 +112,21 @@ def ntor_raw(link, payload):
     link.register(dummy)
 
     # Receive answers
+    cell = None
     try:
-        cell = ltor.cell.created2.cell(link.get(dummy))
+        if timeout is None:
+            cell = ltor.cell.created2.cell(link.get(dummy))
+        else:
+            for _ in range(10):
+                try:
+                    cell = ltor.cell.created2.cell(
+                        link.get(dummy, block=False))
+                    break
+                except queue.Empty:
+                    time.sleep(timeout / 10)
+            if cell is None:
+                link.unregister(dummy)
+                raise RuntimeError('Got timeout while creating circuit.')
     except KeyError:
         raise RuntimeError('Got DESTROY cell while creating circuit.')
 
