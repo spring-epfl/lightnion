@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser.add_argument('padding', nargs='?', type=int, default=100)
     sys_argv = parser.parse_args()
 
-    print('Building a HTTP channel using polling API...')
+    print('Building a HTTP channel powered by polling...')
     endpoint = sys_argv.host, sys_argv.port
     state, channel = ltor.http.client(*endpoint, io=ltor.http.polling.io)
 
