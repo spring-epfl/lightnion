@@ -6,8 +6,7 @@ import json
 import time
 
 from .. import http
-
-send_batch = 120
+from .. import proxy
 
 class worker(threading.Thread):
     def __init__(self, endpoint, period, max_queue=2048):
@@ -31,14 +30,14 @@ class worker(threading.Thread):
         self.close()
         raise e
 
-    def send(self, cell):
+    def send(self, cell, block=True):
         try:
             cell = cell.raw
         except AttributeError:
             pass
 
         cell = base64.b64encode(cell)
-        self.send_queue.put(cell)
+        self.send_queue.put(cell, block)
 
     def recv(self, block=True):
         payload = self.recv_queue.get(block=block)
@@ -48,7 +47,7 @@ class worker(threading.Thread):
     def main(self):
         try:
             cells = []
-            for _ in range(send_batch):
+            for _ in range(proxy.jobs.request_max_cells):
                 try:
                     cells.append(self.send_queue.get(block=False))
                 except queue.Empty as e:
@@ -107,8 +106,8 @@ class io:
     def recv(self, block=True):
         return self.worker.recv(block)
 
-    def send(self, payload):
-        self.worker.send(payload)
+    def send(self, payload, block=True):
+        self.worker.send(payload, block=block)
 
     def close(self):
         self.worker.close()

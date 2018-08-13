@@ -105,8 +105,8 @@ class link:
     def recv(self, block=True):
         return self.io.recv(block=block)
 
-    def send(self, cell):
-        self.io.send(cell)
+    def send(self, cell, block=True):
+        self.io.send(cell, block=block)
 
     def close(self):
         self.io.close()

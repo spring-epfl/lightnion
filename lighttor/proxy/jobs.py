@@ -9,6 +9,7 @@ import lighttor as ltor
 default_qsize = 30
 default_expiracy = 6
 circuit_expiracy = 30
+request_max_cells = 120
 
 isalive_period = 30
 refresh_timeout = 3
@@ -449,7 +450,6 @@ class guard(basic):
 
             olds = []
             news = []
-            clen = len(self.link.circuits)
             for key, circuit in self.link.circuits.items():
                 if not hasattr(circuit, 'used'):
                     continue
@@ -486,7 +486,7 @@ class guard(basic):
             pass
 
         try:
-            for _ in range(refresh_batches):
+            for _ in range(request_max_cells):
                 if not self.link.pull(block=False):
                     return (redo or False)
             return True
@@ -529,7 +529,7 @@ class create(ordered):
             circuit = ltor.create.circuit(circid, None)
             data = str(base64.b64encode(data), 'utf8')
         except BaseException as e:
-            logging.info('Got an invalid create ntor handshake: {}'.format(e))
+            logging.debug('Got an invalid create ntor handshake: {}'.format(e))
             return True
 
         if not self.clerk.producer.isalive():
@@ -558,10 +558,12 @@ class create(ordered):
         try:
             self.put_job((circuit,
                 {'id': token, 'path': [middle, exit], 'ntor': data}), job_id)
-            self.clerk.guard.link.register(circuit)
         except expired:
             logging.warning('Too many create channel requests, dropping.')
             return False
+
+        self.clerk.channels[circuit.id] = channel(
+                self.clerk, circuit, self.clerk.guard.link)
         return True
 
     def get(self, job_id, timeout=1):
@@ -600,8 +602,134 @@ class delete(basic):
         logging.debug('Remaining circuits: {}'.format(list(
             self.clerk.guard.link.circuits)))
 
+        circuit.destroyed = True
+        circuit.reason = reason
         return True
 
     def perform(self, circuit, timeout=1):
         self.put(circuit)
         return {}
+
+class channel(basic):
+    def __init__(self, clerk, circuit, link,
+        expiracy=circuit_expiracy, qsize=default_qsize):
+        self.expiracy = expiracy
+        self.circuit = circuit
+        self.cells = []
+        self.packs = []
+        self.used = time.time()
+        self.link = link
+        self.born = False
+        super().__init__(clerk=clerk, qsize=qsize)
+
+    def isalive(self):
+        return (True
+            and self.circuit.id in self.clerk.channels
+            and self.circuit.id in self.link.circuits
+            and not self.circuit.destroyed
+            and not (time.time() - self.used) > self.expiracy)
+
+    def delete(self):
+        self.link.unregister(self.circuit)
+        logging.debug('Deleting channel: {}'.format(self.circuit.id))
+
+        reason = ltor.cell.destroy.reason.FINISHED
+        self.link.send(ltor.cell.destroy.pack(self.circuit.id, reason))
+
+        self.circuit.destroyed = True
+        self.circuit.reason = reason
+
+    def reset(self):
+        super().reset()
+        if self.born:
+            if not self.circuit.destroyed:
+                self.delete()
+
+            try:
+                self.clerk.channels.pop(self.circuit.id, None)
+            except ValueError:
+                pass
+
+            return
+
+        logging.info('Channel for circuit {} opened.'.format(self.circuit.id))
+        self.link.register(self.circuit)
+        self.born = True
+
+    def isfresh(self):
+        return not (self._in.qsize() > 0)
+
+    def send(self, cell):
+        cell = ltor.cell.header_view.write(cell, circuit_id=self.circuit.id)
+        try:
+            self.link.send(cell, block=False)
+        except queue.Full:
+            return False
+        return True
+
+    def recv(self):
+        try:
+            cell = self.circuit.queue.get(block=False)
+            cell = ltor.cell.header_view.write(cell,
+                circuit_id=ltor.proxy.fake_circuit_id)
+            return cell
+        except queue.Empty:
+            return None
+
+    def refresh(self):
+        if not self.isalive():
+            return False
+
+        redo = False
+        try:
+            if len(self.cells) < 1:
+                self.cells = self.get_job()
+                self.used = time.time()
+                redo = True
+        except expired:
+            pass
+
+        while len(self.cells) > 0:
+            cell = self.cells.pop(0)
+            if not self.send(cell):
+                self.cells.insert(cell, 0)
+                redo = False
+                break
+
+        if len(self.packs) < 1:
+            for _ in range(request_max_cells - len(self.packs)):
+                cell = self.recv()
+                if cell is None:
+                    break
+                self.packs.append(cell)
+
+        if len(self.packs) > 0:
+            try:
+                self.put_job(self.packs)
+                self.packs = []
+                redo = True
+            except expired:
+                pass
+        elif redo:
+            try:
+                self.put_job([])
+            except expired:
+                pass
+
+        return redo
+
+    def perform(self, cells, timeout=1):
+        self.put(cells, timeout=timeout)
+        if len(cells) > 0:
+            timeout = 0
+        timeout = timeout / self.qsize
+
+        packs = []
+        for _ in range(self.qsize):
+            try:
+                packs += self.get(timeout=timeout)
+            except expired:
+                if len(packs) > 0:
+                    break
+
+        return [str(base64.b64encode(cell), 'utf8') for cell in packs]

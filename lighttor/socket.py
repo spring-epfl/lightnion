@@ -109,8 +109,8 @@ class worker(threading.Thread):
         self.close()
         raise e
 
-    def send(self, cell):
-        self.send_queue.put(ltor.cell.pad(cell))
+    def send(self, cell, block=True):
+        self.send_queue.put(ltor.cell.pad(cell), block=block)
 
     def recv(self, block=True):
         return self.cell_queue.get(block=block)
@@ -198,8 +198,8 @@ class io:
     def recv(self, block=True):
         return self.worker.recv(block)
 
-    def send(self, payload):
-        self.worker.send(payload)
+    def send(self, payload, block=True):
+        self.worker.send(payload, block=block)
 
     def binding(self):
         return self.peer.get_channel_binding()

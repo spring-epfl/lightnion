@@ -11,18 +11,7 @@ import lighttor as ltor
 import lighttor.proxy
 
 debug = True
-
-per_request_max_cell = 120
-send_batch = ltor.proxy.jobs.default_qsize * per_request_max_cell
-recv_batch = ltor.proxy.jobs.default_qsize * per_request_max_cell
-
-tick_rate = 0.01 if not debug else 0.1
-queue_size = 5
-query_time = 6
-nonce_size = 12
-
-refresh_timeout = 5
-isalive_timeout = 30
+tick_rate = 0.1 # (sleeps when nothing to do)
 
 class crypto:
     from cryptography.exceptions import InvalidTag
@@ -36,7 +25,7 @@ class crypto:
     def compute_token(self, circuit_id, binding):
         circuit_id = ltor.cell.view.uint(4).write(b'', circuit_id)
 
-        nonce = secrets.token_bytes(nonce_size)
+        nonce = secrets.token_bytes(12)
         token = self.gcm.encrypt(nonce, circuit_id, self.binding + binding)
         token = base64.urlsafe_b64encode(nonce + token)
         return str(token.replace(b'=', b''), 'utf8')
@@ -53,7 +42,7 @@ class crypto:
             return None
 
         binding = self.binding + binding
-        nonce, token = token[:nonce_size], token[nonce_size:]
+        nonce, token = token[:12], token[12:]
         try:
             circuit_id = self.gcm.decrypt(nonce, token, binding)
         except self.InvalidTag:
@@ -77,18 +66,13 @@ class clerk(threading.Thread):
         self.dead = False
 
         self.nb_actions = 0
-        self.tick = 0
 
-        self.producer = ltor.proxy.jobs.producer(self)
-        self.slave = ltor.proxy.jobs.slave(self)
-
-        self.consensus_getter = ltor.proxy.jobs.consensus(self)
-        self.guard = ltor.proxy.jobs.guard(self)
-
-        self.create = ltor.proxy.jobs.create(self)
-        self.delete = ltor.proxy.jobs.delete(self)
-
-        self._send_trigger = queue.Queue(maxsize=send_batch)
+        self.producer           = ltor.proxy.jobs.producer(self)
+        self.slave              = ltor.proxy.jobs.slave(self)
+        self.consensus_getter   = ltor.proxy.jobs.consensus(self)
+        self.guard              = ltor.proxy.jobs.guard(self)
+        self.create             = ltor.proxy.jobs.create(self)
+        self.delete             = ltor.proxy.jobs.delete(self)
 
         self.jobs = [
             self.slave,
@@ -98,6 +82,8 @@ class clerk(threading.Thread):
             self.create,
             self.delete]
 
+        self.channels = dict()
+
     def die(self, e):
         if isinstance(e, str):
             logging.error(e)
@@ -106,19 +92,20 @@ class clerk(threading.Thread):
         self.dead = True
         raise e
 
-    def circuit_from_uid(self, uid):
+    def channel_from_uid(self, uid):
         circuit_id = self.crypto.decrypt_token(uid, self.maintoken)
         if circuit_id is None:
             logging.debug('Got an invalid token: {}'.format(uid))
             raise RuntimeError('Invalid token.')
 
-        if circuit_id not in self.guard.link.circuits:
+        if circuit_id not in self.channels:
             logging.debug('Got an unknown circuit: {}'.format(circuit_id))
             raise RuntimeError('Unknown circuit: {}'.format(circuit_id))
 
-        circuit = self.guard.link.circuits[circuit_id]
-        circuit.used = time.time()
-        return circuit
+        channel = self.channels[circuit_id]
+        channel.used = time.time()
+        channel.circuit.used = time.time()
+        return channel
 
     def perform_pending_send(self):
         try:
@@ -129,24 +116,24 @@ class clerk(threading.Thread):
             return False
 
     def main(self):
-        for job in self.jobs:
+        channels = [channel for _, channel in self.channels.items()]
+        for job in self.jobs + channels:
             if not job.isalive():
                 job.reset()
 
-        for job in self.jobs:
+        bored = True
+        for job in self.jobs + channels:
             if job.isfresh():
                 continue
 
             for _ in range(ltor.proxy.jobs.refresh_batches):
                 if job.refresh():
+                    bored = False
                     continue
                 break
 
-        for _ in range(ltor.proxy.jobs.refresh_batches):
-            if self.perform_pending_send():
-                continue
-            break
-        time.sleep(tick_rate)
+        if bored:
+            time.sleep(tick_rate)
 
     def run(self):
         while not self.dead:
@@ -157,32 +144,6 @@ class clerk(threading.Thread):
                 if debug:
                     traceback.print_exc()
 
-    def send(self, payload, circuit, timeout=1):
-        if len(payload) != ltor.constants.full_cell_len:
-            logging.debug('Got invalid size for cell.')
-            flask.abort(400)
-        payload = ltor.cell.header_view.write(payload, circuit_id=circuit.id)
-
-        try:
-            self._send_trigger.put(payload, timeout=timeout)
-        except queue.Full:
-            flask.abort(503)
-
-    def recv(self, circuit, timeout=1):
-        timeout = timeout / recv_batch
-        received = []
-        try:
-            for _ in range(recv_batch):
-                payload = circuit.queue.get(timeout=timeout)
-                payload = ltor.cell.header_view.write(payload,
-                    circuit_id=ltor.proxy.fake_circuit_id)
-
-                received.append(str(base64.b64encode(payload), 'utf8'))
-        except queue.Empty:
-            pass
-
-        return dict(cells=received)
-
     def __enter__(self):
         self.start()
         return self
@@ -192,23 +153,23 @@ class clerk(threading.Thread):
         self.join()
 
 app = flask.Flask(__name__)
-base_url = ltor.proxy.base_url
+url = ltor.proxy.base_url
 
-@app.route(base_url + '/consensus')
+@app.route(url + '/consensus')
 def get_consensus():
     try:
         return flask.jsonify(app.clerk.consensus_getter.perform()), 200
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
-@app.route(base_url + '/guard')
+@app.route(url + '/guard')
 def get_guard():
     try:
         return flask.jsonify(app.clerk.guard.perform()), 200
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
-@app.route(base_url + '/channels', methods=['POST'])
+@app.route(url + '/channels', methods=['POST'])
 def create_channel():
     if not flask.request.json or not 'ntor' in flask.request.json:
         flask.abort(400)
@@ -219,32 +180,36 @@ def create_channel():
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
-@app.route(base_url + '/channels/<uid>', methods=['POST'])
+@app.route(url + '/channels/<uid>', methods=['POST'])
 def write_channel(uid):
     if not flask.request.json or 'cells' not in flask.request.json:
         flask.abort(400)
 
     try:
-        circuit = app.clerk.circuit_from_uid(uid)
+        channel = app.clerk.channel_from_uid(uid)
     except RuntimeError:
         flask.abort(404)
 
-    if len(flask.request.json['cells']) > per_request_max_cell:
-        flask.abort(404)
+    if len(flask.request.json['cells']) > ltor.proxy.jobs.request_max_cells:
+        flask.abort(400)
 
-    for cell in flask.request.json['cells']:
-        cell = base64.b64decode(cell)
-        app.clerk.send(cell, circuit)
+    cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
+    if any([len(cell) > ltor.constants.full_cell_len for cell in cells]):
+        flask.abort(400)
 
-    return flask.jsonify(app.clerk.recv(circuit)), 201 # Created
+    try:
+        return flask.jsonify(dict(cells=channel.perform(cells))), 201
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
 
-@app.route(base_url + '/channels/<uid>', methods=['DELETE'])
+@app.route(url + '/channels/<uid>', methods=['DELETE'])
 def delete_channel(uid):
     try:
-        circuit = app.clerk.circuit_from_uid(uid)
+        channel = app.clerk.channel_from_uid(uid)
     except RuntimeError:
         flask.abort(404)
 
+    circuit = channel.circuit
     try:
         return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
     except ltor.proxy.jobs.expired:
