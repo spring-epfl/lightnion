@@ -1,6 +1,5 @@
 var lighttor = {};
 lighttor.api = {};
-lighttor.get = {};
 
 lighttor.api.version = '0.1'
 lighttor.api.url = '/lighttor/api/v' + lighttor.api.version
@@ -21,16 +20,19 @@ lighttor.endpoint = function(host)
         http: http,
         guard: http + '/guard',
         channels: http + '/channels',
+        consensus: http + '/consensus',
         websockets: ws + '/channels'}
 
     var endpoint = {
         host: host,
         urls: urls,
-        guard: null}
+        guard: null,
+        consensus: null}
 
     return endpoint
 }
 
+lighttor.get = {};
 lighttor.get.guard = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest();
@@ -48,5 +50,24 @@ lighttor.get.guard = function(endpoint, success, error)
         }
     }
     rq.open('GET', endpoint.urls.guard, true);
+    rq.send()
+}
+lighttor.get.consensus = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest();
+    rq.onreadystatechange = function()
+    {
+        if (this.readyState == 4 && this.status == 200)
+        {
+            endpoint.consensus = JSON.parse(this.responseText);
+            if (success !== undefined)
+                success(endpoint)
+        }
+        else if (this.readyState == 4 && error !== undefined)
+        {
+            error(endpoint, this.status);
+        }
+    }
+    rq.open('GET', endpoint.urls.consensus, true);
     rq.send()
 }

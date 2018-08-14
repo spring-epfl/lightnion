@@ -9,12 +9,20 @@
 </head>
 <body>
     <pre id='loaded'>Nothing to see here! </pre>
+    <pre id='consensus'>Number of routers: </pre>
     <pre id='guard'>Guard identity is: </pre>
 
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
 
         endpoint = lighttor.endpoint('localhost')
+        lighttor.get.consensus(endpoint,
+            function(endpoint)
+            {
+                nb = endpoint.consensus.routers.length
+                document.getElementById('consensus').innerHTML += nb.toString()
+            })
+
         lighttor.get.guard(endpoint,
             function(endpoint)
             {
