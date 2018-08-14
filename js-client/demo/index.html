@@ -8,10 +8,19 @@
     <meta charset="UTF-8"> 
 </head>
 <body>
-    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='loaded'>Nothing to see here! </pre>
+    <pre id='guard'>Guard identity is: </pre>
 
     <script>
-        motd()
+        document.getElementById('loaded').innerHTML += 'Loaded!';
+
+        endpoint = lighttor.endpoint('localhost')
+        lighttor.get.guard(endpoint,
+            function(endpoint)
+            {
+                identity = endpoint.guard.router.identity
+                document.getElementById('guard').innerHTML += identity
+            })
     </script>
 </body>
 </html>
