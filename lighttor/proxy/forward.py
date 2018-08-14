@@ -103,69 +103,6 @@ class clerk(threading.Thread):
         self.dead = True
         self.join()
 
-app = flask.Flask(__name__)
-url = ltor.proxy.base_url
-
-@app.route(url + '/consensus')
-def get_consensus():
-    try:
-        return flask.jsonify(app.clerk.consensus_getter.perform()), 200
-    except ltor.proxy.jobs.expired:
-        flask.abort(503)
-
-@app.route(url + '/guard')
-def get_guard():
-    try:
-        return flask.jsonify(app.clerk.guard.perform()), 200
-    except ltor.proxy.jobs.expired:
-        flask.abort(503)
-
-@app.route(url + '/channels', methods=['POST'])
-def create_channel():
-    if not flask.request.json or not 'ntor' in flask.request.json:
-        flask.abort(400)
-
-    try:
-        data = flask.request.json['ntor']
-        return flask.jsonify(app.clerk.create.perform(data)), 201 # Created
-    except ltor.proxy.jobs.expired:
-        flask.abort(503)
-
-@app.route(url + '/channels/<uid>', methods=['POST'])
-def write_channel(uid):
-    if not flask.request.json or 'cells' not in flask.request.json:
-        flask.abort(400)
-
-    try:
-        channel = app.clerk.channel_from_uid(uid)
-    except RuntimeError:
-        flask.abort(404)
-
-    if len(flask.request.json['cells']) > ltor.proxy.jobs.request_max_cells:
-        flask.abort(400)
-
-    cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
-    if any([len(cell) > ltor.constants.full_cell_len for cell in cells]):
-        flask.abort(400)
-
-    try:
-        return flask.jsonify(dict(cells=channel.perform(cells))), 201
-    except ltor.proxy.jobs.expired:
-        flask.abort(503)
-
-@app.route(url + '/channels/<uid>', methods=['DELETE'])
-def delete_channel(uid):
-    try:
-        channel = app.clerk.channel_from_uid(uid)
-    except RuntimeError:
-        flask.abort(404)
-
-    circuit = channel.circuit
-    try:
-        return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
-    except ltor.proxy.jobs.expired:
-        flask.abort(503)
-
 async def channel_input(websocket, channel):
     cell = None
     while True:
@@ -240,9 +177,76 @@ class sockets(threading.Thread):
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
 
-def main(port, slave_node, control_port, purge_cache):
+app = flask.Flask(__name__)
+url = ltor.proxy.base_url
+
+@app.route(url + '/consensus')
+def get_consensus():
+    try:
+        return flask.jsonify(app.clerk.consensus_getter.perform()), 200
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
+
+@app.route(url + '/guard')
+def get_guard():
+    try:
+        return flask.jsonify(app.clerk.guard.perform()), 200
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
+
+@app.route(url + '/channels', methods=['POST'])
+def create_channel():
+    if not flask.request.json or not 'ntor' in flask.request.json:
+        flask.abort(400)
+
+    try:
+        data = flask.request.json['ntor']
+        return flask.jsonify(app.clerk.create.perform(data)), 201 # Created
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
+
+@app.route(url + '/channels/<uid>', methods=['POST'])
+def write_channel(uid):
+    if not flask.request.json or 'cells' not in flask.request.json:
+        flask.abort(400)
+
+    try:
+        channel = app.clerk.channel_from_uid(uid)
+    except RuntimeError:
+        flask.abort(404)
+
+    if len(flask.request.json['cells']) > ltor.proxy.jobs.request_max_cells:
+        flask.abort(400)
+
+    cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
+    if any([len(cell) > ltor.constants.full_cell_len for cell in cells]):
+        flask.abort(400)
+
+    try:
+        return flask.jsonify(dict(cells=channel.perform(cells))), 201
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
+
+@app.route(url + '/channels/<uid>', methods=['DELETE'])
+def delete_channel(uid):
+    try:
+        channel = app.clerk.channel_from_uid(uid)
+    except RuntimeError:
+        flask.abort(404)
+
+    circuit = channel.circuit
+    try:
+        return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
+    except ltor.proxy.jobs.expired:
+        flask.abort(503)
+
+def main(port, slave_node, control_port, purge_cache, static_files=None):
     if purge_cache:
         ltor.cache.purge()
+
+    if static_files is not None:
+        from werkzeug import SharedDataMiddleware
+        app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
     with clerk(slave_node, control_port) as app.clerk:
         logging.info('Bootstrapping HTTP server.')

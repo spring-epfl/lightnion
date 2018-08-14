@@ -1,8 +1,9 @@
 import lighttor.proxy.forward
 
-import argparse
 import ipaddress
+import argparse
 import logging
+import os
 
 log_format = "%(levelname)s: %(message)s"
 log_levels = {None: logging.ERROR, 1: logging.WARNING, 2: logging.INFO}
@@ -36,11 +37,24 @@ if __name__ == '__main__':
         help='If specified, purge cache before starting.')
     parser.add_argument('-v', action='count',
                         help='Verbose output (up to -vvv)')
+    parser.add_argument('--static', required=False, default=[],
+        nargs='*', metavar='path:url', help='Serve given static directories.')
 
     argv = parser.parse_args()
     logging.basicConfig(
         format=log_format, level=log_levels.get(argv.v, logging.DEBUG))
 
+    static = dict()
+    for arg in argv.static:
+        static_path, static_url = arg.split(':')
+        for entry in os.listdir(static_path):
+            full_path = os.path.join(static_path, entry)
+            if not os.path.isfile(full_path):
+                continue
+
+            full_url = os.path.join('/', static_url, entry)
+            logging.info('Serving static {} ({}).'.format(full_path, full_url))
+            static[full_url] = full_path
 
     # For now, we rely on having a trusted local Tor node that checks
     # signatures for us & everything else.
@@ -55,4 +69,5 @@ if __name__ == '__main__':
         port=argv.p,
         slave_node=argv.s,
         control_port=argv.c,
-        purge_cache=argv.purge_cache)
+        purge_cache=argv.purge_cache,
+        static_files=static if len(static) > 0 else None)
