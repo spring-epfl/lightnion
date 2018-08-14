@@ -11,6 +11,7 @@
     <pre id='loaded'>Nothing to see here! </pre>
     <pre id='consensus'>Number of routers: </pre>
     <pre id='guard'>Guard identity is: </pre>
+    <pre id='id'>Channel create id: </pre>
 
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
@@ -28,6 +29,12 @@
             {
                 identity = endpoint.guard.router.identity
                 document.getElementById('guard').innerHTML += identity
+
+                lighttor.post.create(endpoint,
+                    function(endpoint)
+                    {
+                        document.getElementById('id').innerHTML += endpoint.id
+                    })
             })
     </script>
 </body>
