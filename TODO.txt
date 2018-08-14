@@ -1,11 +1,14 @@
+Roadmap common:   
+ - replace '/guard' by '/guards' (let clients choose their guard)
+ - use raw consensus & descriptors instead of JSON-ified ones? (client parsers)
 
+Roadmap python implementation:
  - download consensus via HTTP whenever possible
- 
- - link authentication with CERTS & all
+ - asyncio-only (sans-IO?) rewrite of core components
+ - websockets-only (no flask, perform_request-based) rewrite of the proxy
+ - link authentication
  - consensus signatures
  - descriptor signatures
-
- - replace controlport-based hack for path selection with proper implementation
- - replace python implementation of ntor by a proper one (wrapped ctor?)
- 
- - rewrite parsers to make them simpler
+ - proper path selection algorithm
+ - handle more crypto bits in C? wrapped ctor?
+ - remove complexity/bottlenecks (no parsers? no cell.view? proper zlib & peel)
