@@ -79,7 +79,7 @@ lighttor.get.consensus = function(endpoint, success, error)
 }
 
 lighttor.ntor = {}
-lighttor.ntor.keybytes = 72
+lighttor.ntor.keybytes = 92
 lighttor.ntor.protoid = 'ntor-curve25519-sha256-1'
 lighttor.ntor.tweaks = {
     expand: lighttor.ntor.protoid + ':key_expand',
@@ -226,6 +226,20 @@ lighttor.ntor.shake = function(endpoint, data)
     return null
 }
 
+lighttor.ntor.slice = function(material)
+{
+    k = 16 // KEY_LEN
+    h = 20 // HASH_LEN
+    var material = {
+        key_hash: material.slice(h * 2 + k * 2),
+        forward_digest: material.slice(0, h),
+        backward_digest: material.slice(h, h * 2),
+        forward_key: material.slice(h * 2, h * 2 + k),
+        backward_key: material.slice(h * 2 + k, h * 2 + k * 2)
+    }
+    return material
+}
+
 lighttor.post = {}
 lighttor.post.create = function(endpoint, success, error)
 {
@@ -238,8 +252,9 @@ lighttor.post.create = function(endpoint, success, error)
             endpoint.id = info['id']
             endpoint.path = info['path']
 
-            var shared = lighttor.ntor.shake(endpoint, info['ntor'])
-            endpoint.material = shared
+            var material = lighttor.ntor.shake(endpoint, info['ntor'])
+            material = lighttor.ntor.slice(material)
+            endpoint.material = material
             if (success !== undefined)
                 success(endpoint)
         }
