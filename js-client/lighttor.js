@@ -23,13 +23,12 @@ lighttor.endpoint = function(host)
         consensus: http + '/consensus',
         websockets: ws + '/channels'}
 
-    var material = {
-        ntor: null}
-
     var endpoint = {
         host: host,
         urls: urls,
-        material: material,
+        material: null,
+        forward: null,
+        backward: null,
         id: null,
         path: null,
         guard: null,
@@ -240,6 +239,130 @@ lighttor.ntor.slice = function(material)
     return material
 }
 
+lighttor.onion = {}
+lighttor.onion.ctr = function(key)
+{
+    var key = sjcl.codec.bytes.toBits(key)
+    var aes = new sjcl.cipher.aes(key)
+
+    var ctr = {
+        prf: aes,
+        nonce: 0,
+        buffer: new Uint8Array(0),
+        extend: function(n)
+        {
+            if (n < 16)
+                n = 16
+
+            var remains = this.buffer
+            this.buffer = new Uint8Array(n)
+            this.buffer.set(remains, offset=0)
+
+            for (var idx = remains.length; idx < n; idx += 16)
+            {
+                var nonce = new ArrayBuffer(16)
+                new DataView(nonce).setUint32(12, this.nonce, false)
+                nonce = sjcl.codec.bytes.toBits(new Uint8Array(nonce))
+
+                var pad = this.prf.encrypt(nonce)
+                pad = new Uint8Array(sjcl.codec.bytes.fromBits(pad))
+
+                this.buffer.set(pad, offset=idx)
+                this.nonce = this.nonce + 1
+            }
+        },
+        process: function(data)
+        {
+            if (data.length > this.buffer.length)
+                this.extend(data.length)
+
+            var data = data.slice(0)
+            for (var idx = 0; idx < data.length; idx++)
+            {
+                data[idx] ^= this.buffer[idx]
+            }
+            this.buffer = this.buffer.slice(data.length)
+
+            return data
+        }
+    }
+    return ctr
+}
+
+lighttor.onion.sha = function(digest)
+{
+    var digest = sjcl.codec.bytes.toBits(digest)
+
+    var sha = {
+        hash: new sjcl.hash.sha1(),
+        digest: function(data)
+        {
+            this.hash.update(sjcl.codec.bytes.toBits(data))
+            data = new sjcl.hash.sha1(this.hash).finalize()
+            return new Uint8Array(sjcl.codec.bytes.fromBits(data))
+        }
+    }
+
+    sha.hash.update(digest)
+    return sha
+}
+
+lighttor.onion.forward = function(endpoint)
+{
+    var forward = {
+        iv: 0,
+        ctr: lighttor.onion.ctr(endpoint.material.forward_key),
+        sha: lighttor.onion.sha(endpoint.material.forward_digest),
+        encrypt: function(cell)
+        {
+            if ((cell.length) != lighttor.relay.full_len)
+                console.log('Invalid size for cell, fatal.')
+
+            body = cell.slice(5)
+            cell.set(this.ctr.process(body), offset=5)
+            return cell
+        },
+        digest: function(cell)
+        {
+            if ((cell.length) != lighttor.relay.full_len)
+                console.log('Invalid size for cell, fatal.')
+
+            body = cell.slice(5)
+            body.set(new Uint8Array(4), offset=5)
+            return this.sha.digest(body).slice(0, 4)
+        }
+    }
+    return forward
+}
+
+lighttor.onion.backward = function(endpoint)
+{
+    var backward = {
+        iv: 0,
+        ctr: lighttor.onion.ctr(endpoint.material.backward_key),
+        sha: lighttor.onion.sha(endpoint.material.backward_digest),
+        decrypt: function(cell)
+        {
+            if ((cell.length) != lighttor.relay.full_len)
+                console.log('Invalid size for cell, fatal.')
+
+            body = cell.slice(5)
+            cell.set(this.ctr.process(body), offset=5)
+            return cell
+        },
+        digest: function(cell)
+        {
+            if ((cell.length) != lighttor.relay.full_len)
+                console.log('Invalid size for cell, fatal.')
+
+            body = cell.slice(5)
+            body.set(new Uint8Array(4), offset=5)
+            return this.sha.digest(body).slice(0, 4)
+        }
+    }
+    return backward
+}
+
 lighttor.post = {}
 lighttor.post.create = function(endpoint, success, error)
 {
@@ -255,6 +378,9 @@ lighttor.post.create = function(endpoint, success, error)
             var material = lighttor.ntor.shake(endpoint, info['ntor'])
             material = lighttor.ntor.slice(material)
             endpoint.material = material
+
+            endpoint.forward = lighttor.onion.forward(endpoint)
+            endpoint.backward = lighttor.onion.backward(endpoint)
             if (success !== undefined)
                 success(endpoint)
         }
@@ -308,9 +434,9 @@ lighttor.relay.pack = function(cmd, stream_id, digest, data)
     var cell = new Uint8Array(lighttor.relay.full_len)
     cell.set(header, offset=0)
     cell.set(digest, offset=10)
-    cell.set(data, offset=12)
+    cell.set(data, offset=14)
 
-    for(var i = 12 + data.length; i < lighttor.relay.full_len; i++)
+    for(var i = 14 + data.length; i < lighttor.relay.full_len; i++)
         cell[i] = 0
 
     return cell
