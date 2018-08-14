@@ -1,1 +1,1 @@
-../../sjcl/sjcl.js
+../../sjcl.js

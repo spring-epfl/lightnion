@@ -12,6 +12,7 @@
     <pre id='consensus'>Number of routers: </pre>
     <pre id='guard'>Guard identity is: </pre>
     <pre id='id'>Channel create id: </pre>
+    <pre id='shared'>Circ. shared keys: </pre>
 
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
@@ -34,6 +35,10 @@
                     function(endpoint)
                     {
                         document.getElementById('id').innerHTML += endpoint.id
+
+                        shared = endpoint.material
+                        shared = nacl.util.encodeBase64(shared)
+                        document.getElementById('shared').innerHTML += shared
                     })
             })
     </script>
