@@ -4,3 +4,12 @@
 [submodule "stem"]
 	path = stem-client
 	url = https://git.torproject.org/stem.git
+[submodule "js-client/sjcl"]
+	path = js-client/sjcl
+	url = https://github.com/bitwiseshiftleft/sjcl
+[submodule "js-client/tweetnacl-js"]
+	path = js-client/tweetnacl-js
+	url = https://github.com/dchest/tweetnacl-js
+[submodule "js-client/tweetnacl-util-js"]
+	path = js-client/tweetnacl-util-js
+	url = https://github.com/dchest/tweetnacl-util-js
