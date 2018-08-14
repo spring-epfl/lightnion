@@ -256,3 +256,47 @@ lighttor.post.create = function(endpoint, success, error)
     rq.setRequestHeader("Content-type", "application/json");
     rq.send(JSON.stringify({ntor: lighttor.ntor.hand(endpoint)}))
 }
+
+lighttor.relay = {}
+lighttor.relay.payload_len = 509
+lighttor.relay.full_len = 5 + lighttor.relay.payload_len
+lighttor.relay.cmd = {
+        'begin'     : 1,
+        'data'      : 2,
+        'end'       : 3,
+        'connected' : 4,
+        'sendme'    : 5,
+        'extend'    : 6,
+        'extended'  : 7,
+        'truncate'  : 8,
+        'truncated' : 9,
+        'drop'      : 10,
+        'resolve'   : 11,
+        'resolved'  : 12,
+        'begin_dir' : 13,
+        'extend2'   : 14,
+        'extended2' : 15
+    }
+
+lighttor.relay.pack = function(cmd, stream_id, digest, data)
+{
+    var header = new ArrayBuffer(10)
+
+    var view = new DataView(header)
+    view.setUint32(0, 2147483648 /* fake circuit_id */, false)
+    view.setUint8(4, 3 /* RELAY CELL */, false)
+    view.setUint8(5, lighttor.relay.cmd[cmd], false)
+    view.setUint16(6, 0 /* recognized */, false)
+    view.setUint16(8, stream_id, false)
+    var header = new Uint8Array(header)
+
+    var cell = new Uint8Array(lighttor.relay.full_len)
+    cell.set(header, offset=0)
+    cell.set(digest, offset=10)
+    cell.set(data, offset=12)
+
+    for(var i = 12 + data.length; i < lighttor.relay.full_len; i++)
+        cell[i] = 0
+
+    return cell
+}
