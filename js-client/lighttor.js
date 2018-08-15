@@ -488,8 +488,7 @@ lighttor.io.simple = function(handler, success, error)
             if (this.incoming.length < 1)
                 return null
 
-            cell = this.incoming[0]
-            this.incoming = this.incoming.slice(1)
+            cell = this.incoming.shift()
             return nacl.util.decodeBase64(cell)
         }
     }
