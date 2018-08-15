@@ -26,6 +26,7 @@ lighttor.endpoint = function(host, port)
         host: host,
         urls: urls,
         io: null,
+        state: 0,
         material: null,
         forward: null,
         backward: null,
@@ -33,6 +34,7 @@ lighttor.endpoint = function(host, port)
         url: null,
         path: null,
         guard: null,
+        stream: null,
         consensus: null}
 
     return endpoint
@@ -557,7 +559,7 @@ lighttor.io.simple = function(handler, success, error)
         recv: function()
         {
             if (this.incoming.length < 1)
-                return null
+                return undefined
 
             cell = this.incoming.shift()
             return nacl.util.decodeBase64(cell)
@@ -669,8 +671,7 @@ lighttor.post.channel = function(endpoint, success, error)
     rq.send(JSON.stringify({cells: endpoint.io.outcoming}))
 }
 
-lighttor.send = {}
-lighttor.send.extend = function(endpoint, descriptor, success, error)
+lighttor.post.extend = function(endpoint, descriptor, success, error)
 {
     var hand = lighttor.ntor.hand(endpoint, descriptor, encode=false)
 
@@ -718,4 +719,173 @@ lighttor.send.extend = function(endpoint, descriptor, success, error)
 
     endpoint.io.handler = handler
     endpoint.io.send(cell)
+}
+
+lighttor.state = {
+    started: 1,
+    guarded: 2,
+    created: 3,
+    pending: 4,
+    extpath: 5,
+    success: 6}
+
+lighttor.stream = {}
+lighttor.stream.backend = function(error)
+{
+    var sendme = function(endpoint, cell)
+    {
+        if (cell.cmd == 'sendme')
+            endpoint.stream.sendme += 1
+        else
+        {
+            console.log('Got unexpected control cell: ', cell.cmd)
+            error(endpoint)
+        }
+    }
+
+    var backend = {
+        id: 0,
+        sendme: 0,
+        handles: {0: {callback: sendme}},
+        register: function(handle)
+        {
+            this.id += 1
+            handle.id = this.id
+            this.handles[this.id] = handle
+            return this.id
+        }
+    }
+    return backend
+}
+
+lighttor.stream.handler = function(endpoint)
+{
+    var cell = endpoint.io.recv()
+    for (; cell !== undefined; cell = endpoint.io.recv())
+    {
+        if (cell[4] != 3) // (relay cell only)
+        {
+            console.log('Got non-relay cell, dropped: ', cell[4])
+            continue
+        }
+
+        cell = lighttor.onion.peel(endpoint, cell)
+        if (cell == null)
+        {
+            console.log('Got invalid cell, dropped.')
+            continue
+        }
+
+        if (!(cell.stream_id in endpoint.stream.handles))
+        {
+            console.log('Got cell outside stream, dropped: ', cell.stream_id)
+            continue
+        }
+
+        var handle = endpoint.stream.handles[cell.stream_id]
+        if (cell.cmd == 'end')
+            delete endpoint.stream.handles[cell.stream_id]
+        handle.callback(endpoint, cell)
+    }
+}
+
+lighttor.stream.dir = function(endpoint, path, handler)
+{
+    var request = {
+        id: null,
+        data: '',
+        send: function() { throw 'No send method on directory streams.' },
+        recv: function() { var data = this.data; this.data = ''; return data },
+        state: lighttor.state.started,
+        callback: function(endpoint, cell)
+        {
+            if (cell.cmd == 'connected')
+            {
+                this.state = lighttor.state.created
+                handler(this)
+                this.state = lighttor.state.pending
+            }
+            if (cell.cmd == 'end')
+            {
+                this.state = lighttor.state.success
+                handler(this)
+            }
+            if (cell.cmd != 'data')
+                return
+
+            this.data += nacl.util.encodeUTF8(cell.data)
+            handler(this)
+        }
+    }
+
+    var id = endpoint.stream.register(request)
+    var cell = lighttor.onion.build(endpoint, 'begin_dir', id)
+    endpoint.io.send(cell)
+
+    var data = 'GET ' + path + ' HTTP/1.0\r\n'
+    data += 'Accept-Encoding: identity\r\n\r\n'
+    data = nacl.util.decodeUTF8(data)
+
+    cell = lighttor.onion.build(endpoint, 'data', id, data)
+    endpoint.io.send(cell)
+
+    handler(request)
+    return request
+}
+
+lighttor.open = function(host, port, success, error, io)
+{
+    var endpoint = lighttor.endpoint(host, port)
+    if (io === undefined)
+        io = lighttor.io.polling
+    if (error === undefined)
+        error = function() { }
+    if (success === undefined)
+        success = function() { }
+
+    var cb = {
+        guard: function(endpoint)
+        {
+            endpoint.state = lighttor.state.guarded
+            success(endpoint)
+
+            lighttor.post.create(endpoint, cb.create, error)
+        },
+        create: function(endpoint)
+        {
+            endpoint.state = lighttor.state.created
+            success(endpoint)
+
+            endpoint.stream = lighttor.stream.backend(error)
+            io(endpoint, lighttor.stream.handler, function(endpoint)
+            {
+                var state = endpoint.state
+
+                endpoint.state = lighttor.state.pending
+                success(endpoint)
+                endpoint.state = state
+            }, error)
+
+            lighttor.post.extend(endpoint, endpoint.path[0], cb.extend, error)
+            endpoint.io.start()
+        },
+        extend: function(endpoint)
+        {
+            endpoint.state = lighttor.state.extpath
+            success(endpoint)
+
+            lighttor.post.extend(endpoint, endpoint.path[1], cb.success, error)
+        },
+        success: function(endpoint)
+        {
+            endpoint.state = lighttor.state.success
+            success(endpoint)
+            endpoint.io.success = function() { }
+        }
+    }
+
+    endpoint.state = lighttor.state.started
+    success(endpoint)
+
+    lighttor.get.guard(endpoint, cb.guard, error)
 }
