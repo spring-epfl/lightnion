@@ -419,7 +419,7 @@ lighttor.relay.cmd = {
         'extended2' : 15
     }
 
-lighttor.relay.pack = function(cmd, stream_id, digest, data)
+lighttor.relay.pack = function(cmd, stream_id, data)
 {
     var header = new ArrayBuffer(10)
 
@@ -431,13 +431,10 @@ lighttor.relay.pack = function(cmd, stream_id, digest, data)
     view.setUint16(8, stream_id, false)
     var header = new Uint8Array(header)
 
-    var cell = new Uint8Array(lighttor.relay.full_len)
+    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
     cell.set(header, offset=0)
-    cell.set(digest, offset=10)
+    cell.set(new Uint8Array(4) /* zeroed digest */, offset=10)
     cell.set(data, offset=14)
-
-    for(var i = 14 + data.length; i < lighttor.relay.full_len; i++)
-        cell[i] = 0
 
     return cell
 }
