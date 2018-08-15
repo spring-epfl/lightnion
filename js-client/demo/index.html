@@ -21,7 +21,7 @@
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
 
-        var endpoint = lighttor.endpoint('localhost')
+        var endpoint = lighttor.endpoint('localhost', 4990)
         lighttor.get.consensus(endpoint,
             function(endpoint)
             {

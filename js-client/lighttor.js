@@ -4,12 +4,11 @@ lighttor.api = {}
 lighttor.api.version = '0.1'
 lighttor.api.url = '/lighttor/api/v' + lighttor.api.version
 
-lighttor.api.http_port = '4990'
 lighttor.api.ws_port = '8765'
 
-lighttor.endpoint = function(host)
+lighttor.endpoint = function(host, port)
 {
-    var http = 'http://' + host + ':' + lighttor.api.http_port
+    var http = 'http://' + host + ':' + port.toString()
     http += lighttor.api.url
 
     var ws = 'ws://' + host + ':' + lighttor.api.ws_port
