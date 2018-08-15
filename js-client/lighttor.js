@@ -311,18 +311,24 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
     if (typeof(eidentity) == 'string')
         eidentity = nacl.util.decodeBase64(eidentity + '=')
 
-    var length = (1                     // Number of link specifiers (set to 3)
+    var nspec = 2
+    if (eidentity !== undefined)
+        nspec += 1
+
+    var length = (1                     // Number of link specifiers
         + 1 + 1 + 6                         // 1. IPv4 addr+port
         + 1 + 1 + identity.length           // 2. Legacy identity
-        + 1 + 1 + eidentity.length          // 3. Ed25519 identity
         + 2                             // Client handshake type (0x00002 ntor)
         + 2                             // Client handshake length
         + handshake.length)             // Actual handshake content
 
+    if (nspec == 3)
+        length += 1 + 1 + eidentity.length  // 3. Ed25519 identity
+
     var off = 0
     var data = new Uint8Array(length)
     var view = new DataView(data.buffer)
-    view.setUint8(off, 3 /* (set to 3 specifiers here) */, false); off += 1
+    view.setUint8(off, nspec /* nb of specifiers */, false); off += 1
 
     view.setUint8(off, 0 /* TLS-over-TCP IPv4 specifier */, false); off += 1
     view.setUint8(off, 6, false); off += 1      /* length   1 byte  */
@@ -333,9 +339,12 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
     view.setUint8(off, identity.length, false); off += 1
     data.set(identity, offset=off); off += identity.length
 
-    view.setUint8(off, 3 /* Ed25519 identity specifier */, false); off += 1
-    view.setUint8(off, eidentity.length, false); off += 1
-    data.set(eidentity, offset=off); off += eidentity.length
+    if (nspec == 3)
+    {
+        view.setUint8(off, 3 /* Ed25519 identity specifier */, false); off += 1
+        view.setUint8(off, eidentity.length, false); off += 1
+        data.set(eidentity, offset=off); off += eidentity.length
+    }
 
     view.setUint16(off, 2 /* handshake: 0x00002 ntor */, false); off += 2
     view.setUint16(off, handshake.length, false); off += 2
