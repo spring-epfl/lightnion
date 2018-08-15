@@ -1,3 +1,4 @@
+import logging
 import socket
 import queue
 import ssl
@@ -58,6 +59,8 @@ class link:
             circuit.destroyed = True
             circuit.reason = cell.reason
             self.unregister(circuit)
+            logging.debug('Circuit {} got destroyed, reason: {}'.format(
+                circuit.id, circuit.reason))
             return False
 
         self.put(circuit, payload)
