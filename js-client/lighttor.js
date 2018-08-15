@@ -26,10 +26,12 @@ lighttor.endpoint = function(host)
     var endpoint = {
         host: host,
         urls: urls,
+        io: null,
         material: null,
         forward: null,
         backward: null,
         id: null,
+        url: null,
         path: null,
         guard: null,
         consensus: null}
@@ -243,26 +245,34 @@ lighttor.relay = {}
 lighttor.relay.payload_len = 509
 lighttor.relay.full_len = 5 + lighttor.relay.payload_len
 lighttor.relay.cmd = {
-        'begin'     : 1,
-        'data'      : 2,
-        'end'       : 3,
-        'connected' : 4,
-        'sendme'    : 5,
-        'extend'    : 6,
-        'extended'  : 7,
-        'truncate'  : 8,
-        'truncated' : 9,
-        'drop'      : 10,
-        'resolve'   : 11,
-        'resolved'  : 12,
-        'begin_dir' : 13,
-        'extend2'   : 14,
-        'extended2' : 15
+        'begin'     : 1,   1: 'begin',
+        'data'      : 2,   2: 'data',
+        'end'       : 3,   3: 'end',
+        'connected' : 4,   4: 'connected',
+        'sendme'    : 5,   5: 'sendme',
+        'extend'    : 6,   6: 'extend',
+        'extended'  : 7,   7: 'extended',
+        'truncate'  : 8,   8: 'truncate',
+        'truncated' : 9,   9: 'truncated',
+        'drop'      : 10, 10: 'drop',
+        'resolve'   : 11, 11: 'resolve',
+        'resolved'  : 12, 12: 'resolved',
+        'begin_dir' : 13, 13: 'begin_dir',
+        'extend2'   : 14, 14: 'extend2',
+        'extended2' : 15, 15: 'extended2'
     }
 
 lighttor.relay.pack = function(cmd, stream_id, data)
 {
-    var header = new ArrayBuffer(10)
+    if (data === undefined)
+        data = new Uint8Array(0)
+    if (stream_id === undefined)
+        stream_id = 0
+
+    if (typeof(data) == "string")
+        data = nacl.util.decodeUTF8(data)
+
+    var header = new ArrayBuffer(16)
 
     var view = new DataView(header)
     view.setUint32(0, 2147483648 /* fake circuit_id */, false)
@@ -299,7 +309,6 @@ lighttor.onion.ctr = function(key)
 
             for (var idx = remains.length; idx < length; idx += 16)
             {
-                console.log(idx, this.nonce, this.buffer.length)
                 var nonce = new ArrayBuffer(16)
                 new DataView(nonce).setUint32(12, this.nonce, false)
                 nonce = sjcl.codec.bytes.toBits(new Uint8Array(nonce))
@@ -410,6 +419,89 @@ lighttor.onion.build = function(endpoint, cmd, stream_id, data)
     return endpoint.forward.encrypt(cell)
 }
 
+lighttor.onion.peel = function(endpoint, cell)
+{
+    var cell = endpoint.backward.decrypt(cell)
+    var digest = cell.slice(10, 14)
+    cell.set(new Uint8Array(4), 10)
+
+    var expect = endpoint.backward.digest(cell)
+    if (!(true
+        && digest[0] == expect[0]
+        && digest[1] == expect[1]
+        && digest[2] == expect[2]
+        && digest[3] == expect[3]))
+    {
+        console.log('Invalid cell digest.')
+        return null
+    }
+
+    var recognized = cell.slice(6, 8)
+    if (!(recognized[0] == recognized[1] && recognized[0] == 0))
+    {
+        console.log('Invalid cell recognized field.')
+        return null
+    }
+
+    var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
+    if (length > lighttor.relay.payload_len - 11)
+    {
+        console.log('Invalid cell length.')
+        return null
+    }
+
+    var id = new DataView(cell.slice(8, 10).buffer).getUint16(0, false)
+    var cmd = lighttor.relay.cmd[cell.slice(5, 6)[0]]
+    var data = cell.slice(16, 16 + length)
+    var relay = {cmd: cmd, stream_id: id, data: data}
+    return relay
+}
+
+lighttor.io = {}
+lighttor.io.simple = function(handler, success, error)
+{
+    var io = {
+        incoming: [],
+        outcoming: [],
+        pending: 0,
+        handler: handler,
+        success: success,
+        error: error,
+        send: function(cell)
+        {
+            this.outcoming.push(nacl.util.encodeBase64(cell))
+        },
+        recv: function()
+        {
+            if (this.incoming.length < 1)
+                return null
+
+            cell = this.incoming[0]
+            this.incoming = this.incoming.slice(1)
+            return nacl.util.decodeBase64(cell)
+        }
+    }
+    return io
+}
+
+lighttor.io.polling = function(endpoint, handler, success, error)
+{
+    var io = lighttor.io.simple(handler, success, error)
+    io.poll = function()
+    {
+        setTimeout(function()
+        {
+            lighttor.post.channel(endpoint, io.poll)
+        }, 1000)
+    }
+    io.start = function()
+    {
+        lighttor.post.channel(endpoint, io.poll)
+    }
+    endpoint.io = io
+    return io
+}
+
 lighttor.post = {}
 lighttor.post.create = function(endpoint, success, error)
 {
@@ -420,6 +512,7 @@ lighttor.post.create = function(endpoint, success, error)
         {
             var info = JSON.parse(this.responseText)
             endpoint.id = info['id']
+            endpoint.url = endpoint.urls.channels + '/' + info['id']
             endpoint.path = info['path']
 
             var material = lighttor.ntor.shake(endpoint, info['ntor'])
@@ -443,4 +536,53 @@ lighttor.post.create = function(endpoint, success, error)
     rq.open('POST', endpoint.urls.channels, true)
     rq.setRequestHeader("Content-type", "application/json");
     rq.send(JSON.stringify({ntor: lighttor.ntor.hand(endpoint)}))
+}
+
+lighttor.post.channel = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (this.readyState == 4 && this.status == 201)
+        {
+            var cells = JSON.parse(this.responseText)['cells']
+            if (cells === undefined)
+            {
+                if (endpoint.io.error !== undefined)
+                    endpoint.io.error(endpoint)
+                return
+            }
+
+            var pending = endpoint.io.pending
+            if (pending > 0 && endpoint.io.success !== undefined)
+                endpoint.io.success(endpoint)
+
+            if (cells.length > 0)
+            {
+                endpoint.io.incoming = endpoint.io.incoming.concat(cells)
+                if (endpoint.io.handler !== undefined)
+                    endpoint.io.handler(endpoint)
+            }
+
+            endpoint.io.outcoming = endpoint.io.outcoming.slice(pending)
+            endpoint.io.pending = 0
+
+            if (success !== undefined)
+                success(endpoint)
+        }
+        else if (this.readyState == 4)
+        {
+            if (endpoint.io.error !== undefined)
+                endpoint.io.error(endpoint)
+
+            if (error !== undefined)
+                error(endpoint, this.status)
+        }
+    }
+
+    endpoint.io.pending = endpoint.io.outcoming.length
+
+    rq.open('POST', endpoint.url, true)
+    rq.setRequestHeader("Content-type", "application/json");
+    rq.send(JSON.stringify({cells: endpoint.io.outcoming}))
 }

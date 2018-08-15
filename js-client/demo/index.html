@@ -5,42 +5,83 @@
     <script src="js/nacl.min.js"></script>
     <script src="js/nacl-util.min.js"></script>
     <script src="js/lighttor.js"></script>
-    <meta charset="UTF-8"> 
+    <meta charset="UTF-8">
 </head>
 <body>
     <pre id='loaded'>Nothing to see here! </pre>
     <pre id='consensus'>Number of routers: </pre>
     <pre id='guard'>Guard identity is: </pre>
     <pre id='id'>Channel create id: </pre>
-    <pre id='shared'>Confirmation hash: </pre>
+    <pre id='one'>First node status: </pre>
 
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
 
-        endpoint = lighttor.endpoint('localhost')
+        var endpoint = lighttor.endpoint('localhost')
         lighttor.get.consensus(endpoint,
             function(endpoint)
             {
-                nb = endpoint.consensus.routers.length
+                var nb = endpoint.consensus.routers.length
                 document.getElementById('consensus').innerHTML += nb.toString()
             })
 
-        lighttor.get.guard(endpoint,
-            function(endpoint)
+        var cb = {
+            guard: function(endpoint)
             {
-                identity = endpoint.guard.router.identity
+                var identity = endpoint.guard.router.identity
                 document.getElementById('guard').innerHTML += identity
 
-                lighttor.post.create(endpoint,
-                    function(endpoint)
-                    {
-                        document.getElementById('id').innerHTML += endpoint.id
+                lighttor.post.create(endpoint, cb.create)
+            },
+            create: function create(endpoint)
+            {
+                document.getElementById('id').innerHTML += endpoint.id
+                document.getElementById('one').innerHTML += '(handshake done)'
 
-                        shared = endpoint.material
-                        shared = nacl.util.encodeBase64(shared.key_hash)
-                        document.getElementById('shared').innerHTML += shared
-                    })
-            })
+                lighttor.io.polling(endpoint, cb.handler, cb.send, cb.error)
+
+                var cell = lighttor.onion.build(endpoint, 'begin_dir', 1)
+                endpoint.io.send(cell)
+
+                var cell = lighttor.onion.build(endpoint, 'data', 1,
+                    nacl.util.decodeUTF8("GET /tor/server/authority HTTP/1.0\r\nAccept-Encoding: identity\r\n\r\n"))
+                endpoint.io.send(cell)
+
+                // var begin = lighttor.relay.begin('perdu.com', 80)
+                // cell = lighttor.onion.build(endpoint, 'begin', 1, begin)
+
+                endpoint.io.start()
+            },
+            send: function(endpoint)
+            {
+                console.log('Successfully send', endpoint.io.pending, 'cells')
+            },
+            handler: function(endpoint)
+            {
+                var cell = endpoint.io.recv()
+                for (; cell !== null; cell = endpoint.io.recv())
+                {
+                    var cell = lighttor.onion.peel(endpoint, cell)
+                    if (cell == null)
+                        continue
+
+                    if (cell.cmd == 'connected')
+                        console.log('Stream connected!')
+
+                    if (cell.cmd == 'data')
+                        console.log(nacl.util.encodeUTF8(cell.data))
+
+                    if (cell.cmd == 'end')
+                        console.log('Stream closed!')
+                }
+            },
+            error: function(endpoint)
+            {
+                console.log('Unable to interact with channel?')
+            }
+        }
+
+        lighttor.get.guard(endpoint, cb.guard)
     </script>
 </body>
 </html>
