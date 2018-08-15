@@ -272,9 +272,9 @@ lighttor.relay.pack = function(cmd, stream_id, data)
     if (typeof(data) == "string")
         data = nacl.util.decodeUTF8(data)
 
-    var header = new ArrayBuffer(16)
+    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
+    var view = new DataView(cell.buffer)
 
-    var view = new DataView(header)
     view.setUint32(0, 2147483648 /* fake circuit_id */, false)
     view.setUint8(4, 3 /* RELAY CELL */, false)
     view.setUint8(5, lighttor.relay.cmd[cmd], false)
@@ -282,10 +282,6 @@ lighttor.relay.pack = function(cmd, stream_id, data)
     view.setUint16(8, stream_id, false)
     // (implicit 4-bytes zeroed digest at offset 10)
     view.setUint16(14, data.length, false)
-    var header = new Uint8Array(header)
-
-    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
-    cell.set(header, offset=0)
     cell.set(data, offset=16)
 
     return cell
@@ -310,9 +306,9 @@ lighttor.onion.ctr = function(key)
 
             for (var idx = remains.length; idx < length; idx += 16)
             {
-                var nonce = new ArrayBuffer(16)
-                new DataView(nonce).setUint32(12, this.nonce, false)
-                nonce = sjcl.codec.bytes.toBits(new Uint8Array(nonce))
+                var nonce = new Uint8Array(16)
+                new DataView(nonce.buffer).setUint32(12, this.nonce, false)
+                nonce = sjcl.codec.bytes.toBits(nonce)
 
                 var pad = this.prf.encrypt(nonce)
                 pad = new Uint8Array(sjcl.codec.bytes.fromBits(pad))
