@@ -239,6 +239,47 @@ lighttor.ntor.slice = function(material)
     return material
 }
 
+lighttor.relay = {}
+lighttor.relay.payload_len = 509
+lighttor.relay.full_len = 5 + lighttor.relay.payload_len
+lighttor.relay.cmd = {
+        'begin'     : 1,
+        'data'      : 2,
+        'end'       : 3,
+        'connected' : 4,
+        'sendme'    : 5,
+        'extend'    : 6,
+        'extended'  : 7,
+        'truncate'  : 8,
+        'truncated' : 9,
+        'drop'      : 10,
+        'resolve'   : 11,
+        'resolved'  : 12,
+        'begin_dir' : 13,
+        'extend2'   : 14,
+        'extended2' : 15
+    }
+
+lighttor.relay.pack = function(cmd, stream_id, data)
+{
+    var header = new ArrayBuffer(10)
+
+    var view = new DataView(header)
+    view.setUint32(0, 2147483648 /* fake circuit_id */, false)
+    view.setUint8(4, 3 /* RELAY CELL */, false)
+    view.setUint8(5, lighttor.relay.cmd[cmd], false)
+    view.setUint16(6, 0 /* recognized */, false)
+    view.setUint16(8, stream_id, false)
+    var header = new Uint8Array(header)
+
+    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
+    cell.set(header, offset=0)
+    cell.set(new Uint8Array(4) /* zeroed digest */, offset=10)
+    cell.set(data, offset=14)
+
+    return cell
+}
+
 lighttor.onion = {}
 lighttor.onion.ctr = function(key)
 {
@@ -251,15 +292,14 @@ lighttor.onion.ctr = function(key)
         buffer: new Uint8Array(0),
         extend: function(n)
         {
-            if (n < 16)
-                n = 16
-
+            var length = (Math.floor(n / 16) + 1) * 16
             var remains = this.buffer
-            this.buffer = new Uint8Array(n)
+            this.buffer = new Uint8Array(length+remains.length)
             this.buffer.set(remains, offset=0)
 
-            for (var idx = remains.length; idx < n; idx += 16)
+            for (var idx = remains.length; idx < length; idx += 16)
             {
+                console.log(idx, this.nonce, this.buffer.length)
                 var nonce = new ArrayBuffer(16)
                 new DataView(nonce).setUint32(12, this.nonce, false)
                 nonce = sjcl.codec.bytes.toBits(new Uint8Array(nonce))
@@ -363,6 +403,13 @@ lighttor.onion.backward = function(endpoint)
     return backward
 }
 
+lighttor.onion.build = function(endpoint, cmd, stream_id, data)
+{
+    var cell = lighttor.relay.pack(cmd, stream_id, data)
+    cell.set(endpoint.forward.digest(cell), offset=10)
+    return endpoint.forward.encrypt(cell)
+}
+
 lighttor.post = {}
 lighttor.post.create = function(endpoint, success, error)
 {
@@ -396,45 +443,4 @@ lighttor.post.create = function(endpoint, success, error)
     rq.open('POST', endpoint.urls.channels, true)
     rq.setRequestHeader("Content-type", "application/json");
     rq.send(JSON.stringify({ntor: lighttor.ntor.hand(endpoint)}))
-}
-
-lighttor.relay = {}
-lighttor.relay.payload_len = 509
-lighttor.relay.full_len = 5 + lighttor.relay.payload_len
-lighttor.relay.cmd = {
-        'begin'     : 1,
-        'data'      : 2,
-        'end'       : 3,
-        'connected' : 4,
-        'sendme'    : 5,
-        'extend'    : 6,
-        'extended'  : 7,
-        'truncate'  : 8,
-        'truncated' : 9,
-        'drop'      : 10,
-        'resolve'   : 11,
-        'resolved'  : 12,
-        'begin_dir' : 13,
-        'extend2'   : 14,
-        'extended2' : 15
-    }
-
-lighttor.relay.pack = function(cmd, stream_id, data)
-{
-    var header = new ArrayBuffer(10)
-
-    var view = new DataView(header)
-    view.setUint32(0, 2147483648 /* fake circuit_id */, false)
-    view.setUint8(4, 3 /* RELAY CELL */, false)
-    view.setUint8(5, lighttor.relay.cmd[cmd], false)
-    view.setUint16(6, 0 /* recognized */, false)
-    view.setUint16(8, stream_id, false)
-    var header = new Uint8Array(header)
-
-    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
-    cell.set(header, offset=0)
-    cell.set(new Uint8Array(4) /* zeroed digest */, offset=10)
-    cell.set(data, offset=14)
-
-    return cell
 }
