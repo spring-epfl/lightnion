@@ -280,12 +280,13 @@ lighttor.relay.pack = function(cmd, stream_id, data)
     view.setUint8(5, lighttor.relay.cmd[cmd], false)
     view.setUint16(6, 0 /* recognized */, false)
     view.setUint16(8, stream_id, false)
+    // (implicit 4-bytes zeroed digest at offset 10)
+    view.setUint16(14, data.length, false)
     var header = new Uint8Array(header)
 
     var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
     cell.set(header, offset=0)
-    cell.set(new Uint8Array(4) /* zeroed digest */, offset=10)
-    cell.set(data, offset=14)
+    cell.set(data, offset=16)
 
     return cell
 }
@@ -362,6 +363,7 @@ lighttor.onion.forward = function(endpoint)
         iv: 0,
         ctr: lighttor.onion.ctr(endpoint.material.forward_key),
         sha: lighttor.onion.sha(endpoint.material.forward_digest),
+        early: 8, // (first 8 relay cells will be replaced by relay_early)
         encrypt: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
@@ -369,6 +371,12 @@ lighttor.onion.forward = function(endpoint)
 
             body = cell.slice(5)
             cell.set(this.ctr.process(body), offset=5)
+
+            if (this.early > 0 && cell[4] == 3 /* relay */)
+            {
+                this.early = this.early - 1
+                cell[4] = 9 /* relay_early */
+            }
             return cell
         },
         digest: function(cell)
