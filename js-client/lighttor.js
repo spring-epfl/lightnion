@@ -135,10 +135,15 @@ lighttor.ntor.kdf = function(material, n)
     return new Uint8Array(sjcl.codec.bytes.fromBits(out))
 }
 
-lighttor.ntor.hand = function(endpoint)
+lighttor.ntor.hand = function(endpoint, descriptor, encode)
 {
-    var identity = nacl.util.decodeBase64(endpoint.guard.router.identity + '=')
-    var onionkey = nacl.util.decodeBase64(endpoint.guard['ntor-onion-key'])
+    if (encode === undefined)
+        encode = true
+    if (descriptor === undefined)
+        descriptor = endpoint.guard
+
+    var identity = nacl.util.decodeBase64(descriptor.router.identity + '=')
+    var onionkey = nacl.util.decodeBase64(descriptor['ntor-onion-key'])
 
     endpoint.material = {}
     endpoint.material.ntor = nacl.box.keyPair()
@@ -156,9 +161,12 @@ lighttor.ntor.hand = function(endpoint)
     return nacl.util.encodeBase64(payload)
 }
 
-lighttor.ntor.shake = function(endpoint, data)
+lighttor.ntor.shake = function(endpoint, data, encoded)
 {
-    data = nacl.util.decodeBase64(data)
+    if (encoded === undefined)
+        encoded = true
+    if (encoded)
+        data = nacl.util.decodeBase64(data)
 
     var client_pubkey = endpoint.material.ntor.publicKey
     var client_secret = endpoint.material.ntor.secretKey
