@@ -158,7 +158,9 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     payload.set(onionkey, offset=identity.length)
     payload.set(pubkey, offset=identity.length+onionkey.length)
 
-    return nacl.util.encodeBase64(payload)
+    if (encode)
+        return nacl.util.encodeBase64(payload)
+    return payload
 }
 
 lighttor.ntor.shake = function(endpoint, data, encoded)
@@ -295,6 +297,52 @@ lighttor.relay.pack = function(cmd, stream_id, data)
     return cell
 }
 
+lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
+{
+    // (assuming that host is an IPv4)
+    addr = new Uint8Array(host.split('.'))
+    if (addr.join('.') != host)
+        console.log('Invalid extend IPv4 address, fatal.')
+
+    port = parseInt(port)
+    if (typeof(identity) == 'string')
+        identity = nacl.util.decodeBase64(identity)
+    if (typeof(eidentity) == 'string')
+        eidentity = nacl.util.decodeBase64(eidentity + '=')
+
+    var length = (1                     // Number of link specifiers (set to 3)
+        + 1 + 1 + 6                         // 1. IPv4 addr+port
+        + 1 + 1 + identity.length           // 2. Legacy identity
+        + 1 + 1 + eidentity.length          // 3. Ed25519 identity
+        + 2                             // Client handshake type (0x00002 ntor)
+        + 2                             // Client handshake length
+        + handshake.length)             // Actual handshake content
+
+    var off = 0
+    var data = new Uint8Array(length)
+    var view = new DataView(data.buffer)
+    view.setUint8(off, 3 /* (set to 3 specifiers here) */, false); off += 1
+
+    view.setUint8(off, 0 /* TLS-over-TCP IPv4 specifier */, false); off += 1
+    view.setUint8(off, 6, false); off += 1      /* length   1 byte  */
+    data.set(addr, offset=off); off += 4        /* address  4 bytes */
+    view.setUint16(off, port, false); off += 2  /* port     2 bytes */
+
+    view.setUint8(off, 2 /* Legacy identity specifier */, false); off += 1
+    view.setUint8(off, identity.length, false); off += 1
+    data.set(identity, offset=off); off += identity.length
+
+    view.setUint8(off, 3 /* Ed25519 identity specifier */, false); off += 1
+    view.setUint8(off, eidentity.length, false); off += 1
+    data.set(eidentity, offset=off); off += eidentity.length
+
+    view.setUint16(off, 2 /* handshake: 0x00002 ntor */, false); off += 2
+    view.setUint16(off, handshake.length, false); off += 2
+    data.set(handshake, offset=off)
+
+    return data
+}
+
 lighttor.onion = {}
 lighttor.onion.ctr = function(key)
 {
@@ -312,7 +360,7 @@ lighttor.onion.ctr = function(key)
             this.buffer = new Uint8Array(length+remains.length)
             this.buffer.set(remains, offset=0)
 
-            for (var idx = remains.length; idx < length; idx += 16)
+            for (var idx = remains.length; idx < this.buffer.length; idx += 16)
             {
                 var nonce = new Uint8Array(16)
                 new DataView(nonce.buffer).setUint32(12, this.nonce, false)
@@ -363,17 +411,29 @@ lighttor.onion.sha = function(digest)
 
 lighttor.onion.forward = function(endpoint)
 {
+    var layers = []
+    if (endpoint.forward != null)
+    {
+        layers = endpoint.forward.layers
+        layers.push(endpoint.forward)
+    }
+
     var forward = {
         iv: 0,
         ctr: lighttor.onion.ctr(endpoint.material.forward_key),
         sha: lighttor.onion.sha(endpoint.material.forward_digest),
         early: 8, // (first 8 relay cells will be replaced by relay_early)
+        layers: layers,
         encrypt: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
                 console.log('Invalid size for cell, fatal.')
 
             body = cell.slice(5)
+            for (var idx = 0; idx < this.layers.length; idx++)
+            {
+                body.set(this.layers[idx].ctr.process(body), offset=0)
+            }
             cell.set(this.ctr.process(body), offset=5)
 
             if (this.early > 0 && cell[4] == 3 /* relay */)
@@ -398,16 +458,28 @@ lighttor.onion.forward = function(endpoint)
 
 lighttor.onion.backward = function(endpoint)
 {
+    var layers = []
+    if (endpoint.backward != null)
+    {
+        layers = endpoint.backward.layers
+        layers.push(endpoint.backward)
+    }
+
     var backward = {
         iv: 0,
         ctr: lighttor.onion.ctr(endpoint.material.backward_key),
         sha: lighttor.onion.sha(endpoint.material.backward_digest),
+        layers: layers,
         decrypt: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
                 console.log('Invalid size for cell, fatal.')
 
             body = cell.slice(5)
+            for (var idx = 0; idx < this.layers.length; idx++)
+            {
+                body.set(this.layers[idx].ctr.process(body), offset=0)
+            }
             cell.set(this.ctr.process(body), offset=5)
             return cell
         },
@@ -437,6 +509,13 @@ lighttor.onion.peel = function(endpoint, cell)
     var digest = cell.slice(10, 14)
     cell.set(new Uint8Array(4), 10)
 
+    var recognized = cell.slice(6, 8)
+    if (!(recognized[0] == recognized[1] && recognized[0] == 0))
+    {
+        console.log('Invalid cell recognized field.')
+        return null
+    }
+
     var expect = endpoint.backward.digest(cell)
     if (!(true
         && digest[0] == expect[0]
@@ -445,13 +524,6 @@ lighttor.onion.peel = function(endpoint, cell)
         && digest[3] == expect[3]))
     {
         console.log('Invalid cell digest.')
-        return null
-    }
-
-    var recognized = cell.slice(6, 8)
-    if (!(recognized[0] == recognized[1] && recognized[0] == 0))
-    {
-        console.log('Invalid cell recognized field.')
         return null
     }
 
@@ -503,7 +575,7 @@ lighttor.io.polling = function(endpoint, handler, success, error)
         setTimeout(function()
         {
             lighttor.post.channel(endpoint, io.poll)
-        }, 1000)
+        }, 100)
     }
     io.start = function()
     {
@@ -596,4 +668,55 @@ lighttor.post.channel = function(endpoint, success, error)
     rq.open('POST', endpoint.url, true)
     rq.setRequestHeader("Content-type", "application/json");
     rq.send(JSON.stringify({cells: endpoint.io.outcoming}))
+}
+
+lighttor.send = {}
+lighttor.send.extend = function(endpoint, descriptor, success, error)
+{
+    var hand = lighttor.ntor.hand(endpoint, descriptor, encode=false)
+
+    var eidentity = descriptor['identity']['master-key'] // (assuming ed25519)
+    var identity = endpoint.material.identity
+    var addr = descriptor['router']['address']
+    var port = descriptor['router']['orport']
+
+    var data = lighttor.relay.extend(hand, addr, port, identity, eidentity)
+    var cell = lighttor.onion.build(endpoint, 'extend2', 0, data)
+
+    var extend_error = error
+    var extend_success = success
+    var normal_handler = endpoint.io.handler
+
+    var handler = function(endpoint)
+    {
+        endpoint.io.handler = normal_handler
+
+        var cell = lighttor.onion.peel(endpoint, endpoint.io.recv())
+        if (cell == null || cell.cmd != 'extended2')
+        {
+            console.log('Invalid answer, expecting extended2 cell, fatal!')
+            if (extend_error !== undefined)
+                return extend_error(endpoint)
+        }
+
+        var view = new DataView(cell.data.buffer)
+        var length = view.getUint16(0, false)
+        var data = cell.data.slice(2, 2+length)
+
+        var material = lighttor.ntor.shake(endpoint, data, encoded=false)
+        material = lighttor.ntor.slice(material)
+        endpoint.material = material
+
+        if (material == null && extend_error !== undefined)
+            return extend_error(endpoint)
+
+        endpoint.forward = lighttor.onion.forward(endpoint)
+        endpoint.backward = lighttor.onion.backward(endpoint)
+
+        if (extend_success !== undefined)
+            extend_success(endpoint)
+    }
+
+    endpoint.io.handler = handler
+    endpoint.io.send(cell)
 }

@@ -12,7 +12,11 @@
     <pre id='consensus'>Number of routers: </pre>
     <pre id='guard'>Guard identity is: </pre>
     <pre id='id'>Channel create id: </pre>
-    <pre id='one'>First node status: </pre>
+    <pre id='one'>First hop working: </pre>
+    <pre id='two'>Second hop extend: </pre>
+    <pre id='three'>Third hop working: </pre>
+    <br>
+    <pre id='log'></pre>
 
     <script>
         document.getElementById('loaded').innerHTML += 'Loaded!';
@@ -36,9 +40,24 @@
             create: function create(endpoint)
             {
                 document.getElementById('id').innerHTML += endpoint.id
-                document.getElementById('one').innerHTML += '(handshake done)'
+                document.getElementById('one').innerHTML += 'yes'
 
                 lighttor.io.polling(endpoint, cb.handler, cb.send, cb.error)
+
+                lighttor.send.extend(endpoint, endpoint.path[0],
+                    success=cb.extend, error=cb.error)
+
+                endpoint.io.start()
+            },
+            extend: function(endpoint)
+            {
+                document.getElementById('two').innerHTML += 'yes'
+                lighttor.send.extend(endpoint, endpoint.path[1],
+                    success=cb.authority, error=cb.error)
+            },
+            authority: function(authority)
+            {
+                document.getElementById('three').innerHTML += 'yes'
 
                 var cell = lighttor.onion.build(endpoint, 'begin_dir', 1)
                 endpoint.io.send(cell)
@@ -46,11 +65,6 @@
                 var cell = lighttor.onion.build(endpoint, 'data', 1,
                     nacl.util.decodeUTF8("GET /tor/server/authority HTTP/1.0\r\nAccept-Encoding: identity\r\n\r\n"))
                 endpoint.io.send(cell)
-
-                // var begin = lighttor.relay.begin('perdu.com', 80)
-                // cell = lighttor.onion.build(endpoint, 'begin', 1, begin)
-
-                endpoint.io.start()
             },
             send: function(endpoint)
             {
@@ -66,13 +80,16 @@
                         continue
 
                     if (cell.cmd == 'connected')
-                        console.log('Stream connected!')
+                        document.getElementById('log').innerHTML += (
+                            'Stream connected!\n\n')
 
                     if (cell.cmd == 'data')
-                        console.log(nacl.util.encodeUTF8(cell.data))
+                        document.getElementById('log').innerHTML += (
+                            nacl.util.encodeUTF8(cell.data))
 
                     if (cell.cmd == 'end')
-                        console.log('Stream closed!')
+                        document.getElementById('log').innerHTML += (
+                            '\n\nStream closed!')
                 }
             },
             error: function(endpoint)
