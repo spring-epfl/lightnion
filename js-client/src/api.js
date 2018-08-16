@@ -2,7 +2,7 @@ lighttor.open = function(host, port, success, error, io)
 {
     var endpoint = lighttor.endpoint(host, port)
     if (io === undefined)
-        io = lighttor.io.polling
+        io = lighttor.io.socket
     if (error === undefined)
         error = function() { }
     if (success === undefined)

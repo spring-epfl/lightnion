@@ -10,9 +10,9 @@ lighttor.endpoint = function(host, port)
         ws: ws,
         http: http,
         guard: http + "/guard",
+        socket: ws + "/channels",
         channels: http + "/channels",
-        consensus: http + "/consensus",
-        websockets: ws + "/channels"}
+        consensus: http + "/consensus"}
 
     var endpoint = {
         host: host,
