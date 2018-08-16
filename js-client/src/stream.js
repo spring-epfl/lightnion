@@ -54,6 +54,8 @@ lighttor.stream.handler = function(endpoint)
         var handle = endpoint.stream.handles[cell.stream_id]
         if (cell.cmd == "end")
             delete endpoint.stream.handles[cell.stream_id]
+
+        handle.cell = cell
         handle.callback(cell)
     }
 }
@@ -63,6 +65,7 @@ lighttor.stream.raw = function(endpoint, handler)
     var request = {
         id: null,
         data: [],
+        cell: null,
         send: function(cmd, data)
         {
             var cell = lighttor.onion.build(
@@ -80,18 +83,15 @@ lighttor.stream.raw = function(endpoint, handler)
         callback: function(cell)
         {
             if (cell.cmd == "connected")
-            {
                 request.state = lighttor.state.created
-                handler(request)
-                request.state = lighttor.state.pending
-            }
             if (cell.cmd == "end")
-            {
                 request.state = lighttor.state.success
-                handler(request)
-            }
+
             request.data.push(cell)
             handler(request)
+
+            if (cell.cmd == "connected")
+                request.state = lighttor.state.pending
         }
     }
 
@@ -105,6 +105,7 @@ lighttor.stream.dir = function(endpoint, path, handler)
     var request = {
         id: null,
         data: "",
+        cell: null,
         send: function() { throw "No send method on directory streams." },
         recv: function()
         {
@@ -144,6 +145,69 @@ lighttor.stream.dir = function(endpoint, path, handler)
     data = lighttor.dec.utf8(data)
 
     cell = lighttor.onion.build(endpoint, "data", id, data)
+    endpoint.io.send(cell)
+
+    handler(request)
+    return request
+}
+
+lighttor.stream.tcp = function(endpoint, host, port, handler)
+{
+    var request = {
+        id: null,
+        data: new Uint8Array(0),
+        cell: null,
+        send: function(data)
+        {
+            if (typeof(data) == 'string')
+                data = lighttor.dec.utf8(data)
+
+            var payload = new Uint8Array(lighttor.relay.data_len)
+            while (data.length > payload.length)
+            {
+                payload.set(data.slice(0, payload.length), 0)
+                data = data.slice(payload.length)
+
+                var cell = lighttor.onion.build(
+                    request.endpoint, 'data', request.id, payload)
+                endpoint.io.send(cell)
+            }
+            var cell = lighttor.onion.build(
+                    request.endpoint, 'data', request.id, data)
+            endpoint.io.send(cell)
+        },
+        recv: function()
+        {
+            var data = request.data
+            request.data = new Uint8Array(0)
+            return data
+        },
+        state: lighttor.state.started,
+        endpoint: endpoint,
+        callback: function(cell)
+        {
+            if (cell.cmd == "connected")
+                request.state = lighttor.state.created
+            if (cell.cmd == "end")
+                request.state = lighttor.state.success
+            if (cell.cmd == "data")
+            {
+                var data = request.data
+                request.data = new Uint8Array(data.length + cell.data.length)
+                request.data.set(data, 0)
+                request.data.set(cell.data, data.length)
+            }
+
+            handler(request)
+            if (cell.cmd == "connected")
+                request.state = lighttor.state.pending
+        }
+    }
+
+    var id = endpoint.stream.register(request)
+
+    var data = lighttor.relay.begin(host, port)
+    var cell = lighttor.onion.build(endpoint, "begin", id, data)
     endpoint.io.send(cell)
 
     handler(request)

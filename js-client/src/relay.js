@@ -1,5 +1,6 @@
 lighttor.relay = {}
 lighttor.relay.payload_len = 509
+lighttor.relay.data_len = lighttor.relay.payload_len - 11
 lighttor.relay.full_len = 5 + lighttor.relay.payload_len
 lighttor.relay.cmd = {
         "begin"     : 1,   1: "begin",

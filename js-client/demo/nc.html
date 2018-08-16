@@ -1,0 +1,82 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <form id='before' onsubmit='return connect()'>
+        <input id='host' value='127.0.0.1'>
+        <input id='port' onload='this.focus()' onfocus='this.value = 4040'>
+        <input type='submit' value='connect'>
+    </form>
+    <form id='after' onsubmit='return send()' style='display: none'>
+        <input id='data'>
+        <input type='submit' value='send'>
+    </form>
+    <pre id='log'></pre>
+
+    <script>
+        var tcp = null
+        function connect()
+        {
+            // open a channel
+            lighttor.open('localhost', 4990, function(endpoint)
+            {
+                if (endpoint.state != lighttor.state.success)
+                    return
+
+                // create a tcp stream to host:port
+                host = document.getElementById('host').value
+                port = document.getElementById('port').value
+                lighttor.stream.tcp(endpoint, host, port, handler) 
+            })
+            return false
+        }
+
+        function send(request)
+        {
+            text = document.getElementById('data').value + '\n'
+            if (tcp == null)
+                document.getElementById('log').innerHTML += '(not ready yet)\n'
+            else
+            {
+                tcp.send(text) // send data to tcp stream
+                document.getElementById('data').value = ''
+                document.getElementById('log').innerHTML += text
+            }
+
+            return false
+        }
+
+        function handler(request)
+        {
+            switch(request.state)
+            {
+                case lighttor.state.created:
+                    tcp = request
+                    document.getElementById('log').innerHTML = '(ready)\n\n'
+                    document.getElementById('before').style.display = 'none'
+                    document.getElementById('after').style.display = 'block'
+
+                    document.getElementById('data').focus()
+                    document.getElementById('data').value = 'Hello world!'
+                    return
+                case lighttor.state.success:
+                    tcp = null
+                    document.getElementById('log').innerHTML = '\n\n(closed)'
+                    return
+            }
+
+            var data = request.recv() // receive data from tcp stream
+            var text = lighttor.enc.utf8(data)
+            if (typeof(text) != 'string')
+            {
+                document.getElementById('log').innerHTML += '\n(invalid utf8)'
+                text = '\n: ' + lighttor.enc.base64(data) + '\n'
+            }
+            document.getElementById('log').innerHTML += text
+        }
+        document.getElementById('port').focus()
+    </script>
+</body>
+</html>
