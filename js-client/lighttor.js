@@ -6,6 +6,19 @@ lighttor.api.url = '/lighttor/api/v' + lighttor.api.version
 
 lighttor.api.ws_port = '8765'
 
+lighttor.enc = {}
+lighttor.enc.bits = sjcl.codec.bytes.toBits
+lighttor.enc.utf8 = nacl.util.encodeUTF8
+lighttor.enc.base64 = nacl.util.encodeBase64
+
+lighttor.dec = {}
+lighttor.dec.bits = function(data)
+{
+    return new Uint8Array(sjcl.codec.bytes.fromBits(data))
+}
+lighttor.dec.utf8 = nacl.util.decodeUTF8
+lighttor.dec.base64 = nacl.util.decodeBase64
+
 lighttor.endpoint = function(host, port)
 {
     var http = 'http://' + host + ':' + port.toString()
@@ -99,9 +112,9 @@ lighttor.ntor.hash_factory = function(tweak)
         hmac: new sjcl.misc.hmac(tweak),
         encrypt: function(data)
         {
-            data = sjcl.codec.bytes.toBits(data)
+            data = lighttor.enc.bits(data)
             data = this.hmac.encrypt(data)
-            return new Uint8Array(sjcl.codec.bytes.fromBits(data))
+            return lighttor.dec.bits(data)
         }}
     return hash
 }
@@ -114,17 +127,17 @@ lighttor.ntor.hash.verify = lighttor.ntor.hash_factory('verify')
 lighttor.ntor.kdf = function(material, n)
 {
     material = lighttor.ntor.hash.prk.encrypt(material)
-    var hash = new sjcl.misc.hmac(sjcl.codec.bytes.toBits(material))
+    var hash = new sjcl.misc.hmac(lighttor.enc.bits(material))
 
     var tweak = lighttor.ntor.tweaks['expand']
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
     var idx = 1
-    var out = sjcl.codec.bytes.toBits([])
-    var last = sjcl.codec.bytes.toBits([])
+    var out = lighttor.enc.bits([])
+    var last = lighttor.enc.bits([])
     while (sjcl.bitArray.bitLength(out) < n * 8)
     {
-        var idxbits = sjcl.codec.bytes.toBits([idx])
+        var idxbits = lighttor.enc.bits([idx])
         var current = sjcl.bitArray.concat(tweak, idxbits)
 
         last = hash.encrypt(sjcl.bitArray.concat(last, current))
@@ -132,8 +145,7 @@ lighttor.ntor.kdf = function(material, n)
         idx = idx + 1
     }
 
-    out = sjcl.bitArray.clamp(out, n * 8)
-    return new Uint8Array(sjcl.codec.bytes.fromBits(out))
+    return lighttor.dec.bits(sjcl.bitArray.clamp(out, n * 8))
 }
 
 lighttor.ntor.hand = function(endpoint, descriptor, encode)
@@ -143,8 +155,8 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     if (descriptor === undefined)
         descriptor = endpoint.guard
 
-    var identity = nacl.util.decodeBase64(descriptor.router.identity + '=')
-    var onionkey = nacl.util.decodeBase64(descriptor['ntor-onion-key'])
+    var identity = lighttor.dec.base64(descriptor.router.identity + '=')
+    var onionkey = lighttor.dec.base64(descriptor['ntor-onion-key'])
 
     endpoint.material = {}
     endpoint.material.ntor = nacl.box.keyPair()
@@ -160,7 +172,7 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     payload.set(pubkey, offset=identity.length+onionkey.length)
 
     if (encode)
-        return nacl.util.encodeBase64(payload)
+        return lighttor.enc.base64(payload)
     return payload
 }
 
@@ -169,7 +181,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     if (encoded === undefined)
         encoded = true
     if (encoded)
-        data = nacl.util.decodeBase64(data)
+        data = lighttor.dec.base64(data)
 
     var client_pubkey = endpoint.material.ntor.publicKey
     var client_secret = endpoint.material.ntor.secretKey
@@ -182,7 +194,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     var exp_share = nacl.scalarMult(client_secret, server_pubkey)
     var exp_onion = nacl.scalarMult(client_secret, onionkey)
 
-    var protoid = nacl.util.decodeUTF8(lighttor.ntor.protoid)
+    var protoid = lighttor.dec.utf8(lighttor.ntor.protoid)
     var length = exp_share.length * 2 + identity.length + onionkey.length * 3
     var off = 0
 
@@ -196,7 +208,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     secret_input.set(protoid, offset=off)
     var verify = lighttor.ntor.hash.verify.encrypt(secret_input)
 
-    var server = nacl.util.decodeUTF8(lighttor.ntor.tweaks['server'])
+    var server = lighttor.dec.utf8(lighttor.ntor.tweaks['server'])
     var length = verify.length + identity.length + onionkey.length * 3
     var off = 0
 
@@ -281,7 +293,7 @@ lighttor.relay.pack = function(cmd, stream_id, data)
         stream_id = 0
 
     if (typeof(data) == "string")
-        data = nacl.util.decodeUTF8(data)
+        data = lighttor.dec.utf8(data)
 
     var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
     var view = new DataView(cell.buffer)
@@ -307,9 +319,9 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
 
     port = parseInt(port)
     if (typeof(identity) == 'string')
-        identity = nacl.util.decodeBase64(identity)
+        identity = lighttor.dec.base64(identity)
     if (typeof(eidentity) == 'string')
-        eidentity = nacl.util.decodeBase64(eidentity + '=')
+        eidentity = lighttor.dec.base64(eidentity + '=')
 
     var nspec = 2
     if (eidentity !== undefined)
@@ -356,7 +368,7 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
 lighttor.onion = {}
 lighttor.onion.ctr = function(key)
 {
-    var key = sjcl.codec.bytes.toBits(key)
+    var key = lighttor.enc.bits(key)
     var aes = new sjcl.cipher.aes(key)
 
     var ctr = {
@@ -374,10 +386,9 @@ lighttor.onion.ctr = function(key)
             {
                 var nonce = new Uint8Array(16)
                 new DataView(nonce.buffer).setUint32(12, this.nonce, false)
-                nonce = sjcl.codec.bytes.toBits(nonce)
 
-                var pad = this.prf.encrypt(nonce)
-                pad = new Uint8Array(sjcl.codec.bytes.fromBits(pad))
+                nonce = lighttor.enc.bits(nonce)
+                var pad = lighttor.dec.bits(this.prf.encrypt(nonce))
 
                 this.buffer.set(pad, offset=idx)
                 this.nonce = this.nonce + 1
@@ -403,15 +414,15 @@ lighttor.onion.ctr = function(key)
 
 lighttor.onion.sha = function(digest)
 {
-    var digest = sjcl.codec.bytes.toBits(digest)
+    var digest = lighttor.enc.bits(digest)
 
     var sha = {
         hash: new sjcl.hash.sha1(),
         digest: function(data)
         {
-            this.hash.update(sjcl.codec.bytes.toBits(data))
+            this.hash.update(lighttor.enc.bits(data))
             data = new sjcl.hash.sha1(this.hash).finalize()
-            return new Uint8Array(sjcl.codec.bytes.fromBits(data))
+            return lighttor.dec.bits(data)
         }
     }
 
@@ -563,7 +574,7 @@ lighttor.io.simple = function(handler, success, error)
         error: error,
         send: function(cell)
         {
-            this.outcoming.push(nacl.util.encodeBase64(cell))
+            this.outcoming.push(lighttor.enc.base64(cell))
         },
         recv: function()
         {
@@ -571,7 +582,7 @@ lighttor.io.simple = function(handler, success, error)
                 return undefined
 
             cell = this.incoming.shift()
-            return nacl.util.decodeBase64(cell)
+            return lighttor.dec.base64(cell)
         }
     }
     return io
@@ -822,7 +833,7 @@ lighttor.stream.dir = function(endpoint, path, handler)
             if (cell.cmd != 'data')
                 return
 
-            this.data += nacl.util.encodeUTF8(cell.data)
+            this.data += lighttor.enc.utf8(cell.data)
             handler(this)
         }
     }
@@ -833,7 +844,7 @@ lighttor.stream.dir = function(endpoint, path, handler)
 
     var data = 'GET ' + path + ' HTTP/1.0\r\n'
     data += 'Accept-Encoding: identity\r\n\r\n'
-    data = nacl.util.decodeUTF8(data)
+    data = lighttor.dec.utf8(data)
 
     cell = lighttor.onion.build(endpoint, 'data', id, data)
     endpoint.io.send(cell)
