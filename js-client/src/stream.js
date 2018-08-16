@@ -7,7 +7,7 @@ lighttor.stream.backend = function(error)
             endpoint.stream.sendme += 1
         else
         {
-            console.log("Got unexpected control cell: ", cell.cmd)
+            throw "Got unexpected control cell."
             error(endpoint)
         }
     }
@@ -159,7 +159,7 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
         cell: null,
         send: function(data)
         {
-            if (typeof(data) == 'string')
+            if (typeof(data) == "string")
                 data = lighttor.dec.utf8(data)
 
             var payload = new Uint8Array(lighttor.relay.data_len)
@@ -169,11 +169,11 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
                 data = data.slice(payload.length)
 
                 var cell = lighttor.onion.build(
-                    request.endpoint, 'data', request.id, payload)
+                    request.endpoint, "data", request.id, payload)
                 endpoint.io.send(cell)
             }
             var cell = lighttor.onion.build(
-                    request.endpoint, 'data', request.id, data)
+                    request.endpoint, "data", request.id, data)
             endpoint.io.send(cell)
         },
         recv: function()

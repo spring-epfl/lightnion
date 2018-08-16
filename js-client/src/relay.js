@@ -50,7 +50,7 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
     // (assuming that host is an IPv4)
     var addr = new Uint8Array(host.split("."))
     if (addr.join(".") != host)
-        console.log("Invalid extend IPv4 address, fatal.")
+        throw "Invalid extend IPv4 address, fatal."
 
     port = parseInt(port)
     if (typeof(identity) == "string")
@@ -115,7 +115,7 @@ lighttor.relay.begin = function(host, port)
         host = host.slice(0, -1)
 
     if (!valid)
-        console.log("Warning: invalid host?")
+        throw "Invalid host provided?"
     var address = lighttor.dec.utf8(host + ":" + port)
 
     var data = new Uint8Array(address.length + 1 + 4) // (1o null, 4o flags)

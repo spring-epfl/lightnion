@@ -119,7 +119,7 @@ lighttor.post.extend = function(endpoint, descriptor, success, error)
         var cell = lighttor.onion.peel(endpoint, endpoint.io.recv())
         if (cell == null || cell.cmd != "extended2")
         {
-            console.log("Invalid answer, expecting extended2 cell, fatal!")
+            throw "Invalid answer, expecting extended2 cell, fatal!"
             if (extend_error !== undefined)
                 return extend_error(endpoint)
         }

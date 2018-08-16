@@ -81,7 +81,7 @@ lighttor.onion.forward = function(endpoint)
         encrypt: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
-                console.log("Invalid size for cell, fatal.")
+                throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
             for (var idx = 0; idx < forward.layers.length; idx++)
@@ -100,7 +100,7 @@ lighttor.onion.forward = function(endpoint)
         digest: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
-                console.log("Invalid size for cell, fatal.")
+                throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
             body.set(new Uint8Array(4), 5)
@@ -127,7 +127,7 @@ lighttor.onion.backward = function(endpoint)
         decrypt: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
-                console.log("Invalid size for cell, fatal.")
+                throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
             for (var idx = 0; idx < backward.layers.length; idx++)
@@ -140,7 +140,7 @@ lighttor.onion.backward = function(endpoint)
         digest: function(cell)
         {
             if ((cell.length) != lighttor.relay.full_len)
-                console.log("Invalid size for cell, fatal.")
+                throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
             body.set(new Uint8Array(4), 5)
@@ -166,7 +166,7 @@ lighttor.onion.peel = function(endpoint, cell)
     var recognized = cell.slice(6, 8)
     if (!(recognized[0] == recognized[1] && recognized[0] == 0))
     {
-        console.log("Invalid cell recognized field.")
+        throw "Invalid cell recognized field."
         return null
     }
 
@@ -177,14 +177,14 @@ lighttor.onion.peel = function(endpoint, cell)
         && digest[2] == expect[2]
         && digest[3] == expect[3]))
     {
-        console.log("Invalid cell digest.")
+        throw "Invalid cell digest."
         return null
     }
 
     var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
-    if (length > lighttor.relay.payload_len - 11)
+    if (length > lighttor.relay.data_len)
     {
-        console.log("Invalid cell length.")
+        throw "Invalid cell data length."
         return null
     }
 

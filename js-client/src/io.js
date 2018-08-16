@@ -67,7 +67,7 @@ lighttor.io.socket = function(endpoint, handler, success, error)
         },
         start: function() { }
     }
-    var socket = new WebSocket(endpoint.urls.socket + '/' + endpoint.id)
+    var socket = new WebSocket(endpoint.urls.socket + "/" + endpoint.id)
 
     socket.binaryType = "arraybuffer"
     socket.onopen = function(event)
@@ -81,7 +81,7 @@ lighttor.io.socket = function(endpoint, handler, success, error)
         io.send = function(cell)
         {
             if (io.closed)
-                throw 'Unable to send, connection closed.'
+                throw "Unable to send, connection closed."
             io.socket.send(cell.buffer)
         }
     }
