@@ -2,11 +2,14 @@
 <head>
     <script src="lighttor.bundle.js"></script>
     <meta charset="UTF-8">
+    <script>
+        var ini = 'artscene.textfiles.com/asciiart/penguin'
+    </script>
 </head>
 <body>
-    <form onsubmit='return perform()'>
-        <input id='url' onfocus="this.value='api.ipify.org'" autofocus>
-        <input id='curl' type='submit' value='curl' disabled>
+    <form id='form' onsubmit='return perform()'>
+      <input id='url' onfocus="this.value=ini" autofocus>
+      <input id='curl' type='submit' value='curl' disabled>
     </form>
     <pre id='log'></pre>
     <script>
@@ -23,12 +26,6 @@
 
         function perform()
         {
-            if (channel == null)
-            {
-                document.getElementById('log').innerText = '(not ready yet)'
-                return false
-            }
-
             var url = document.getElementById('url').value
             var success = function(request)
             {
@@ -37,10 +34,10 @@
 
                 switch(url)
                 {
-                    case 'api.ipify.org':
-                        url = 'ip-api.com/line'
+                    case ini:
+                        url = 'api.ipify.org'
                         break
-                    case 'ip-api.com/line':
+                    case 'api.ipify.org':
                         url = 'wttr.in/?0T'
                         break
                     case 'wttr.in/?0T':
@@ -51,8 +48,8 @@
                 document.getElementById('curl').disabled = false
             }
 
-            document.getElementById('curl').disabled = true
             curl('http://' + url, success)
+            document.getElementById('curl').disabled = true
             return false
         }
 
@@ -96,15 +93,18 @@
                     {
                         headers = data.split('\r\n\r\n')[0]
                         var len = headers.match('Content-Length: ([^\r]*)')
-                        length = parseInt(len[0])
+                        length = parseInt(len[1])
+                        console.log(length, len[1])
                     }
                 }
 
+                console.log(data.length, headers.length + length, data)
                 if (data.length < headers.length + length)
                     return
 
-                length = headers.length + 4
-                success({headers: headers, data: data.slice(length)})
+                success({headers: headers,
+                    data: data.slice(headers.length + 4)})
+                success = function(request) { }
             }
 
             host = host.split(':')[0]
@@ -150,6 +150,7 @@
             "curl/7.38.0"
         ]
         var agent = agents[Math.floor(Math.random() * agents.length)]
+        document.getElementById('curl').disabled = true
     </script>
 </body>
 </html>
