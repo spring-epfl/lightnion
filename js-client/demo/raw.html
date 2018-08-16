@@ -1,0 +1,56 @@
+<html>
+<head>
+    <title>Javascript client demo</title>
+    <script src="js/sjcl.js"></script>
+    <script src="js/nacl.min.js"></script>
+    <script src="js/nacl-util.min.js"></script>
+    <script src="js/lighttor.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='log'></pre>
+
+    <script>
+
+        lighttor.open('localhost', 4990,
+        function success(endpoint)
+        {
+            if (endpoint.state != lighttor.state.success)
+                return
+            document.getElementById('loaded').innerHTML = '(channel opened)'
+
+            var stream = lighttor.stream.raw(endpoint, handler)
+            stream.send('begin_dir')
+        },
+        function error(endpoint)
+        {
+            document.getElementById('loaded').innerHTML = '(unable to open)'
+        })
+
+        function handler(request)
+        {
+            if (request.state == lighttor.state.created)
+            {
+                var data = 'GET /tor/status-vote/current/consensus HTTP/1.0'
+                data += '\r\nAccept-Encoding: identity\r\n\r\n'
+                request.send('data', data)
+            }
+
+            if (request.state != lighttor.state.pending)
+                return
+
+            cells = request.recv()
+            for(var idx = 0; idx < cells.length; idx++)
+            {
+                var cell = cells[idx]
+                if (cell.cmd != 'data')
+                    continue
+
+                var data = lighttor.enc.utf8(cell.data)
+                document.getElementById('log').innerHTML += data
+            }
+        }
+    </script>
+</body>
+</html>

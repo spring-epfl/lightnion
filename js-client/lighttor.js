@@ -809,6 +809,47 @@ lighttor.stream.handler = function(endpoint)
     }
 }
 
+lighttor.stream.raw = function(endpoint, handler)
+{
+    var request = {
+        id: null,
+        data: [],
+        send: function(cmd, data)
+        {
+            var cell = lighttor.onion.build(this.endpoint, cmd, this.id, data)
+            endpoint.io.send(cell)
+        },
+        recv: function()
+        {
+            var data = this.data
+            this.data = []
+            return data
+        },
+        state: lighttor.state.started,
+        endpoint: endpoint,
+        callback: function(cell)
+        {
+            if (cell.cmd == 'connected')
+            {
+                this.state = lighttor.state.created
+                handler(this)
+                this.state = lighttor.state.pending
+            }
+            if (cell.cmd == 'end')
+            {
+                this.state = lighttor.state.success
+                handler(this)
+            }
+            this.data.push(cell)
+            handler(this)
+        }
+    }
+
+    var id = endpoint.stream.register(request)
+    handler(request)
+    return request
+}
+
 lighttor.stream.dir = function(endpoint, path, handler)
 {
     var request = {
