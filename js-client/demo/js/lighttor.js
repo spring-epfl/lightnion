@@ -1,1 +1,0 @@
-../../lighttor.js
