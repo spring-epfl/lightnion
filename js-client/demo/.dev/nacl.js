@@ -1,1 +1,0 @@
-../../tweetnacl-js/nacl.js

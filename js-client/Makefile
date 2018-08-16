@@ -34,7 +34,7 @@ sjcl-bundle-license:
 	cat sjcl/LICENSE.txt >> $(BUNDLELICENSE)
 
 tweetnacl-bundle:
-	cat tweetnacl-js/nacl.min.js >> ./lighttor.bundle.js
+	cat tweetnacl-js/nacl-fast.min.js >> ./lighttor.bundle.js
 	cat tweetnacl-util-js/nacl-util.min.js >> ./lighttor.bundle.js
 
 tweetnacl-bundle-license:

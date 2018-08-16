@@ -81,6 +81,15 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     return payload
 }
 
+lighttor.ntor.fast = function(endpoint)
+{
+    endpoint.material = {}
+    endpoint.material.ntor = nacl.box.keyPair()
+    endpoint.material.identity = null
+    endpoint.material.onionkey = null
+    return lighttor.enc.base64(endpoint.material.ntor.publicKey)
+}
+
 lighttor.ntor.shake = function(endpoint, data, encoded)
 {
     if (encoded === undefined)

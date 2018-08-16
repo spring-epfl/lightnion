@@ -11,6 +11,15 @@ lighttor.post.create = function(endpoint, success, error)
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
             endpoint.path = info["path"]
 
+            if (endpoint.fast)
+            {
+                endpoint.guard = info["guard"]
+                endpoint.material.identity = lighttor.dec.base64(
+                    info["guard"].router.identity + "=")
+                endpoint.material.onionkey = lighttor.dec.base64(
+                    info["guard"]["ntor-onion-key"])
+            }
+
             var material = lighttor.ntor.shake(endpoint, info["ntor"])
             material = lighttor.ntor.slice(material)
             endpoint.material = material
@@ -26,12 +35,16 @@ lighttor.post.create = function(endpoint, success, error)
         }
     }
 
-    var payload = lighttor.ntor.hand(endpoint)
+    var payload = null
+    if (endpoint.fast)
+        payload = lighttor.ntor.fast(endpoint)
+    else
+        payload = lighttor.ntor.hand(endpoint)
     payload = JSON.stringify({ntor: payload})
 
     rq.open("POST", endpoint.urls.channels, true)
     rq.setRequestHeader("Content-type", "application/json");
-    rq.send(JSON.stringify({ntor: lighttor.ntor.hand(endpoint)}))
+    rq.send(payload)
 }
 
 lighttor.post.channel = function(endpoint, success, error)

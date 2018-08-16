@@ -1,0 +1,1 @@
+../../tweetnacl-js/nacl-fast.js

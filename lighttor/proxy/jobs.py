@@ -596,6 +596,20 @@ class create(ordered):
         if not self.clerk.guard.isalive():
             self.clerk.guard.reset()
 
+        # fast channel:
+        #   if no identity/onion-key is given within the ntor handshake, the
+        #   client doesn't know the guard identity/onion-key and we default to
+        #   any guard we want!
+        #
+        fast = False
+        if len(data) == 32:
+            fast = True
+            identity = base64.b64decode(
+                self.clerk.guard.desc['router']['identity'] + '====')
+            onion_key = base64.b64decode(
+                self.clerk.guard.desc['ntor-onion-key'] + '====')
+            data = identity + onion_key + data
+
         try:
             circid, data = ltor.create.ntor_raw(
                 self.clerk.guard.link, data, timeout=1)
@@ -630,8 +644,10 @@ class create(ordered):
         logging.debug('Token emitted: {}'.format(token))
 
         try:
-            self.put_job((circuit,
-                {'id': token, 'path': [middle, exit], 'ntor': data}), job_id)
+            answer = {'id': token, 'path': [middle, exit], 'ntor': data}
+            if fast:
+                answer['guard'] = self.clerk.guard.desc
+            self.put_job((circuit, answer), job_id)
         except expired:
             logging.warning('Too many create channel requests, dropping.')
             return False

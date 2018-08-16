@@ -1,12 +1,20 @@
-lighttor.open = function(host, port, success, error, io)
+lighttor.fast = function(host, port, success, error, io)
+{
+    lighttor.open(host, port, success, error, io, true)
+}
+
+lighttor.open = function(host, port, success, error, io, fast)
 {
     var endpoint = lighttor.endpoint(host, port)
     if (io === undefined)
         io = lighttor.io.socket
+    if (fast === undefined)
+        fast = false
     if (error === undefined)
         error = function() { }
     if (success === undefined)
         success = function() { }
+    endpoint.fast = fast
 
     var cb = {
         guard: function(endpoint)
@@ -52,5 +60,9 @@ lighttor.open = function(host, port, success, error, io)
     endpoint.state = lighttor.state.started
     success(endpoint)
 
-    lighttor.get.guard(endpoint, cb.guard, error)
+    // fast channel: one-request channel creation (no guard pinning)
+    if (endpoint.fast)
+        lighttor.post.create(endpoint, cb.create, error)
+    else
+        lighttor.get.guard(endpoint, cb.guard, error)
 }
