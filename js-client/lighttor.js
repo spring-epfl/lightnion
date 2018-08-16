@@ -805,7 +805,7 @@ lighttor.stream.handler = function(endpoint)
         var handle = endpoint.stream.handles[cell.stream_id]
         if (cell.cmd == 'end')
             delete endpoint.stream.handles[cell.stream_id]
-        handle.callback(endpoint, cell)
+        handle.callback(cell)
     }
 }
 
@@ -817,7 +817,8 @@ lighttor.stream.dir = function(endpoint, path, handler)
         send: function() { throw 'No send method on directory streams.' },
         recv: function() { var data = this.data; this.data = ''; return data },
         state: lighttor.state.started,
-        callback: function(endpoint, cell)
+        endpoint: endpoint,
+        callback: function(cell)
         {
             if (cell.cmd == 'connected')
             {
