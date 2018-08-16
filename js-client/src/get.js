@@ -1,7 +1,7 @@
 lighttor.get = {}
 lighttor.get.guard = function(endpoint, success, error)
 {
-    var rq = new XMLHttpRequest();
+    var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
     {
         if (rq.readyState == 4 && rq.status == 200)

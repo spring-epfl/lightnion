@@ -43,7 +43,7 @@ lighttor.post.create = function(endpoint, success, error)
     payload = JSON.stringify({ntor: payload})
 
     rq.open("POST", endpoint.urls.channels, true)
-    rq.setRequestHeader("Content-type", "application/json");
+    rq.setRequestHeader("Content-type", "application/json")
     rq.send(payload)
 }
 
@@ -92,7 +92,7 @@ lighttor.post.channel = function(endpoint, success, error)
     endpoint.io.pending = endpoint.io.outcoming.length
 
     rq.open("POST", endpoint.url, true)
-    rq.setRequestHeader("Content-type", "application/json");
+    rq.setRequestHeader("Content-type", "application/json")
     rq.send(JSON.stringify({cells: endpoint.io.outcoming}))
 }
 

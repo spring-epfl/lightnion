@@ -22,21 +22,21 @@
             {
                 case lighttor.state.started:
                     document.getElementById('loaded').innerHTML = 'Started!'
-                    return;
+                    return
                 case lighttor.state.guarded:
                     document.getElementById('guard').innerHTML += (
                         endpoint.guard.router.identity)
-                    return;
+                    return
                 case lighttor.state.created:
                     document.getElementById('id').innerHTML += endpoint.id
                     document.getElementById('one').innerHTML += 'yes'
-                    return;
+                    return
                 case lighttor.state.pending:
                     document.getElementById('loaded').innerHTML += '!'
-                    return;
+                    return
                 case lighttor.state.extpath:
                     document.getElementById('two').innerHTML += 'yes'
-                    return;
+                    return
                 case lighttor.state.success:
                     document.getElementById('three').innerHTML += 'yes'
             }
@@ -49,16 +49,16 @@
             {
                 case lighttor.state.started:
                     document.getElementById('log').innerHTML = 'Stream...'
-                    return;
+                    return
                 case lighttor.state.created:
                     document.getElementById('log').innerHTML += ' open!\n\n'
-                    return;
+                    return
                 case lighttor.state.pending:
                     document.getElementById('log').innerHTML += request.recv()
-                    return;
+                    return
                 case lighttor.state.success:
                     document.getElementById('log').innerHTML += '\nFinished!'
-                    return;
+                    return
             }
         }
     </script>
