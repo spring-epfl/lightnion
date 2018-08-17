@@ -177,3 +177,21 @@ lighttor.ntor.slice = function(material)
     }
     return material
 }
+
+// (function only used for proxy auth, not a part of regular ntor handshake)
+lighttor.ntor.auth = function(endpoint, client, data)
+{
+    var pending_material = endpoint.material
+    endpoint.material = endpoint.auth
+
+    var material = lighttor.ntor.shake(endpoint, client)
+    if (material == null)
+        throw "Invalid auth."
+
+    material = lighttor.ntor.slice(material)
+    endpoint.material = pending_material
+
+    var data = lighttor.dec.base64(data)
+    var forward = lighttor.onion.ctr(material.forward_key)
+    return JSON.parse(lighttor.enc.utf8(forward.process(data)))
+}

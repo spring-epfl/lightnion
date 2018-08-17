@@ -1,0 +1,39 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <form onsubmit='return perform()'>
+      <input id='suffix'
+      placeholder="Authentication suffix (cf. --auth-enabled + authmat/suffix)"
+      size=64 autofocus> <input id='open' type='submit', value='open'>
+    </form>
+    <pre id='log'></pre>
+
+    <script>
+        var path = '/tor/server/authority'
+        function perform()
+        {
+            document.getElementById('open').disabled = true
+            var suffix = document.getElementById('suffix').value
+
+            lighttor.auth('localhost', 4990, suffix, function(endpoint)
+            {
+                if (endpoint.state == lighttor.state.success)
+                    lighttor.stream.dir(endpoint, path, handler)
+            })
+            return false
+        }
+        function handler(request)
+        {
+            document.getElementById('log').innerHTML = ''
+            if (request.state != lighttor.state.success)
+                return
+
+            document.getElementById('log').innerHTML = request.data
+            document.getElementById('open').disabled = false
+        }
+    </script>
+</body>
+</html>

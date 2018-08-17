@@ -17,11 +17,22 @@ tick_rate = 0.03 # (sleeps when nothing to do)
 async_rate = 0.01 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
-    def __init__(self, slave_node, control_port):
+    def __init__(self, slave_node, control_port, auth_dir=None):
         super().__init__()
         logging.info('Bootstrapping clerk.')
         self.crypto = ltor.proxy.parts.crypto()
         self.dead = False
+
+        self.auth = None
+        self.auth_dir = auth_dir
+        if auth_dir is not None:
+            try:
+                self.auth = ltor.proxy.auth.getpkey(auth_dir)
+            except FileNotFoundError:
+                ltor.proxy.auth.genpkey(auth_dir)
+                self.auth = ltor.proxy.auth.getpkey(auth_dir)
+            logging.debug('Note: authentication suffix is {}'.format(
+                self.auth.suffix))
 
         self.control_port = control_port
         self.slave_node = slave_node
@@ -198,10 +209,20 @@ def get_guard():
 def create_channel():
     if not flask.request.json or not 'ntor' in flask.request.json:
         flask.abort(400)
+    data = flask.request.json['ntor']
+
+    auth = None
+    if 'auth' in flask.request.json:
+        auth = flask.request.json['auth']
+        if app.clerk.auth is None:
+            flask.abort(400)
 
     try:
-        data = flask.request.json['ntor']
-        return flask.jsonify(app.clerk.create.perform(data)), 201 # Created
+        data = app.clerk.create.perform(data)
+        if auth is not None:
+            data = app.clerk.auth.perform(auth, data)
+
+        return flask.jsonify(data), 201 # Created
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
@@ -240,7 +261,8 @@ def delete_channel(uid):
     except ltor.proxy.jobs.expired:
         flask.abort(503)
 
-def main(port, slave_node, control_port, purge_cache, static_files=None):
+def main(port, slave_node, control_port, purge_cache,
+    static_files=None, auth_dir=None):
     if purge_cache:
         ltor.cache.purge()
 
@@ -248,7 +270,7 @@ def main(port, slave_node, control_port, purge_cache, static_files=None):
         from werkzeug import SharedDataMiddleware
         app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
-    with clerk(slave_node, control_port) as app.clerk:
+    with clerk(slave_node, control_port, auth_dir) as app.clerk:
         logging.info('Bootstrapping HTTP server.')
         sockets(app.clerk).start()
         app.run(port=port, debug=debug, use_reloader=False)

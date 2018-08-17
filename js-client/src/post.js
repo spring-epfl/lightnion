@@ -7,6 +7,11 @@ lighttor.post.create = function(endpoint, success, error)
         if (rq.readyState == 4 && rq.status == 201)
         {
             var info = JSON.parse(rq.responseText)
+            if (endpoint.auth != null)
+            {
+                info = lighttor.ntor.auth(endpoint, info["auth"], info["data"])
+            }
+
             endpoint.id = info["id"]
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
             endpoint.path = info["path"]
@@ -21,6 +26,9 @@ lighttor.post.create = function(endpoint, success, error)
             }
 
             var material = lighttor.ntor.shake(endpoint, info["ntor"])
+            if (material == null)
+                throw "Invalid guard handshake."
+
             material = lighttor.ntor.slice(material)
             endpoint.material = material
 
@@ -40,7 +48,13 @@ lighttor.post.create = function(endpoint, success, error)
         payload = lighttor.ntor.fast(endpoint)
     else
         payload = lighttor.ntor.hand(endpoint)
-    payload = JSON.stringify({ntor: payload})
+
+    payload = {ntor: payload}
+    if (endpoint.auth != null)
+    {
+        payload["auth"] = lighttor.enc.base64(endpoint.auth.ntor.publicKey)
+    }
+    payload = JSON.stringify(payload)
 
     rq.open("POST", endpoint.urls.channels, true)
     rq.setRequestHeader("Content-type", "application/json")

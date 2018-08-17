@@ -40,6 +40,11 @@ if __name__ == '__main__':
     parser.add_argument('--static', required=False, default=[],
         nargs='*', metavar='path:url', help='Serve given static directories.')
 
+    parser.add_argument('--auth-enabled', action='store_true',
+        help='Enable proxy authentication.')
+    parser.add_argument('--auth-dirpkey', required=False, default='authmat',
+        metavar='path', help='Fetch auth. material here (default: ./authmat)')
+
     argv = parser.parse_args()
     logging.basicConfig(
         format=log_format, level=log_levels.get(argv.v, logging.DEBUG))
@@ -70,4 +75,5 @@ if __name__ == '__main__':
         slave_node=argv.s,
         control_port=argv.c,
         purge_cache=argv.purge_cache,
-        static_files=static if len(static) > 0 else None)
+        static_files=static if len(static) > 0 else None,
+        auth_dir=argv.auth_dirpkey if argv.auth_enabled else None)

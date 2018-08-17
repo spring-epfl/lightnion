@@ -3,7 +3,27 @@ lighttor.fast = function(host, port, success, error, io)
     lighttor.open(host, port, success, error, io, true)
 }
 
-lighttor.open = function(host, port, success, error, io, fast)
+lighttor.auth = function(host, port, suffix, success, error, io)
+{
+    if (typeof(suffix) == "string")
+    {
+        suffix = suffix.replace(/-/g, "+").replace(/_/g, "/")
+        suffix = lighttor.dec.base64(suffix)
+    }
+    if (lighttor.enc.utf8(suffix.slice(0, 5)) != "auth ")
+        throw "Invalid prefix in auth. suffix!"
+
+    suffix = suffix.slice(5)
+    if (suffix.length != 20 + 32)
+        throw "Invalid auth. suffix length!"
+
+    lighttor.open(host, port, success, error, io, true, {
+        identity: suffix.slice(0, 20),
+        onionkey: suffix.slice(20),
+        ntor: nacl.box.keyPair()})
+}
+
+lighttor.open = function(host, port, success, error, io, fast, auth)
 {
     var endpoint = lighttor.endpoint(host, port)
     if (io === undefined)
@@ -15,6 +35,7 @@ lighttor.open = function(host, port, success, error, io, fast)
     if (success === undefined)
         success = function() { }
     endpoint.fast = fast
+    endpoint.auth = auth
 
     var cb = {
         guard: function(endpoint)
