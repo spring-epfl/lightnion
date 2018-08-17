@@ -7,8 +7,8 @@ lighttor.stream.backend = function(error)
             endpoint.stream.sendme += 1
         else
         {
-            throw "Got unexpected control cell."
             error(endpoint)
+            throw "Got unexpected control cell."
         }
     }
 

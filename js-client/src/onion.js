@@ -167,7 +167,6 @@ lighttor.onion.peel = function(endpoint, cell)
     if (!(recognized[0] == recognized[1] && recognized[0] == 0))
     {
         throw "Invalid cell recognized field."
-        return null
     }
 
     var expect = endpoint.backward.digest(cell)
@@ -178,14 +177,12 @@ lighttor.onion.peel = function(endpoint, cell)
         && digest[3] == expect[3]))
     {
         throw "Invalid cell digest."
-        return null
     }
 
     var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
     if (length > lighttor.relay.data_len)
     {
         throw "Invalid cell data length."
-        return null
     }
 
     var id = new DataView(cell.slice(8, 10).buffer).getUint16(0, false)

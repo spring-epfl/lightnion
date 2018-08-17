@@ -133,9 +133,9 @@ lighttor.post.extend = function(endpoint, descriptor, success, error)
         var cell = lighttor.onion.peel(endpoint, endpoint.io.recv())
         if (cell == null || cell.cmd != "extended2")
         {
-            throw "Invalid answer, expecting extended2 cell, fatal!"
             if (extend_error !== undefined)
                 return extend_error(endpoint)
+            throw "Invalid answer, expecting extended2 cell, fatal!"
         }
 
         var view = new DataView(cell.data.buffer)
