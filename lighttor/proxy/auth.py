@@ -1,17 +1,16 @@
 import collections
-import curve25519
+import nacl.public
 import logging
 import base64
 import json
 import os
 
 import lighttor as ltor
-import lighttor.ntor_ref as ntor_ref
 
 class material(collections.namedtuple('material', ['pkey', 'secret'])):
     @property
     def public(self):
-        return self.pkey.get_public().public
+        return bytes(self.pkey.public_key)
 
     @property
     def suffix(self):
@@ -22,8 +21,8 @@ class material(collections.namedtuple('material', ['pkey', 'secret'])):
         data = bytes(json.dumps(data), 'utf8')
         client = base64.b64decode(client)
 
-        keys, msg = ntor_ref.server(self.pkey, self.secret,
-            self.secret + self.public + client, keyBytes=92)
+        keys, msg = ltor.crypto.ntor.server(self.pkey, self.secret,
+            self.secret + self.public + client, length=92)
         keys = ltor.crypto.ntor.kdf(keys)
 
         state = ltor.onion.state(None, ltor.create.circuit(None, keys))
@@ -50,7 +49,7 @@ _x25519_openssl_asn1 = b'0.\x02\x01\x000\x05\x06\x03+en\x04"\x04 '
 def genpkey(auth_dir, base_dir=None):
     logging.warning('New private key and shared secret generated.')
 
-    pkey = curve25519.keys.Private().private
+    pkey = bytes(nacl.public.PrivateKey.generate())
     with open(filename(auth_dir, 'private.pem'), 'wb') as f:
         f.write(_x25519_header + b'\n')
         f.write(base64.b64encode(_x25519_openssl_asn1 + pkey))
@@ -79,7 +78,7 @@ def getpkey(auth_dir, base_dir=None):
         raise RuntimeError('Invalid key encoding, expected asn1:'.format(
             base64.b64encode(_x25519_openssl_asn1)))
 
-    auth = material(curve25519.keys.Private(raw[16:]), shared_secret)
+    auth = material(nacl.public.PrivateKey(raw[16:]), shared_secret)
     with open(filename(auth_dir, 'suffix'), 'w') as f:
         f.write(auth.suffix + '\n')
     return auth
