@@ -5,6 +5,8 @@ import argparse
 import logging
 import os
 
+default_auth = '.lighttor-auth.d'
+
 log_format = "%(levelname)s: %(message)s"
 log_levels = {None: logging.ERROR, 1: logging.WARNING, 2: logging.INFO}
 
@@ -42,8 +44,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--auth-enabled', action='store_true',
         help='Enable proxy authentication.')
-    parser.add_argument('--auth-dirpkey', required=False, default='authmat',
-        metavar='path', help='Fetch auth. material here (default: ./authmat)')
+    parser.add_argument('--auth-dirpkey', required=False, default=default_auth,
+        metavar='path', help='Fetch auth. material here (default: {})'.format(
+        default_auth))
 
     argv = parser.parse_args()
     logging.basicConfig(

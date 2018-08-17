@@ -5,7 +5,7 @@ import shutil
 import base64
 import logging
 
-cache_directory = 'lighttor-cache'
+cache_directory = '.lighttor-cache.d'
 
 def directory(base_dir=None):
     if base_dir is None:
