@@ -100,7 +100,7 @@ class state:
             algorithms, modes, Cipher
         )
 
-        # Tor uses AES128-CTF with IV=0 as stream cipher
+        # Tor uses AES128-CTR with IV=0 as stream cipher
         nonce_size = algorithms.AES.block_size // 8
         zeroed_ctr = modes.CTR(b'\x00' * nonce_size)
 
