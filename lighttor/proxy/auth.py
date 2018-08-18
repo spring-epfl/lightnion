@@ -1,5 +1,6 @@
 import collections
 import nacl.public
+import nacl.secret
 import logging
 import base64
 import json
@@ -21,12 +22,13 @@ class material(collections.namedtuple('material', ['pkey', 'secret'])):
         data = bytes(json.dumps(data), 'utf8')
         client = base64.b64decode(client)
 
-        keys, msg = ltor.crypto.ntor.server(self.pkey, self.secret,
+        material, msg = ltor.crypto.ntor.server(self.pkey, self.secret,
             self.secret + self.public + client, length=92)
-        keys = ltor.crypto.ntor.kdf(keys)
 
-        state = ltor.onion.state(None, ltor.create.circuit(None, keys))
-        data = base64.b64encode(state.forward_encryptor.update(data))
+        box = nacl.secret.SecretBox(material[:32])
+        data = box.encrypt(data, nonce=material[32:32+24])[24:]
+
+        data = base64.b64encode(data)
         auth = base64.b64encode(msg)
 
         return dict(data=str(data, 'utf8'), auth=str(auth, 'utf8'))

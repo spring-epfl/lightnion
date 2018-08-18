@@ -184,14 +184,14 @@ lighttor.ntor.auth = function(endpoint, client, data)
     var pending_material = endpoint.material
     endpoint.material = endpoint.auth
 
+    var data = lighttor.dec.base64(data)
     var material = lighttor.ntor.shake(endpoint, client)
     if (material == null)
         throw "Invalid auth."
-
-    material = lighttor.ntor.slice(material)
     endpoint.material = pending_material
 
-    var data = lighttor.dec.base64(data)
-    var forward = lighttor.onion.ctr(material.forward_key)
-    return JSON.parse(lighttor.enc.utf8(forward.process(data)))
+    var key = material.slice(0, 32)
+    var nonce = material.slice(32, 32+24)
+    data = nacl.secretbox.open(data, nonce, key)
+    return JSON.parse(lighttor.enc.utf8(data))
 }
