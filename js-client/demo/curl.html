@@ -94,11 +94,9 @@
                         headers = data.split('\r\n\r\n')[0]
                         var len = headers.match('Content-Length: ([^\r]*)')
                         length = parseInt(len[1])
-                        console.log(length, len[1])
                     }
                 }
 
-                console.log(data.length, headers.length + length, data)
                 if (data.length < headers.length + length)
                     return
 
