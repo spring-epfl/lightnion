@@ -8,6 +8,7 @@ lighttor.io.polling = function(endpoint, handler, success, error)
         handler: handler,
         success: success,
         error: error,
+        cell: null,
         poll: function()
         {
             setTimeout(function()
@@ -24,8 +25,8 @@ lighttor.io.polling = function(endpoint, handler, success, error)
             if (io.incoming.length < 1)
                 return undefined
 
-            var cell = io.incoming.shift()
-            return lighttor.dec.base64(cell)
+            io.cell = io.incoming.shift()
+            return lighttor.dec.base64(io.cell)
         },
         start: function()
         {
@@ -54,6 +55,7 @@ lighttor.io.socket = function(endpoint, handler, success, error)
         handler: handler,
         success: success,
         error: error,
+        cell: null,
         send: function(cell)
         {
             io.outcoming.push(cell)
@@ -63,7 +65,8 @@ lighttor.io.socket = function(endpoint, handler, success, error)
             if (io.incoming.length < 1)
                 return undefined
 
-            return io.incoming.shift()
+            io.cell = io.incoming.shift()
+            return io.cell
         },
         start: function() { }
     }
