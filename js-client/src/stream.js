@@ -1,7 +1,7 @@
 lighttor.stream = {}
 lighttor.stream.backend = function(error)
 {
-    var sendme = function(endpoint, cell)
+    var sendme = function(cell, endpoint)
     {
         if (cell.cmd == "sendme")
             endpoint.stream.sendme += 1
@@ -56,7 +56,7 @@ lighttor.stream.handler = function(endpoint)
             delete endpoint.stream.handles[cell.stream_id]
 
         handle.cell = cell
-        handle.callback(cell)
+        handle.callback(cell, endpoint)
     }
 }
 
