@@ -1,6 +1,6 @@
 lighttor.fast = function(host, port, success, error, io)
 {
-    lighttor.open(host, port, success, error, io, true)
+    return lighttor.open(host, port, success, error, io, true)
 }
 
 lighttor.auth = function(host, port, suffix, success, error, io)
@@ -17,7 +17,7 @@ lighttor.auth = function(host, port, suffix, success, error, io)
     if (suffix.length != 20 + 32)
         throw "Invalid auth. suffix length!"
 
-    lighttor.open(host, port, success, error, io, true, {
+    return lighttor.open(host, port, success, error, io, true, {
         identity: suffix.slice(0, 20),
         onionkey: suffix.slice(20),
         ntor: nacl.box.keyPair()})
