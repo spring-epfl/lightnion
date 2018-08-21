@@ -65,18 +65,20 @@ lighttor.onion.sha = function(digest)
 
 lighttor.onion.forward = function(endpoint)
 {
+    var early = 8
     var layers = []
     if (endpoint.forward != null)
     {
         layers = endpoint.forward.layers
         layers.push(endpoint.forward)
+        early = endpoint.forward.early
     }
 
     var forward = {
         iv: 0,
         ctr: lighttor.onion.ctr(endpoint.material.forward_key),
         sha: lighttor.onion.sha(endpoint.material.forward_digest),
-        early: 8, // (first 8 relay cells will be replaced by relay_early)
+        early: early, // (first 8 relay cells will be replaced by relay_early)
         layers: layers,
         encrypt: function(cell)
         {
