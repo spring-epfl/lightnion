@@ -16,10 +16,12 @@ lighttor.stream.backend = function(error)
         id: 0,
         sendme: 0,
         handles: {0: {callback: sendme}},
+        smwindow: 1000, // (sendme circuit-level window)
         register: function(handle)
         {
             backend.id += 1
             handle.id = backend.id
+            handle.smwindow = 500 // (sendme stream-level window)
             backend.handles[backend.id] = handle
             return backend.id
         }
@@ -57,6 +59,23 @@ lighttor.stream.handler = function(endpoint)
 
         handle.cell = cell
         handle.callback(cell, endpoint)
+
+        /* handle circuit-level sendme */
+        endpoint.stream.smwindow -= 1
+        if (endpoint.stream.smwindow < 900)
+        {
+            endpoint.io.send(lighttor.onion.build(endpoint, 'sendme'))
+            endpoint.stream.smwindow += 100
+        }
+
+        /* handle stream-level sendme */
+        handle.smwindow -= 1
+        if (handle.smwindow < 450)
+        {
+            cell = lighttor.onion.build(endpoint, 'sendme', handle.id)
+            endpoint.io.send(cell)
+            handle.smwindow += 50
+        }
     }
 }
 
@@ -79,6 +98,7 @@ lighttor.stream.raw = function(endpoint, handler)
             return data
         },
         state: lighttor.state.started,
+        smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
@@ -114,6 +134,7 @@ lighttor.stream.dir = function(endpoint, path, handler)
             return data
         },
         state: lighttor.state.started,
+        smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
@@ -183,6 +204,7 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
             return data
         },
         state: lighttor.state.started,
+        smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
