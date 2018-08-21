@@ -1,0 +1,141 @@
+<html>
+<head>
+    <script src='lighttor.bundle.js'></script>
+    <meta charset='UTF-8'>
+
+    <!-- Third-part provided TLS library & its dependencies -->
+    <script
+        src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'
+        integrity='sha512-+NqPlbbtM1QqiK8ZAo4Yrj2c4lNQoGv8P79DPtKzj++l5jnN39rHA/xsqn8zE9l0uSoxaCdrOgFs6yjyfbBxSg=='
+        crossorigin='anonymous'></script>
+    <script
+        src='https://cdnjs.cloudflare.com/ajax/libs/forge/0.7.6/forge.all.min.js'
+        integrity='sha512-AaQcfPrw8R6U3IaQLRhTei9pARpVaLkbMtyxeD8cpl3omSfzpZT2NGjqxG5a31N55v+PpqGmp82XD0BFpHdzmg=='
+        crossorigin='anonymous'></script>
+</head>
+<body>
+    <form id='before' onsubmit='return connect()'>
+        <input id='host' value='check.torproject.org'>
+        <input id='port' onload='this.focus()' onfocus='this.value = 443'>
+        <input id='open' type='submit' value='connect'>
+    </form>
+    <form id='after' onsubmit='return send()' style='display: none'>
+        <input id='data'>
+        <input id='submit' type='submit' value='send' disabled>
+        <label for='unsafe'>
+            <pre style='display: inline'>
+            -- replace page content afterwards:</pre>
+        </label>
+        <input type='checkbox' id='unsafe' checked>
+        <pre style='display: inline'>(unsafe!)</pre>
+    </form>
+    <pre id='log'></pre>
+
+    <script>
+        var tcp = null
+        function connect()
+        {
+            lighttor.open('localhost', 4990, function(endpoint)
+            {
+                document.getElementById('open').disabled = true
+                if (endpoint.state == lighttor.state.success)
+                {
+                    // create a tcp stream
+                    host = document.getElementById('host').value
+                    port = document.getElementById('port').value
+                    lighttor.stream.tcp(endpoint, host, port, handler)
+                }
+            })
+            return false
+        }
+
+        // forge tls transport (adapted from github.com/digitalbazaar/forge)
+        var tls = forge.tls.createConnection({
+            server: false,
+            verify: function(connection, verified, depth, certs)
+            {
+                return true // skip cert. verif. (testing)
+            },
+            connected: function(connection)
+            {
+                // (tls handshake finished, now ready to send)
+                document.getElementById('submit').disabled = false
+            },
+            tlsDataReady: function(connection)
+            {
+                // (decode binary data into array before processing)
+                tcp.send(lighttor.dec.binary(connection.tlsData.getBytes()))
+            },
+            dataReady: function(connection)
+            {
+                // (receive decrypted data from the tls transport)
+                var data = connection.data.getBytes()
+                document.getElementById('log').innerText += data
+            },
+            closed: function()
+            {
+                document.getElementById('submit').disabled = true
+            },
+            error: function(connection, error) { }
+        })
+
+        function send(request)
+        {
+            var text = document.getElementById('data').value
+            text = text.replace(/\\r/g, '\r').replace(/\\n/g, '\n')
+
+            tls.prepare(text) // send data through tls-on-tcp stream
+            document.getElementById('data').value = ''
+            document.getElementById('log').innerText += text
+
+            return false
+        }
+
+        function handler(request)
+        {
+            switch(request.state)
+            {
+                case lighttor.state.created:
+                    tcp = request
+                    tls.handshake()
+                    // ^ bootstrap tls transport on tcp stream creation
+
+                    // (cosmetics)
+                    document.getElementById('log').innerText = '(ready)\n\n'
+                    document.getElementById('before').style.display = 'none'
+                    document.getElementById('after').style.display = 'block'
+
+                    document.getElementById('data').focus()
+                    document.getElementById('data').value = ('GET / HTTP/1.1' +
+                    '\\r\\nHost: check.torproject.org\\r\\n\\r\\n')
+
+                    return
+                case lighttor.state.pending:
+                    tls.process(lighttor.enc.binary(request.recv()))
+                    // ^ forwards incoming tcp traffic to tcp transport
+
+                    return
+                case lighttor.state.success:
+                    tcp = null
+
+                    // (cosmetics)
+                    document.getElementById('log').innerText += '\n\n(closed)'
+                    document.getElementById('submit').disabled = true
+                    if (document.getElementById('unsafe').checked)
+                    {
+                        data = document.getElementById('log').innerText
+                        data = '<html' + data.split('<html').slice(1).join()
+                        data = data.split('html>')[0] + '</html>'
+                        data = data.replace(/<img[^>]*>/g, '')
+
+                        document.open()
+                        document.write(data)
+                        document.close()
+                    }
+                    return
+            }
+        }
+        document.getElementById('port').focus()
+    </script>
+</body>
+</html>
