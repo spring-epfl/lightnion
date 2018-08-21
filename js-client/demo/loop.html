@@ -1,0 +1,79 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='rt'></pre>
+    <pre id='bw'></pre>
+
+    <script>
+        // stats & cosmetics
+        var tcp = null
+        var start = null
+        var counter = null
+        var lastctr = null
+        var bandwidth = null
+        function stats(timeout)
+        {
+            setTimeout(stats, timeout, timeout)
+            if (lastctr == counter)
+                return
+            lastctr = counter
+
+            var delta = performance.now() - start + 1
+            var rtps = Math.floor(100 * 1000 * counter / delta) / 100
+            var kops = Math.floor(100 * bandwidth / delta) / 100
+            var mo = Math.floor(100 * bandwidth / 1000 / 1000) / 100
+
+            // increase load until we receive more than 100ko/s
+            if (kops < 100)
+                tcp.send(tcp.cell.data)
+
+            document.getElementById('rt').innerText = (
+                'roundtrip: ' + rtps + '/s\n(total: ' + counter + ')\n')
+            document.getElementById('bw').innerText = (
+                'bandwidth: ' + kops + 'ko/s\n(total: ' + mo + 'mo)')
+        }
+
+        // create the channel
+        var channel = lighttor.fast('localhost', 4990, function(endpoint)
+        {
+            if (endpoint.state != lighttor.state.success)
+                return
+
+            // create the stream
+            tcp = lighttor.stream.tcp(endpoint, '127.0.0.1', 12003, handler)
+
+            // send a first packet that will echo (a lot)
+            tcp.send(new Uint8Array(lighttor.relay.data_len))
+        })
+
+        function handler(request)
+        {
+            if (request.state == lighttor.state.created)
+            {
+                bandwidth = 0
+                counter = 0
+                start = performance.now()
+                stats(30)
+                return
+            }
+
+            if (request.state == lighttor.state.pending)
+            {
+                var data = request.recv()
+                counter += 1
+                bandwidth += data.length
+
+                // send/receive the same data in a loop
+                request.send(data)
+                return
+            }
+
+            if (request.state == lighttor.state.success)
+                console.log('closed')
+        }
+    </script>
+</body>
+</html>
