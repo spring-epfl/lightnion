@@ -86,4 +86,6 @@ lighttor.open = function(host, port, success, error, io, fast, auth)
         lighttor.post.create(endpoint, cb.create, error)
     else
         lighttor.get.guard(endpoint, cb.guard, error)
+
+    return endpoint
 }
