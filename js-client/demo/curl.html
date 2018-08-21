@@ -80,13 +80,16 @@
 
             var data = ''
             var length = null
+            var rawlen = 0
             var headers = null
             var handler = function(request)
             {
                 if (request.state != lighttor.state.pending)
                     return
 
-                data += lighttor.enc.utf8(request.recv())
+                var payload = request.recv()
+                rawlen += payload.length
+                data += lighttor.enc.utf8(payload)
                 if (length == null)
                 {
                     if (data.match('\r\n\r\n'))
@@ -97,7 +100,7 @@
                     }
                 }
 
-                if (data.length < headers.length + length)
+                if (rawlen < headers.length + length)
                     return
 
                 success({headers: headers,

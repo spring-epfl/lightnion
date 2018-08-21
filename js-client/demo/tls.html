@@ -64,7 +64,7 @@
             tlsDataReady: function(connection)
             {
                 // (decode binary data into array before processing)
-                tcp.send(lighttor.dec.binary(connection.tlsData.getBytes()))
+                tcp.send(lighttor.dec.bin(connection.tlsData.getBytes()))
             },
             dataReady: function(connection)
             {
@@ -111,7 +111,7 @@
 
                     return
                 case lighttor.state.pending:
-                    tls.process(lighttor.enc.binary(request.recv()))
+                    tls.process(lighttor.enc.bin(request.recv()))
                     // ^ forwards incoming tcp traffic to tcp transport
 
                     return
