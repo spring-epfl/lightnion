@@ -6,6 +6,7 @@
 <body>
     <pre id='rt'></pre>
     <pre id='bw'></pre>
+    <pre id='lt'></pre>
 
     <script>
         // stats & cosmetics
@@ -13,6 +14,8 @@
         var start = null
         var counter = null
         var lastctr = null
+        var latency = null
+        var nblatency = null
         var bandwidth = null
         function stats(timeout)
         {
@@ -22,18 +25,43 @@
             lastctr = counter
 
             var delta = performance.now() - start + 1
+            var ltavg = Math.floor(100 * latency / nblatency) / 100
             var rtps = Math.floor(100 * 1000 * counter / delta) / 100
             var kops = Math.floor(100 * bandwidth / delta) / 100
             var mo = Math.floor(100 * bandwidth / 1000 / 1000) / 100
 
             // increase load until we receive more than 100ko/s
             if (kops < 100)
-                tcp.send(tcp.cell.data)
+                tcp.send(pack_perf(lighttor.relay.data_len))
 
             document.getElementById('rt').innerText = (
                 'roundtrip: ' + rtps + '/s\n(total: ' + counter + ')\n')
             document.getElementById('bw').innerText = (
-                'bandwidth: ' + kops + 'ko/s\n(total: ' + mo + 'mo)')
+                'bandwidth: ' + kops + 'ko/s\n(total: ' + mo + 'mo)\n')
+            document.getElementById('lt').innerText = (
+                'avg. latency: ' + ltavg + 'ms\n(measures: ' + nblatency + ')')
+        }
+
+        function pack_perf(length)
+        {
+            var data = new Uint8Array(lighttor.relay.data_len)
+            var view = new DataView(data.buffer)
+
+            view.setUint32(0, performance.now(), false)
+            data[10] = 0x11
+            data[17] = 0xff
+            return data
+        }
+
+        function unpack_perf(data)
+        {
+            if (data[10] != 0x11 || data[17] != 0xff)
+                return null
+
+            var view = new DataView(data.buffer)
+            var last = view.getUint32(0, false)
+
+            return performance.now() - last
         }
 
         // create the channel
@@ -46,7 +74,7 @@
             tcp = lighttor.stream.tcp(endpoint, '127.0.0.1', 12003, handler)
 
             // send a first packet that will echo (a lot)
-            tcp.send(new Uint8Array(lighttor.relay.data_len))
+            tcp.send(pack_perf(lighttor.relay.data_len))
         })
 
         function handler(request)
@@ -54,6 +82,8 @@
             if (request.state == lighttor.state.created)
             {
                 bandwidth = 0
+                nblatency = 0
+                latency = 0
                 counter = 0
                 start = performance.now()
                 stats(30)
@@ -63,11 +93,24 @@
             if (request.state == lighttor.state.pending)
             {
                 var data = request.recv()
+                if (data.length == 0)
+                    return
+
                 counter += 1
                 bandwidth += data.length
 
-                // send/receive the same data in a loop
-                request.send(data)
+                // send/receive the data in a loop
+                if (data.length == lighttor.relay.data_len)
+                {
+                    var last = unpack_perf(data)
+                    if (last != null)
+                    {
+                        latency += last
+                        nblatency += 1
+                    }
+
+                    tcp.send(pack_perf(lighttor.relay.data_len))
+                }
                 return
             }
 
