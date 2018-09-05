@@ -12,7 +12,7 @@
  * {
  *     if (endpoint.state != lighttor.state.success)
  *         return
- *     lighttor.stream.tcp(endpoint, 'api.ipify.org', 80, handler)
+ *     tcp = lighttor.stream.tcp(endpoint, 'api.ipify.org', 80, handler)
  *     tcp.send('GET / HTTP/1.1\r\nHost: api.ipify.org\r\n\r\n')
  * })
  *
