@@ -13,7 +13,7 @@ import lighttor as ltor
 import lighttor.proxy
 
 debug = True
-tick_rate = 0.03 # (sleeps when nothing to do)
+tick_rate = 0.01 # (sleeps when nothing to do)
 async_rate = 0.01 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
