@@ -1,20 +1,92 @@
+/**
+ * Cryptographic operations related to ntor handshakes.
+ * @namespace
+ * @see lighttor.ntor.hand
+ * @see lighttor.ntor.shake
+ */
 lighttor.ntor = {}
+
+/**
+ * Number of bytes to derive from successful ntor handshakes.
+ * @readonly
+ * @default
+ */
 lighttor.ntor.keybytes = 92
+
+/**
+ * Protocol identifier, prefix tweaks used in ntor handshakes various hashes.
+ * @readonly
+ * @default
+ *
+ * @see lighttor.ntor.tweaks
+ */
 lighttor.ntor.protoid = "ntor-curve25519-sha256-1"
+
+/**
+ * Tweaks used in ntor handshakes various hashes and key derivation.
+ * @enum
+ * @readonly
+ *
+ * @see lighttor.ntor.hash
+ */
 lighttor.ntor.tweaks = {
+    /**
+     * rfc5869 Expand {info}
+     * @type kdf
+     */
     expand: lighttor.ntor.protoid + ":key_expand",
-    verify: lighttor.ntor.protoid + ":verify",
-    server: lighttor.ntor.protoid + "Server",
+    /**
+     * rfc5869 Extract {salt}
+     * @type kdf
+     */
     key: lighttor.ntor.protoid + ":key_extract",
+    /**
+     * H({secret_input}, t_verify)
+     * @type ntor
+     */
+    verify: lighttor.ntor.protoid + ":verify",
+    /**
+     * suffix of {auth_input}
+     * @type ntor
+     */
+    server: lighttor.ntor.protoid + "Server",
+    /**
+     * H({auth_input}, t_mac)
+     * @type ntor
+     */
     mac: lighttor.ntor.protoid + ":mac"}
 
+/**
+ * Tweaked pseudo-random function factory, see {@link lighttor.ntor.hash}.
+ *
+ * @param {lighttor.ntor.tweaks} tweak      tweak to use
+ * @return {hash_t}
+ *
+ * @see lighttor.ntor.hash
+ */
 lighttor.ntor.hash_factory = function(tweak)
 {
     tweak = lighttor.ntor.tweaks[tweak]
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
+    /**
+     * Tweaked pseudo-random function used by {@link lighttor.ntor}, returned
+     * by {@link lighttor.ntor.hash_factory}.
+     *
+     * @interface hash_t
+     * @see lighttor.ntor.hash
+     *
+     * @property {Object} hmac      underlying hmac provider
+     */
     var hash = {
         hmac: new sjcl.misc.hmac(tweak),
+        /**
+         * Compute parent tweaked pseudo-random function on provided data.
+         *
+         * @function
+         * @name hash_t#encrypt
+         * @param {Uint8Array} data     input data
+         */
         encrypt: function(data)
         {
             data = lighttor.enc.bits(data)
@@ -24,11 +96,35 @@ lighttor.ntor.hash_factory = function(tweak)
     return hash
 }
 
-lighttor.ntor.hash = {}
-lighttor.ntor.hash.mac = lighttor.ntor.hash_factory("mac")
-lighttor.ntor.hash.prk = lighttor.ntor.hash_factory("key")
-lighttor.ntor.hash.verify = lighttor.ntor.hash_factory("verify")
+/**
+ * Tweaked pseudo-random functions used in ntor handshakes.
+ * @enum
+ * @type hash_t
+ *
+ * @see lighttor.ntor.tweaks
+ */
+lighttor.ntor.hash = {
+        /**
+         * used for H({secret_input}, t_verify) during ntor handshakes
+         */
+        verify: lighttor.ntor.hash_factory("verify"),
+        /**
+         * used for H({auth_input}, t_mac) during ntor handshakes
+         */
+        mac: lighttor.ntor.hash_factory("mac"),
+        /**
+         * used for extraction during ntor handshakes key derivation
+         */
+        prk: lighttor.ntor.hash_factory("key")
+    }
 
+/**
+ * Compute ntor key derivation from given material to n bytes.
+ *
+ * @param {Uint8Array} material     ntor {secret_input} handshake
+ * @param {int} n                   number of bytes to output
+ * @return {Uint8Array}
+ */
 lighttor.ntor.kdf = function(material, n)
 {
     material = lighttor.ntor.hash.prk.encrypt(material)
@@ -53,6 +149,18 @@ lighttor.ntor.kdf = function(material, n)
     return lighttor.dec.bits(sjcl.bitArray.clamp(out, n * 8))
 }
 
+
+/**
+ * Compute the first part of a ntor handshake,
+ * writes a {@link half_t} in {@link endpoint_t#material}.
+ *
+ * @param {endpoint_t} endpoint     state where to store half-finished material
+ * @param {Object} descriptor       node descriptor to handshake with
+ * @param {Boolean} encode          if true, returns base64 (default: true)
+ * @return {Uint8Array|string}
+ *
+ * @see lighttor.ntor.shake
+ */
 lighttor.ntor.hand = function(endpoint, descriptor, encode)
 {
     if (encode === undefined)
@@ -63,10 +171,27 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     var identity = lighttor.dec.base64(descriptor.router.identity + "=")
     var onionkey = lighttor.dec.base64(descriptor["ntor-onion-key"])
 
-    endpoint.material = {}
-    endpoint.material.ntor = nacl.box.keyPair()
-    endpoint.material.identity = identity
-    endpoint.material.onionkey = onionkey
+    /**
+    * Internal object, half-finished ntor handshake state in {@link
+    * endpoint_t#material}, created by:
+    * <ul>
+    *   <li> {@link lighttor.ntor.hand}
+    *   <li> {@link lighttor.ntor.fast}
+    *   <li> {@link lighttor.auth}
+    * </ul>
+    * Captures cryptographic state required to finish the handshake.
+    *
+    * @interface half_t
+    *
+    * @property {Object} ntor key pair
+    * @property {Uint8Array} identity node identity
+    * @property {Uint8Array} onionkey node public key
+    */
+    endpoint.material = {
+            ntor: nacl.box.keyPair(),
+            identity: identity,
+            onionkey: onionkey
+        }
 
     var pubkey = endpoint.material.ntor.publicKey
     var length = identity.length + onionkey.length + pubkey.length
@@ -81,6 +206,18 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     return payload
 }
 
+/**
+ * Just as {@link lighttor.ntor.hand} but without node information – used by
+ * {@link lighttor.fast}, writes a {@link half_t} in
+ * {@link endpoint_t#material}.
+ *
+ * <pre>Note: always returns base64-encoded handshake.</pre>
+ *
+ * @param {endpoint_t} endpoint     state where to store half-finished material
+ * @return {string}
+ *
+ * @see lighttor.fast
+ */
 lighttor.ntor.fast = function(endpoint)
 {
     endpoint.material = {}
@@ -90,6 +227,20 @@ lighttor.ntor.fast = function(endpoint)
     return lighttor.enc.base64(endpoint.material.ntor.publicKey)
 }
 
+/**
+ * Compute the second part of a ntor handshake, returns derived bytes suitable
+ * for {@link lighttor.ntor.slice} use.
+ *
+ * <pre>Note: returns null if handshake is invalid.</pre>
+ *
+ * @param {endpoint_t} endpoint     state where to read half-finished material
+ * @param {Uint8Array|string} data  server part of the handshake
+ * @param {boolean} encoded         if true, decode data as base64
+ *                                  (default: true)
+ * @return {Uint8Array|null}
+ *
+ * @see lighttor.ntor.hand
+ */
 lighttor.ntor.shake = function(endpoint, data, encoded)
 {
     if (encoded === undefined)
@@ -164,10 +315,37 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     return null
 }
 
+/**
+ * Build a shared cryptographic {@link material_t} for
+ * {@link endpoint_t#material}
+ * from the output of {@link lighttor.ntor.shake}.
+ *
+ * <pre>
+ * Note: assume KEY_LEN == 16 (aes256) and HASH_LEN == 20 (sha1) internally.
+ * </pre>
+ *
+ * @param {Uint8Array} material     exactly {@link lighttor.ntor.keybytes}
+ *                                  bytes
+ * @return {material_t}
+ */
 lighttor.ntor.slice = function(material)
 {
     var k = 16 // KEY_LEN
     var h = 20 // HASH_LEN
+
+    /**
+     * Internal object, stores shared cryptographic material
+     * as {@link endpoint_t#material}, returned by {@link lighttor.ntor.slice}.
+     *
+     * @interface material_t
+     * @see lighttor.ntor.slice
+     *
+     * @property {Uint8Array} key_hash          unused
+     * @property {Uint8Array} forward_key       used in {@link forward_t}
+     * @property {Uint8Array} forward_digest    used in {@link forward_t}
+     * @property {Uint8Array} backward_key      used in {@link backward_t}
+     * @property {Uint8Array} backward_digest   used in {@link backward_t}
+     */
     var material = {
         key_hash: material.slice(h * 2 + k * 2),
         forward_digest: material.slice(0, h),

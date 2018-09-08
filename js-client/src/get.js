@@ -1,6 +1,7 @@
 /**
  * GET operations.
  * @namespace
+ * @see lighttor.get.guard
  */
 lighttor.get = {}
 
@@ -50,6 +51,10 @@ lighttor.get.guard = function(endpoint, success, error)
  *
  * Usage and parameters are similar to {@link lighttor.get.guard}, stores the
  * consensus as parsed from the proxy-server answer.
+ *
+ * @param {endpoint_t} endpoint     endpoint in use, stores answer
+ * @param {callback} success        optional, called on success
+ * @param {callback} error          optional, called on error
  *
  * @see lighttor.get.guard
  */

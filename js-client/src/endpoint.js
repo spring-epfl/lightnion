@@ -55,7 +55,11 @@ lighttor.endpoint = function(host, port)
      * @property {stream.backend_t} stream      stream backend in use
      * @property {onion.backward_t} backward    backward cryptographic state
      * @property {onion.forward_t} forward      forward cryptographic state
-     * @property {ntor.material_t} material     shared cryptographic material
+     * @property {material_t|half_t} material   shared cryptographic material
+     * @property {null|half_t} auth             stores {@link lighttor.auth}
+     *                                          material
+     * @property {Boolean} fast                 is {@link lighttor.fast}
+     *                                          in use?
      */
     var endpoint = {
         /**
@@ -72,14 +76,34 @@ lighttor.endpoint = function(host, port)
          * @readonly
          */
         port: port,
+        fast: null,
+        auth: null,
         urls: urls,
         io: null,
         state: 0,
+        /**
+         * Last shared cryptographic material retrieved, written by:
+         * <ul>
+         *  <li> {@link lighttor.post.create}
+         *  <li> {@link lighttor.post.extend}
+         *  <li> {@link lighttor.ntor.hand}
+         *  <li> {@link lighttor.ntor.fast}
+         *  <li> {@link lighttor.ntor.auth}
+         * </ul>
+         *
+         * Either stores {@link material_t} or {@link half_t}.
+         *
+         * @name endpoint_t#material
+         * @type {material_t|half_t}
+         *
+         * @see lighttor.ntor.hand
+         */
         material: null,
         forward: null,
         backward: null,
         /**
-         * Channel id obtained upon successful /create call.
+         * Identifier of the channel in used, written by successful a
+         * {@link lighttor.post.create} call.
          * @name endpoint_t#id
          * @readonly
          * @default null
@@ -110,7 +134,7 @@ lighttor.endpoint = function(host, port)
         path: null,
         /**
          * Guard descriptor obtained by {@link lighttor.open} during channel
-         * setup (written by {@link lighttor.get.guard}).
+         * setup, written by {@link lighttor.get.guard}.
          *
          * @name endpoint_t#guard
          * @readonly
