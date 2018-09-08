@@ -1,23 +1,38 @@
+import threading
 import socket
+import time
 import ssl
 
 def handshake(peer):
     peer.settimeout(3)
 
     ctr = 0
-    print('Connect')
+    print('Connect', time.time())
     try:
         fails = 0
+        first = True
         while fails < 32:
-            ctr += 1
-
             data = peer.recv(498)
+            ctr += len(data)
+
+            if first:
+                first = False
+                print('First', time.time())
+
             fails = fails + 1 if len(data) == 0 else 0
             peer.send(data)
 
-            print(ctr, end='\r', flush=True)
+            print(ctr // 498, end='\r', flush=True)
     except BaseException as e:
-        print('\nClosed:', e)
+        print('\nClosed:', e, time.time())
+
+class client(threading.Thread):
+    def __init__(self, peer):
+        super().__init__()
+        self.peer = peer
+
+    def run(self):
+        handshake(self.peer)
 
 if __name__ == '__main__':
     try:
@@ -28,10 +43,11 @@ if __name__ == '__main__':
         print('Listening here: ', sock.getsockname())
         while True:
             ssock, addr = sock.accept()
-            print('Accept')
+            print('Accept', time.time())
             try:
-                handshake(ssock)
-            finally:
+                thread = client(ssock)
+                thread.start()
+            except BaseException as e:
                 if ssock:
                     ssock.close()
     finally:
