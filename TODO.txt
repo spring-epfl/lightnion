@@ -1,13 +1,3 @@
-Roadmap common:   
- - use raw consensus & descriptors instead of JSON-ified ones? (client parsers)
-
-Roadmap path selection:
- - replace '/guard' by '/guards' (let clients choose their guard)
- - more static guards? (they shouldn't change much often)
- - implement ABWRS in python
- - ...and in javascript
- - add a '/paths' endpoint that spits out bunch of paths
-
 Roadmap python implementation:
  - download consensus via HTTP whenever possible
  - asyncio-only (sans-IO?) rewrite of core components
@@ -17,6 +7,30 @@ Roadmap python implementation:
  - descriptor signatures
  - handle more crypto bits in C? wrapped ctor?
  - remove complexity/bottlenecks (no parsers? no cell.view? proper zlib & peel)
+
+Roadmap javascript implementation:
+ - add configurable path (override the proxy-provided one)
+ - add url suffix parser (guard node, path spec, proxy auth)
+ - remove sjcl, use native SubtleCrypto instead
+ - remove nacl, use HACL* Curve25519 build in WebAssembly instead
+
+Roadmap common:
+ - pluggable transport+proxy websocket-only approach (maybe .extra/spec.txt)
+ - a nginx proxy integration
+
+--/--
+ideas
+--/--
+
+Roadmap common:
+ - use raw consensus & descriptors instead of JSON-ified ones? (client parsers)
+
+Roadmap path selection:
+ - replace '/guard' by '/guards' (let clients choose their guard?)
+ - more static guards? (they shouldn't change much often)
+ - implement ABWRS in python
+ - ...and in javascript
+ - add a '/paths' endpoint that spits out bunch of paths
 
 Roadmap javascript implementation:
  - provide a XMLHttpRequest override? websocket override? (unsafe)
