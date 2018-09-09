@@ -1,3 +1,6 @@
+# Below a walk-through with step-by-step operations and comments
+echo "This file is not meant to be executed, go read it."
+exit 1
 
 #
 # I have tor version 0.3.3.9 installed, but any modern version should work.
