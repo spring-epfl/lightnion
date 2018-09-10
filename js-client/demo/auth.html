@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -18,17 +18,17 @@
             document.getElementById('open').disabled = true
             var suffix = document.getElementById('suffix').value
 
-            lighttor.auth('localhost', 4990, suffix, function(endpoint)
+            lnn.auth('localhost', 4990, suffix, function(endpoint)
             {
-                if (endpoint.state == lighttor.state.success)
-                    lighttor.stream.dir(endpoint, path, handler)
+                if (endpoint.state == lnn.state.success)
+                    lnn.stream.dir(endpoint, path, handler)
             })
             return false
         }
         function handler(request)
         {
             document.getElementById('log').innerHTML = ''
-            if (request.state != lighttor.state.success)
+            if (request.state != lnn.state.success)
                 return
 
             document.getElementById('log').innerHTML = request.data

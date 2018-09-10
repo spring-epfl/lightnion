@@ -1,4 +1,4 @@
-import lighttor as ltor
+import lightnion as lnn
 
 import argparse
 import random
@@ -10,18 +10,18 @@ if __name__ == '__main__':
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    link = lnn.link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 
-    endpoint = ltor.create.fast(link)
+    endpoint = lnn.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
     # Download our first hop's descriptor
-    endpoint, authority = ltor.descriptors.download_authority(endpoint)
+    endpoint, authority = lnn.descriptors.download_authority(endpoint)
 
     # Download a consensus
-    endpoint, cons = ltor.consensus.download(endpoint, flavor='unflavored')
+    endpoint, cons = lnn.consensus.download(endpoint, flavor='unflavored')
 
     # Randomly pick few nodes (!! NOT a sane behavior, only to showcase API !!)
     further_hops = []
@@ -50,7 +50,7 @@ if __name__ == '__main__':
             continue
 
         # Retrieve its descriptor
-        endpoint, nhop = ltor.descriptors.download(
+        endpoint, nhop = lnn.descriptors.download(
             endpoint, cons=router, flavor='unflavored')
         nhop = nhop[0] # (expect only one entry with a matching digest)
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
             nhop['router']['nickname'], len(further_hops)))
 
     # Create a brand new circuit (to have spare RELAY_EARLY to extend it)
-    endpoint = ltor.create.fast(link)
+    endpoint = lnn.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
@@ -76,14 +76,14 @@ if __name__ == '__main__':
         print('Extending to {}:'.format(nhop['router']['nickname']))
         print(' - remaining RELAY_EARLY: {}'.format(endpoint.early_count))
 
-        endpoint = ltor.extend.circuit(endpoint, nhop)
+        endpoint = lnn.extend.circuit(endpoint, nhop)
         print(' - circuit extended, new depth: {}'.format(endpoint.depth))
 
     print('\nChecking...')
-    endpoint, authority = ltor.descriptors.download_authority(endpoint)
+    endpoint, authority = lnn.descriptors.download_authority(endpoint)
     print("- endpoint's descriptor ({}) retrieved at depth {}!".format(
         authority['router']['nickname'], endpoint.depth))
 
-    endpoint, ncons = ltor.consensus.download(endpoint, cache=False)
+    endpoint, ncons = lnn.consensus.download(endpoint, cache=False)
     print("- micro-consensus (with {} nodes) retrieved at depth {}!".format(
         len(ncons['routers']), endpoint.depth))

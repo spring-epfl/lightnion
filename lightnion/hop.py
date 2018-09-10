@@ -2,7 +2,7 @@ import zlib
 import time
 import queue
 
-import lighttor as ltor
+import lightnion as lnn
 
 def recv(state, block=True, once=False, auto_sendme=True):
     '''Receive one or more RELAY{_EARLY,} cells from `state` attached circuit.
@@ -27,15 +27,15 @@ def recv(state, block=True, once=False, auto_sendme=True):
             raise RuntimeError('Circuit got destroyed, reason: {}'.format(
                 state.circuit.reason))
 
-        header = ltor.cell.header(payload)
-        if header.cmd in [ltor.cell.cmd.RELAY, ltor.cell.cmd.RELAY_EARLY]:
+        header = lnn.cell.header(payload)
+        if header.cmd in [lnn.cell.cmd.RELAY, lnn.cell.cmd.RELAY_EARLY]:
             break
 
         state.link.put(state.circuit, payload)
 
-    cell_type = ltor.cell.relay.cell
-    if header.cmd is ltor.cell.cmd.RELAY_EARLY:
-        cell_type = ltor.cell.relay_early.cell
+    cell_type = lnn.cell.relay.cell
+    if header.cmd is lnn.cell.cmd.RELAY_EARLY:
+        cell_type = lnn.cell.relay_early.cell
 
     cell = cell_type(payload)
     #import pdb
@@ -44,7 +44,7 @@ def recv(state, block=True, once=False, auto_sendme=True):
     #    raise RuntimeError(
     #        'Got invalid (encrypted) RELAY cell: {}'.format(cell.raw))
 
-    state, cell = ltor.onion.peel(state, cell)
+    state, cell = lnn.onion.peel(state, cell)
     if not cell.valid:
         raise RuntimeError(
             'Got invalid (decrypted) RELAY cell: {}'.format(cell.raw))
@@ -62,9 +62,9 @@ def recv(state, block=True, once=False, auto_sendme=True):
 
 # TODO: better sendme handling
 def _auto_sendme(state, cell):
-    if not cell.relay.cmd == ltor.cell.relay.cmd.RELAY_DATA:
+    if not cell.relay.cmd == lnn.cell.relay.cmd.RELAY_DATA:
         return state
-    link, circuit, flow = state.link, state.circuit, ltor.constants.flow
+    link, circuit, flow = state.link, state.circuit, lnn.constants.flow
 
     # Circuit-level sendme
     #
@@ -74,7 +74,7 @@ def _auto_sendme(state, cell):
     circuit.window -= 1
     if circuit.window < flow.circuit.lowlimit:
         circuit.window += flow.circuit.increment
-        state = send(state, ltor.cell.relay.cmd.RELAY_SENDME)
+        state = send(state, lnn.cell.relay.cmd.RELAY_SENDME)
 
     # Stream-level sendme
     #
@@ -92,7 +92,7 @@ def _auto_sendme(state, cell):
         return state
 
     circuit.stream_windows[cell.relay.stream_id] += flow.stream.increment
-    state = send(state, ltor.cell.relay.cmd.RELAY_SENDME,
+    state = send(state, lnn.cell.relay.cmd.RELAY_SENDME,
         stream_id=cell.relay.stream_id)
 
     return state
@@ -111,7 +111,7 @@ def send(state, command, payload=b'', stream_id=0):
     '''
 
     # We build our onion
-    state, cell = ltor.onion.build(state, command, payload, stream_id)
+    state, cell = lnn.onion.build(state, command, payload, stream_id)
 
     # Then, we send the encrypted payload.
     state.link.send(cell)
@@ -141,25 +141,25 @@ def directory_query(
     stream_id = state.circuit.last_stream_id
 
     state = send(
-        state, ltor.cell.relay.cmd.RELAY_BEGIN_DIR, stream_id=stream_id)
+        state, lnn.cell.relay.cmd.RELAY_BEGIN_DIR, stream_id=stream_id)
     state, cells = recv(state)
 
-    if not cells[0].relay.cmd == ltor.cell.relay.cmd.RELAY_CONNECTED:
+    if not cells[0].relay.cmd == lnn.cell.relay.cmd.RELAY_CONNECTED:
         raise RuntimeError('Expecting RELAY_CONNECTED after RELAY_BEGIN_DIR,'
             + ' got {} in cell:'.format(cells[0].relay.cmd, cells[0].raw))
 
     http = directory_request.format(query=query, compression=compression)
 
     http = bytes(http, 'utf8')
-    width = ltor.cell.relay.payload_len
+    width = lnn.cell.relay.payload_len
     while len(http) > 0:
         chunk, http = http[:width], http[width:]
-        state = send(state, ltor.cell.relay.cmd.RELAY_DATA, chunk,
+        state = send(state, lnn.cell.relay.cmd.RELAY_DATA, chunk,
             stream_id=stream_id)
 
     # TODO: proper support for RELAY_END reasons
     state, cells = recv(state)
-    if ltor.cell.relay.cmd.RELAY_END not in [c.relay.cmd for c in cells]:
+    if lnn.cell.relay.cmd.RELAY_END not in [c.relay.cmd for c in cells]:
         candidates = []
         diff_time = time.time()
         while True:
@@ -170,7 +170,7 @@ def directory_query(
             candidates = [c.relay.cmd for c in new_cells]
             cells += new_cells
 
-            if ltor.cell.relay.cmd.RELAY_END in candidates:
+            if lnn.cell.relay.cmd.RELAY_END in candidates:
                 break
 
             if len(candidates) > 0:
@@ -183,7 +183,7 @@ def directory_query(
 
     # TODO: proper support for incoming RELAY_SENDME cells
     cells = [c for c in cells if not (c.relay.stream_id == 0
-                and c.relay.cmd == ltor.cell.relay.cmd.RELAY_SENDME)]
+                and c.relay.cmd == lnn.cell.relay.cmd.RELAY_SENDME)]
 
     # TODO: proper support for concurrent streams on the same circuit
     if not all([c.relay.stream_id == stream_id for c in cells]):
@@ -191,7 +191,7 @@ def directory_query(
 
     content = b''
     for cell in cells:
-        if not cell.relay.cmd == ltor.cell.relay.cmd.RELAY_DATA:
+        if not cell.relay.cmd == lnn.cell.relay.cmd.RELAY_DATA:
             continue
         content += cell.relay.data
 

@@ -1,4 +1,4 @@
-lighttor: Tor portable to the browser
+lightnion: Tor portable to the browser
 =====================================
 
 **Note: lightlor is still at its early stages of development, do NOT use it for
@@ -26,7 +26,7 @@ Kids these days worry about a lot of things:
  - users not wanting to download more than a webpage.
  - users not wanting latency and high resources usage.
 
-**Lighttor** enables kids to build such applications in a world made of
+**Lightnion** enables kids to build such applications in a world made of
 browsers that are not the [Tor Browser](https://www.torproject.org/projects/torbrowser.html.en).
 
 It provides the following components:
@@ -34,7 +34,7 @@ It provides the following components:
  - a forward proxy that does some heavy-lifting for clients.
  - a reverse proxy that does the rest of the heavy-lifting.
 
-**Lighttor** lightweight client is a library that your javascript uses to talk
+**Lightnion** lightweight client is a library that your javascript uses to talk
 through Tor. Its forward proxy removes raw TCP between sandboxed code and onion
 routers. Its reverse proxy removes the need of running TLS or HTTPS within a
 webpage.
@@ -49,8 +49,8 @@ Quick setup
 
 Clone the repository and add it to your `PYTHONPATH`:
 ```sh
-git clone --recurse-submodules https://github.com/spring-epfl/lighttor
-cd lighttor
+git clone --recurse-submodules https://github.com/spring-epfl/lightnion
+cd lightnion
 virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -81,7 +81,7 @@ If you have some questions, please open an issue starting with
 You'll find below some answers to some frequently asked questions:
 
  - [Are you attempting to replace the Tor Browser?](#are-you-attempting-to-replace-the-tor-browser)
- - [What can I expect lighttor to do for me?](#what-can-i-expect-lighttor-to-do-for-me)
+ - [What can I expect lightnion to do for me?](#what-can-i-expect-lightnion-to-do-for-me)
  - [How are you going to do that?](#how-are-you-going-to-do-that)
  - [Why doing things in a browser?](#why-doing-things-in-a-browser)
  - [Why javascript? Is is then unsafe?](#why-javascript-is-is-then-unsafe)
@@ -99,13 +99,13 @@ starting point](https://www.torproject.org/docs/faq.html.en#WhatIsTor).
 
 If you do not use the Tor Browser but
 [still care](https://www.torproject.org/docs/faq.html.en#TBBOtherBrowser)
-about privacy, you may someday enjoy web services that uses lighttor.
+about privacy, you may someday enjoy web services that uses lightnion.
 
 If you are trying to build a web service designed with privacy in mind
-and that works on any browser, lighttor may
-[help you](#what-can-i-expect-lighttor-to-do-for-me).
+and that works on any browser, lightnion may
+[help you](#what-can-i-expect-lightnion-to-do-for-me).
 
-### What can I expect lighttor to do for me? 
+### What can I expect lightnion to do for me? 
 
 _Not much if you are not building a web-based application._
 
@@ -118,7 +118,7 @@ not much that you can do against
 Most chooses to tell their privacy-minded and tech-savvy users to get the Tor
 Browser and leave other kinds of users aside.
 
-**Lighttor brings a different compromise into the picture:** your
+**Lightnion brings a different compromise into the picture:** your
 privacy-minded and tech-savvy users will still be able to protect themselves,
 however the other kinds will also interact with you through Tor and will have
 some form of protection.
@@ -128,19 +128,19 @@ other kinds of users. Thus, even getting few users to run signed software that
 checks if your service does not misbehave can provide good incentives to remain
 honest.
 
-To sum up, if you build such "privacy by default" service with lighttor, all
+To sum up, if you build such "privacy by default" service with lightnion, all
 your users talk to you through Tor, get some protection and can at least trust
 your reputation against the permanent scrutiny of anonymous privacy-minded
 users hiding in the crowd.
 
-**Note that lighttor is still in the early stages of its development and need
+**Note that lightnion is still in the early stages of its development and need
 more work to enforce those properties.**
 
 ### How are you going to do that?
 
 _No idea, yet._
 
-Lighttor is first and foremost a research project, its whole job is to figure
+Lightnion is first and foremost a research project, its whole job is to figure
 out how to achieve its goals.
 
 Please open an issue or [contact us](#contact) if you spot problems, have some
@@ -156,7 +156,7 @@ and [several](https://www.torproject.org/docs/faq.html.en#TBBSocksPort)
 [ways](https://tails.boum.org/) to use the Tor network and its capabilities as
 an user.
 
-Lighttor aims to bring Tor to users with nothing more than loading a webpage.
+Lightnion aims to bring Tor to users with nothing more than loading a webpage.
 Hence yes: it does things in a browser.
 
 ### Why javascript? Is is then unsafe?
@@ -165,28 +165,28 @@ _Because browsers. Not more than running any web-based application._
 
 The full answer is closely related to:
  - [Why doing things in a browser?](#why-doing-things-in-a-browser)
- - [What can I expect lighttor to do for me?](#what-can-i-expect-lighttor-to-do-for-me)
+ - [What can I expect lightnion to do for me?](#what-can-i-expect-lightnion-to-do-for-me)
 
-Lighttor targets mostly web-based applications where the user only open a
+Lightnion targets mostly web-based applications where the user only open a
 webpage to use Tor. It can not afford nice things such as native clients,
 extensions or the Tor Browser itself: the only way to go was to embed some
 javascript in the webpage.
 
 As an user of a web-based service, you already put some trust in your service
-that delivers nice code with no malicious intent. Lighttor only adds to this
+that delivers nice code with no malicious intent. Lightnion only adds to this
 code a tiny library that gives a way for the service to interact with its
 servers through Tor.
 
-Lighttor is only as small step towards an ecosystem that brings privacy to the
+Lightnion is only as small step towards an ecosystem that brings privacy to the
 masses. It does provide few other components that may help users to protect
 themselves, however it will not prevent design mistakes in applications or some
 malpractices.
 
 ### Does it protects me if I disable javascript?
 
-_Lighttor does not provide any kind of protection before it is executed._
+_Lightnion does not provide any kind of protection before it is executed._
 
-This question is best answered through a case study: imagine that lighttor is
+This question is best answered through a case study: imagine that lightnion is
 integrated into an instant messaging client written in javascript. You first
 download the webpage, then the client kicks in and send/receive all messages
 through the Tor network.
@@ -200,7 +200,7 @@ the first place.
 
 _Because it may have been counterproductive._
 
-Lighttor was build with a side task of understanding in details what can be/can
+Lightnion was build with a side task of understanding in details what can be/can
 not be done within the Tor protocol, and what needed to be implemented in
 order to get the thing into a browser. This implementation acts as a
 side-effect of such work.
@@ -210,7 +210,7 @@ used, mostly for the sensitive parts.
 
 ### Why are you not using [stem](http://stem.torproject.org/) to do that?
 
-_Because lighttor started before stem gained more client capabilities._
+_Because lightnion started before stem gained more client capabilities._
 
 Closely related to:
 [Why not hacking the official Tor client?](#why-not-hacking-the-official-tor-client)
@@ -222,9 +222,9 @@ used.
 
 _For now._
 
-Implementing a proper pluggable transport can enable lighttor to be more easily
+Implementing a proper pluggable transport can enable lightnion to be more easily
 integrated within the existing Tor ecosystem. However building such pluggable
-transport is for now not a priority, lighttor needs more work to get to this
+transport is for now not a priority, lightnion needs more work to get to this
 point.
 
 ---

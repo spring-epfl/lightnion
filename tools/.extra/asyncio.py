@@ -115,26 +115,26 @@ async with br.link(host, port, handler=None, *, ssl, transport=br.t.link) as lin
     asyncio.ensure_future(link.fast(handler))
 
 # pre-build transports:
-#   br.t.link for bronion.transports.link
-#   br.t.circuit for bronion.transports.circuit
-#   br.t.stream for bronion.transports.stream
+#   br.t.link for lightnion.transports.link
+#   br.t.circuit for lightnion.transports.circuit
+#   br.t.stream for lightnion.transports.stream
 
 # pre-build protocols:
-#   br.lp for bronion.link_protocols
+#   br.lp for lightnion.link_protocols
 #       br.lp.basic
 #       br.lp.initiator
 #       br.lp.responder
-#   br.cp for bronion.circuit_protocols
+#   br.cp for lightnion.circuit_protocols
 #       br.cp.basic
 #       br.cp.raw
 #       br.cp.fast
 #       br.cp.ntor
-#   br.sp for bronion.stream_protocols
+#   br.sp for lightnion.stream_protocols
 #       br.sp.basic
 #       br.sp.raw
 #       br.sp.dir
 #       br.sp.tcp
-#   br.dp for bronion.data_protocols
+#   br.dp for lightnion.data_protocols
 #       br.dp.basic
 #       br.dp.socket
 

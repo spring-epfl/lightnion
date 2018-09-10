@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -32,7 +32,7 @@
 
             // increase load until we receive more than 100ko/s
             if (kops < 100)
-                tcp.send(pack_perf(lighttor.relay.data_len))
+                tcp.send(pack_perf(lnn.relay.data_len))
 
             document.getElementById('rt').innerText = (
                 'roundtrip: ' + rtps + '/s\n(total: ' + counter + ')\n')
@@ -44,7 +44,7 @@
 
         function pack_perf(length)
         {
-            var data = new Uint8Array(lighttor.relay.data_len)
+            var data = new Uint8Array(lnn.relay.data_len)
             var view = new DataView(data.buffer)
 
             view.setUint32(0, performance.now(), false)
@@ -65,21 +65,21 @@
         }
 
         // create the channel
-        var channel = lighttor.fast('localhost', 4990, function(endpoint)
+        var channel = lnn.fast('localhost', 4990, function(endpoint)
         {
-            if (endpoint.state != lighttor.state.success)
+            if (endpoint.state != lnn.state.success)
                 return
 
             // create the stream
-            tcp = lighttor.stream.tcp(endpoint, '127.0.0.1', 12003, handler)
+            tcp = lnn.stream.tcp(endpoint, '127.0.0.1', 12003, handler)
 
             // send a first packet that will echo (a lot)
-            tcp.send(pack_perf(lighttor.relay.data_len))
+            tcp.send(pack_perf(lnn.relay.data_len))
         })
 
         function handler(request)
         {
-            if (request.state == lighttor.state.created)
+            if (request.state == lnn.state.created)
             {
                 bandwidth = 0
                 nblatency = 0
@@ -90,7 +90,7 @@
                 return
             }
 
-            if (request.state == lighttor.state.pending)
+            if (request.state == lnn.state.pending)
             {
                 var data = request.recv()
                 if (data.length == 0)
@@ -100,7 +100,7 @@
                 bandwidth += data.length
 
                 // send/receive the data in a loop
-                if (data.length == lighttor.relay.data_len)
+                if (data.length == lnn.relay.data_len)
                 {
                     var last = unpack_perf(data)
                     if (last != null)
@@ -109,12 +109,12 @@
                         nblatency += 1
                     }
 
-                    tcp.send(pack_perf(lighttor.relay.data_len))
+                    tcp.send(pack_perf(lnn.relay.data_len))
                 }
                 return
             }
 
-            if (request.state == lighttor.state.success)
+            if (request.state == lnn.state.success)
                 console.log('closed')
         }
     </script>

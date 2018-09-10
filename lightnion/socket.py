@@ -1,4 +1,4 @@
-import lighttor as ltor
+import lightnion as lnn
 
 import threading
 import socket
@@ -43,16 +43,16 @@ class _stat_peer:
         return self.peer.close()
 
 def cell_slice(payload, once=False):
-    cell_header = ltor.cell.header(payload)
+    cell_header = lnn.cell.header(payload)
     if len(payload) < cell_header.width: # (payload too small, need data)
         return [], payload, True
 
     if not cell_header.valid:
         raise RuntimeError('Invalid cell header: {}'.format(cell_header.raw))
 
-    length = cell_header.width + ltor.constants.payload_len
+    length = cell_header.width + lnn.constants.payload_len
     if not cell_header.cmd.is_fixed:
-        cell_header = ltor.cell.header_variable(payload)
+        cell_header = lnn.cell.header_variable(payload)
         if len(payload) < cell_header.width: # (payload too small, need data)
             return [], payload, True
 
@@ -62,7 +62,7 @@ def cell_slice(payload, once=False):
 
         length = cell_header.width + cell_header.length
 
-    if length > ltor.constants.max_payload_len:
+    if length > lnn.constants.max_payload_len:
         raise RuntimeError('Invalid cell length: {}'.format(length))
 
     if len(payload) < length:
@@ -110,7 +110,7 @@ class worker(threading.Thread):
         raise e
 
     def send(self, cell, block=True):
-        self.send_queue.put(ltor.cell.pad(cell), block=block)
+        self.send_queue.put(lnn.cell.pad(cell), block=block)
 
     def recv(self, block=True):
         return self.cell_queue.get(block=block)
@@ -148,7 +148,7 @@ class worker(threading.Thread):
 
         try:
             if ((len(self.recving) < 1 or self.celling)
-                and len(self.recving) <= ltor.constants.max_payload_len):
+                and len(self.recving) <= lnn.constants.max_payload_len):
                 self.recving += self.recv_queue.get(block=False)
                 self.celling = False
         except queue.Empty:

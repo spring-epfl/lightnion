@@ -7,14 +7,14 @@ exit 1
 #
 
 # quick setup
-git clone -b ltor --single-branch --recurse-submodules https://github.com/plcp/tor-scripts/ bronion
-cd bronion
+git clone --recurse-submodules https://github.com/spring-epfl/lighttor lightnion
+cd lightnion
 source venv/bin/activate
 pip install -r requirements.txt -r requirements-proxy.txt # install deps
 
 
 # running a Tor node that connects to the REAL network
-cd bronion
+cd lightnion
 cd tools
 ./start-local-relay.sh # Control on 8000, OR on 9050, directory on 9051
 # ^C^C to exit
@@ -22,20 +22,20 @@ cd tools
 
 # running a little chutney
 git clone https://git.torproject.org/chutney.git
-cp bronion/tools/chutney/small-chut chutney # or read tools/chutney/README.md
+cp lightnion/tools/chutney/small-chut chutney # or read tools/chutney/README.md
 cd chutney
-git apply ../bronion/tools/chutney/sandbox_patch # disable sandbox if you need
+git apply ../lightnion/tools/chutney/sandbox_patch # disable sandbox if you need
 ./small-chut
 
 
 # library examples, run with real Tor
-cd bronion
+cd lightnion
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 python examples/link.py # 14 loc – open a link
 python examples/create_fast.py # 23 loc – create a fast circuit
 python examples/consensus.py # 34 loc – download both flavors of consensus
-# -: now .lighttor-cache.d/consensus-{unflavored,microdesc} exists
+# -: now .lightnion-cache.d/consensus-{unflavored,microdesc} exists
 python examples/descriptors.py # 72 loc – download all descriptors +checks
 python examples/directory_query.py # 48 loc – get both consensus (low level)
 # -: performs directory queries on a lower level and writes result in /tmp
@@ -44,7 +44,7 @@ python examples/extend_circuit.py # 89 loc – create extended circuit
 
 
 # library examples, run with chutney
-cd bronion
+cd lightnion
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 python examples/link.py 127.0.0.1 5000
@@ -54,9 +54,9 @@ python examples/path.py 127.0.0.1 5000 7 0 8001 # 67 loc – create 7 paths
 
 
 # run the proxy, run with real Tor
-cd bronion
-python -m lighttor.proxy --help # help!
-python -m lighttor.proxy -vvv -s 127.0.0.1:9050 -c 8000
+cd lightnion
+python -m lightnion.proxy --help # help!
+python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000
 # -vvv is very very verbose mode
 # -s is the slave node, here the local real one
 # -c is the control port for path unholy selection
@@ -71,7 +71,7 @@ python -m lighttor.proxy -vvv -s 127.0.0.1:9050 -c 8000
 
 
 # library examples, run with real Tor
-cd bronion
+cd lightnion
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"
 python example/polling.py # 40l – full path through proxy, using polling
@@ -88,27 +88,27 @@ python example/websocket.py --help
 
 
 # build the javascript client
-cd bronion
+cd lightnion
 cd js-client
 make # you'll need a java, tested with java-10-openjdk
 #
 # you have:
-# - lighttor.js         # /src/* concatenated with config.mk SOURCES order
-# - lighttor.min.js     # minified version (using google closure compiler)
+# - lightnion.js         # /src/* concatenated with config.mk SOURCES order
+# - lightnion.min.js     # minified version (using google closure compiler)
 # - sjcl.js             # sjcl patched build (see jscl.patch)
-# - lighttor.bundle.js  # all-inclusive file, dependencies+minified
+# - lightnion.bundle.js  # all-inclusive file, dependencies+minified
 
 
 # run the proxy, run with chutney and serve static files
-cd bronion
-python -m lighttor.proxy -vvv --purge-cache \
+cd lightnion
+python -m lightnion.proxy -vvv --purge-cache \
     --static ./js-client/demo/: ./js-client/evaluation/:
-# --purge-cache purges the cache (same as rm -rf .lighttor-cache.d
+# --purge-cache purges the cache (same as rm -rf .lightnion-cache.d
 # --static path:root serves files in path to url prefix root
 #
 # for example, we have:
 # --static ./js-client/demo/:
-#   :- now ./js-client/demo/lighttor.bundle.js is at /lighttor.bundle.js
+#   :- now ./js-client/demo/lightnion.bundle.js is at /lightnion.bundle.js
 # --static ./js-client/evaluation/:
 #   :- now ./js-client/evaluation/per-message.html is at /per-message.html
 # --static ./js-client/demo/.dev/:.dev
@@ -141,7 +141,7 @@ $BROWSER http://localhost:4990/fast.html # 34l – clock time of open/fast
 $BROWSER http://localhost:4990/auth.html # 39l – authenticate proxy
 # You'll need:
 #  - to restart the proxy with --auth-enabled
-#  - copy the content of bronion/.lighttor-auth.d/suffix
+#  - copy the content of lightnion/.lightnion-auth.d/suffix
 #  - paste it
 #
 # the auth channel creation implies fast channel creation.
@@ -157,7 +157,7 @@ $BROWSER http://localhost:4990/loop.html # 122l – python tools/loop.py # serve
 
 
 # evaluation
-cd bronion
+cd lightnion
 source venv/bin/activate
 python tools/loop.py # in a separate window, keep it running
 pip install numpy
@@ -168,7 +168,7 @@ $BROWSER http://localhost:4990/per_circuit.html # prints per-circuit latency
 
 # re-run the proxy before doing last demo^W magic tricks
 ./start-local-relay.sh # in a separate window, keep it running
-python -m lighttor.proxy -vvv -s 127.0.0.1:9050 -c 8000 \
+python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000 \
     --static ./js-client/demo/:/
 
 
@@ -196,11 +196,11 @@ $BROWSER http://localhost:4990/tls.html # 121l – unholy TLS, return two times
 #
 
 # purge cache when switching networks
-rm -rf .lighttor-cache.d # purge cache when switching between networks
+rm -rf .lightnion-cache.d # purge cache when switching between networks
 
 # RuntimeError: Missing entry: ['flavor', 'http']
 pkill -f tor # ether wait or re-run your nodes
 
 # every channel creation fails inexplicably
-pkill -f lighttor.proxy # either wait self-diagnosis or reboot the proxy
+pkill -f lightnion.proxy # either wait self-diagnosis or reboot the proxy
 

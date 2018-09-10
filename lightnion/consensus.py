@@ -3,7 +3,7 @@ import datetime
 import binascii
 import time
 
-import lighttor as ltor
+import lightnion as lnn
 
 # TODO: remove extra (useless) checks/exceptions within this file
 
@@ -728,7 +728,7 @@ def download(state, flavor='microdesc', cache=True):
 
     if cache:
         try:
-            return state, ltor.cache.consensus.get(flavor)
+            return state, lnn.cache.consensus.get(flavor)
         except BaseException:
             pass
 
@@ -736,7 +736,7 @@ def download(state, flavor='microdesc', cache=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    state, answer = ltor.hop.directory_query(state, endpoint)
+    state, answer = lnn.hop.directory_query(state, endpoint)
 
     consensus, remaining = parse(answer, flavor=flavor)
 
@@ -744,6 +744,6 @@ def download(state, flavor='microdesc', cache=True):
         raise RuntimeError('Unable to parse downloaded consensus!')
 
     if cache:
-        ltor.cache.consensus.put(consensus)
+        lnn.cache.consensus.put(consensus)
 
     return state, consensus

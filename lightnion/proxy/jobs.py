@@ -4,8 +4,8 @@ import queue
 import base64
 import time
 
-import lighttor as ltor
-import lighttor.http
+import lightnion as lnn
+import lightnion.http
 
 # TODO: rewrite everything? (with less complexity? using asyncio only?)
 
@@ -173,7 +173,7 @@ class producer(basic):
             logging.debug('Previous path emitter successfully terminated.')
 
         addr, port = self.clerk.slave_node[0], self.clerk.control_port
-        self.child = ltor.proxy.path.fetch(tor_process=False,
+        self.child = lnn.proxy.path.fetch(tor_process=False,
             control_host=addr, control_port=port)
         self.guard = self.child.guard
 
@@ -245,8 +245,8 @@ class slave(basic):
             logging.debug('Previous slave link successfully terminated.')
 
         addr, port = self.clerk.slave_node
-        self.link = ltor.link.initiate(addr, port)
-        self.circ = ltor.create.fast(self.link)
+        self.link = lnn.link.initiate(addr, port)
+        self.circ = lnn.create.fast(self.link)
         self.last = time.time()
 
         if not self.isalive(force_check=True):
@@ -255,14 +255,14 @@ class slave(basic):
     def authority(self, check_alive=True):
         if check_alive and not self.isalive():
             self.reset()
-        self.circ, self.desc = ltor.descriptors.download_authority(self.circ)
+        self.circ, self.desc = lnn.descriptors.download_authority(self.circ)
         return self.desc
 
     def descriptors(self, query, fail_on_missing=True, check_alive=True):
         if check_alive and not self.isalive():
             self.reset()
 
-        self.circ, descs = ltor.descriptors.download(self.circ, query,
+        self.circ, descs = lnn.descriptors.download(self.circ, query,
             flavor='unflavored', fail_on_missing=fail_on_missing)
         return descs
 
@@ -270,7 +270,7 @@ class slave(basic):
         if check_alive and not self.isalive():
             self.reset()
 
-        self.circ, cons = ltor.consensus.download(self.circ,
+        self.circ, cons = lnn.consensus.download(self.circ,
             flavor='unflavored')
         return cons
 
@@ -365,7 +365,7 @@ class guard(basic):
             self.clerk.consensus_getter.reset()
 
         try:
-            guard = ltor.proxy.path.convert(
+            guard = lnn.proxy.path.convert(
                 self.clerk.producer.guard,
                 consensus=self.clerk.consensus,
                 expect='list')[0]
@@ -389,7 +389,7 @@ class guard(basic):
     def authority(self, check_alive=True):
         if check_alive and not self.isalive():
             self.reset()
-        self.circ, desc = ltor.descriptors.download_authority(self.circ)
+        self.circ, desc = lnn.descriptors.download_authority(self.circ)
         return desc
 
     def reset(self):
@@ -402,10 +402,10 @@ class guard(basic):
 
         # TODO: link authentication instead of NTOR handshakes!
         addr, port = router['address'], router['orport']
-        self.link = ltor.link.initiate(address=addr, port=port)
+        self.link = lnn.link.initiate(address=addr, port=port)
 
         self.desc = self.clerk.slave.descriptors(router)[0]
-        self.circ = ltor.create.ntor(self.link, self.desc)
+        self.circ = lnn.create.ntor(self.link, self.desc)
 
         self.last = time.time()
         self.used = None
@@ -529,7 +529,7 @@ class create(ordered):
         if self.alive_job_id is None:
             logging.info('Handshaking with guard to check liveness...')
             try:
-                data, self.alive_material = ltor.http.ntor.hand(
+                data, self.alive_material = lnn.http.ntor.hand(
                     self.clerk.guard.desc, encode=False)
                 self.alive_job_id = self.put(data)
             except expired:
@@ -547,7 +547,7 @@ class create(ordered):
 
         try:
             data = self.get(self.alive_job_id)
-            some = ltor.http.ntor.shake(data['ntor'], self.alive_material)
+            some = lnn.http.ntor.shake(data['ntor'], self.alive_material)
             if some is None:
                 logging.info('Handshake failed.')
                 return False
@@ -611,9 +611,9 @@ class create(ordered):
             data = identity + onion_key + data
 
         try:
-            circid, data = ltor.create.ntor_raw(
+            circid, data = lnn.create.ntor_raw(
                 self.clerk.guard.link, data, timeout=1)
-            circuit = ltor.create.circuit(circid, None)
+            circuit = lnn.create.circuit(circid, None)
             data = str(base64.b64encode(data), 'utf8')
         except BaseException as e:
             logging.debug('Got an invalid create ntor handshake: {}'.format(e))
@@ -626,7 +626,7 @@ class create(ordered):
             self.clerk.consensus_getter.reset()
 
         try:
-            middle, exit = ltor.proxy.path.convert(*self.clerk.producer.get(),
+            middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(),
                 consensus=self.clerk.consensus, expect='list')
         except expired:
             logging.debug('Unable to get a path from producer.')
@@ -687,8 +687,8 @@ class delete(basic):
         self.clerk.guard.link.unregister(circuit)
         logging.debug('Deleting circuit: {}'.format(circuit.id))
 
-        reason = ltor.cell.destroy.reason.REQUESTED
-        self.clerk.guard.link.send(ltor.cell.destroy.pack(circuit.id, reason))
+        reason = lnn.cell.destroy.reason.REQUESTED
+        self.clerk.guard.link.send(lnn.cell.destroy.pack(circuit.id, reason))
         logging.debug('Remaining circuits: {}'.format(list(
             self.clerk.guard.link.circuits)))
 
@@ -724,8 +724,8 @@ class channel(basic):
         self.link.unregister(self.circuit)
         logging.debug('Deleting channel: {}'.format(self.circuit.id))
 
-        reason = ltor.cell.destroy.reason.FINISHED
-        self.link.send(ltor.cell.destroy.pack(self.circuit.id, reason))
+        reason = lnn.cell.destroy.reason.FINISHED
+        self.link.send(lnn.cell.destroy.pack(self.circuit.id, reason))
 
         self.circuit.destroyed = True
         self.circuit.reason = reason
@@ -753,7 +753,7 @@ class channel(basic):
         return not (self._in.qsize() > 0)
 
     def send(self, cell):
-        cell = ltor.cell.header_view.write(cell, circuit_id=self.circuit.id)
+        cell = lnn.cell.header_view.write(cell, circuit_id=self.circuit.id)
         try:
             self.link.send(cell, block=False)
         except queue.Full:
@@ -763,8 +763,8 @@ class channel(basic):
     def recv(self):
         try:
             cell = self.circuit.queue.get(block=False)
-            cell = ltor.cell.header_view.write(cell,
-                circuit_id=ltor.proxy.fake_circuit_id)
+            cell = lnn.cell.header_view.write(cell,
+                circuit_id=lnn.proxy.fake_circuit_id)
             return cell
         except queue.Empty:
             return None

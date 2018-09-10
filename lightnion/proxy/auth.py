@@ -6,7 +6,7 @@ import base64
 import json
 import os
 
-import lighttor as ltor
+import lightnion as lnn
 
 class material(collections.namedtuple('material', ['pkey', 'secret'])):
     @property
@@ -22,7 +22,7 @@ class material(collections.namedtuple('material', ['pkey', 'secret'])):
         data = bytes(json.dumps(data), 'utf8')
         client = base64.b64decode(client)
 
-        material, msg = ltor.crypto.ntor.server(self.pkey, self.secret,
+        material, msg = lnn.crypto.ntor.server(self.pkey, self.secret,
             self.secret + self.public + client, length=92)
 
         box = nacl.secret.SecretBox(material[:32])

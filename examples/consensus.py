@@ -1,4 +1,4 @@
-import lighttor as ltor
+import lightnion as lnn
 
 import argparse
 
@@ -9,10 +9,10 @@ if __name__ == "__main__":
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    link = lnn.link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 
-    endpoint = ltor.create.fast(link)
+    endpoint = lnn.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
@@ -25,10 +25,10 @@ if __name__ == "__main__":
             len(consensus['footer']['directory-signatures'])), end='\n')
 
     # downloading unflavored consensus
-    endpoint, unflavored = ltor.consensus.download(endpoint,
+    endpoint, unflavored = lnn.consensus.download(endpoint,
         flavor='unflavored')
     pretty_print(unflavored)
 
     # downloading microdesc consensus
-    endpoint, microdesc = ltor.consensus.download(endpoint, flavor='microdesc')
+    endpoint, microdesc = lnn.consensus.download(endpoint, flavor='microdesc')
     pretty_print(microdesc)

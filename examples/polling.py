@@ -1,6 +1,6 @@
-import lighttor as ltor
-import lighttor.proxy
-import lighttor.http
+import lightnion as lnn
+import lightnion.proxy
+import lightnion.http
 
 import argparse
 
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     print('Building a HTTP channel powered by polling...')
     endpoint = sys_argv.host, sys_argv.port
-    state, channel = ltor.http.client(*endpoint, io=ltor.http.polling.io)
+    state, channel = lnn.http.client(*endpoint, io=lnn.http.polling.io)
 
     print('Success!\n\nChannel {} opened with:'.format(channel.id))
     print(' - Guard is {}'.format(channel.guard['router']['nickname']))
@@ -24,15 +24,15 @@ if __name__ == "__main__":
     # send bunch of padding
     for i in range(sys_argv.padding):
         print('Send padding: {}/{}'.format(i+1, sys_argv.padding), end='\r')
-        state = ltor.hop.send(state, ltor.cell.relay.cmd.RELAY_DROP)
+        state = lnn.hop.send(state, lnn.cell.relay.cmd.RELAY_DROP)
     print('')
 
     # retrieve something
-    state, authority = ltor.descriptors.download_authority(state)
+    state, authority = lnn.descriptors.download_authority(state)
     print('\nSuccessfully retrieved exit node descriptor through channel.')
 
     # retrieve something heavier
-    state, authority = ltor.consensus.download(state, cache=False)
+    state, authority = lnn.consensus.download(state, cache=False)
     print('Successfully retrieved full consensus through channel.')
 
     # destroy the channel

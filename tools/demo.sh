@@ -7,5 +7,5 @@ cd ..
 
 # (run the proxy and serve the demo files)
 source venv/bin/activate
-PYTHONPATH="$PWD" python -m lighttor.proxy \
+PYTHONPATH="$PWD" python -m lightnion.proxy \
 --purge-cache -vvvv --static ./js-client/demo/: ./js-client/demo/.dev/:.dev

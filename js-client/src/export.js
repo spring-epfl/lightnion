@@ -1,1 +1,1 @@
-window['lighttor'] = lighttor
+window['lnn'] = lnn

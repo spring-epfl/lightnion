@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -25,7 +25,7 @@
         // cell packers
         function pack_perf(length)
         {
-            var data = new Uint8Array(lighttor.relay.data_len)
+            var data = new Uint8Array(lnn.relay.data_len)
             var view = new DataView(data.buffer)
 
             view.setUint32(0, Math.floor(performance.now() / 10), false)
@@ -58,7 +58,7 @@
             while (out < nb_measured)
             {
                 out += 1
-                tcp.send(pack_perf(lighttor.relay.data_len))
+                tcp.send(pack_perf(lnn.relay.data_len))
 
                 // (only using setTimeout is not precise enough)
                 var current = performance.now() - time_start
@@ -76,7 +76,7 @@
             document.getElementById('run').innerText = (
                 run + '/' + target_runs + ' run')
             document.getElementById('per').innerText = (
-                Math.floor(per / lighttor.relay.data_len)
+                Math.floor(per / lnn.relay.data_len)
                 + '/' + nb_measured + ' inbound')
             document.getElementById('out').innerText = (
                 out + '/' + nb_measured + ' outbound')
@@ -100,13 +100,13 @@
             per = 0
             everything = []
 
-            var channel = lighttor.fast('localhost', 4990, function(endpoint)
+            var channel = lnn.fast('localhost', 4990, function(endpoint)
             {
-                if (endpoint.state != lighttor.state.success)
+                if (endpoint.state != lnn.state.success)
                     return
 
                 // create the stream
-                lighttor.stream.tcp(
+                lnn.stream.tcp(
                     endpoint, '127.0.0.1', accept_port, handler)
 
             })
@@ -115,7 +115,7 @@
         function handler(request)
         {
             // measure time *after* circuit negotiation
-            if (request.state == lighttor.state.created)
+            if (request.state == lnn.state.created)
             {
                 time_start = performance.now()
 
@@ -123,7 +123,7 @@
                 setTimeout(send_load, 1000 / target_load, request)
             }
 
-            if (request.state == lighttor.state.pending)
+            if (request.state == lnn.state.pending)
             {
                 var data = request.recv()
                 if (data.length == 0)
@@ -131,7 +131,7 @@
                 per += data.length
 
                 // measure only aligned, full cells
-                if (data.length == lighttor.relay.data_len)
+                if (data.length == lnn.relay.data_len)
                 {
                     var last = unpack_perf(data)
                     if (last != null)
@@ -139,7 +139,7 @@
                 }
 
                 // terminate the run
-                if (per >= nb_measured * lighttor.relay.data_len)
+                if (per >= nb_measured * lnn.relay.data_len)
                 {
                     time_total.push(performance.now() - time_start)
                     setTimeout(start_run, restart_lat)

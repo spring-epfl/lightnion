@@ -1,4 +1,4 @@
-import lighttor as ltor
+import lightnion as lnn
 
 import argparse
 
@@ -9,6 +9,6 @@ if __name__ == "__main__":
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = ltor.link.initiate(sys_argv.addr, sys_argv.port)
+    link = lnn.link.initiate(sys_argv.addr, sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
     link.close()

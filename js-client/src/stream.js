@@ -1,5 +1,5 @@
-lighttor.stream = {}
-lighttor.stream.backend = function(error)
+lnn.stream = {}
+lnn.stream.backend = function(error)
 {
     var sendme = function(cell, endpoint)
     {
@@ -29,7 +29,7 @@ lighttor.stream.backend = function(error)
     return backend
 }
 
-lighttor.stream.handler = function(endpoint)
+lnn.stream.handler = function(endpoint)
 {
     var cell = endpoint.io.recv()
     for (; cell !== undefined; cell = endpoint.io.recv())
@@ -40,7 +40,7 @@ lighttor.stream.handler = function(endpoint)
             continue
         }
 
-        cell = lighttor.onion.peel(endpoint, cell)
+        cell = lnn.onion.peel(endpoint, cell)
         if (cell == null)
         {
             console.log("Got invalid cell, dropped.")
@@ -64,7 +64,7 @@ lighttor.stream.handler = function(endpoint)
         endpoint.stream.smwindow -= 1
         if (endpoint.stream.smwindow < 900)
         {
-            endpoint.io.send(lighttor.onion.build(endpoint, 'sendme'))
+            endpoint.io.send(lnn.onion.build(endpoint, 'sendme'))
             endpoint.stream.smwindow += 100
         }
 
@@ -72,14 +72,14 @@ lighttor.stream.handler = function(endpoint)
         handle.smwindow -= 1
         if (handle.smwindow < 450)
         {
-            cell = lighttor.onion.build(endpoint, 'sendme', handle.id)
+            cell = lnn.onion.build(endpoint, 'sendme', handle.id)
             endpoint.io.send(cell)
             handle.smwindow += 50
         }
     }
 }
 
-lighttor.stream.raw = function(endpoint, handler)
+lnn.stream.raw = function(endpoint, handler)
 {
     var request = {
         id: null,
@@ -87,7 +87,7 @@ lighttor.stream.raw = function(endpoint, handler)
         cell: null,
         send: function(cmd, data)
         {
-            var cell = lighttor.onion.build(
+            var cell = lnn.onion.build(
                 request.endpoint, cmd, request.id, data)
             endpoint.io.send(cell)
         },
@@ -97,21 +97,21 @@ lighttor.stream.raw = function(endpoint, handler)
             request.data = []
             return data
         },
-        state: lighttor.state.started,
+        state: lnn.state.started,
         smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
             if (cell.cmd == "connected")
-                request.state = lighttor.state.created
+                request.state = lnn.state.created
             if (cell.cmd == "end")
-                request.state = lighttor.state.success
+                request.state = lnn.state.success
 
             request.data.push(cell)
             handler(request)
 
             if (cell.cmd == "connected")
-                request.state = lighttor.state.pending
+                request.state = lnn.state.pending
         }
     }
 
@@ -120,7 +120,7 @@ lighttor.stream.raw = function(endpoint, handler)
     return request
 }
 
-lighttor.stream.dir = function(endpoint, path, handler)
+lnn.stream.dir = function(endpoint, path, handler)
 {
     var request = {
         id: null,
@@ -133,46 +133,46 @@ lighttor.stream.dir = function(endpoint, path, handler)
             request.data = ""
             return data
         },
-        state: lighttor.state.started,
+        state: lnn.state.started,
         smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
             if (cell.cmd == "connected")
             {
-                request.state = lighttor.state.created
+                request.state = lnn.state.created
                 handler(request)
-                request.state = lighttor.state.pending
+                request.state = lnn.state.pending
             }
             if (cell.cmd == "end")
             {
-                request.state = lighttor.state.success
+                request.state = lnn.state.success
                 handler(request)
             }
             if (cell.cmd != "data")
                 return
 
-            request.data += lighttor.enc.utf8(cell.data)
+            request.data += lnn.enc.utf8(cell.data)
             handler(request)
         }
     }
 
     var id = endpoint.stream.register(request)
-    var cell = lighttor.onion.build(endpoint, "begin_dir", id)
+    var cell = lnn.onion.build(endpoint, "begin_dir", id)
     endpoint.io.send(cell)
 
     var data = "GET " + path + " HTTP/1.0\r\n"
     data += "Accept-Encoding: identity\r\n\r\n"
-    data = lighttor.dec.utf8(data)
+    data = lnn.dec.utf8(data)
 
-    cell = lighttor.onion.build(endpoint, "data", id, data)
+    cell = lnn.onion.build(endpoint, "data", id, data)
     endpoint.io.send(cell)
 
     handler(request)
     return request
 }
 
-lighttor.stream.tcp = function(endpoint, host, port, handler)
+lnn.stream.tcp = function(endpoint, host, port, handler)
 {
     var request = {
         id: null,
@@ -181,19 +181,19 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
         send: function(data)
         {
             if (typeof(data) == "string")
-                data = lighttor.dec.utf8(data)
+                data = lnn.dec.utf8(data)
 
-            var payload = new Uint8Array(lighttor.relay.data_len)
+            var payload = new Uint8Array(lnn.relay.data_len)
             while (data.length > payload.length)
             {
                 payload.set(data.slice(0, payload.length), 0)
                 data = data.slice(payload.length)
 
-                var cell = lighttor.onion.build(
+                var cell = lnn.onion.build(
                     request.endpoint, "data", request.id, payload)
                 endpoint.io.send(cell)
             }
-            var cell = lighttor.onion.build(
+            var cell = lnn.onion.build(
                     request.endpoint, "data", request.id, data)
             endpoint.io.send(cell)
         },
@@ -203,15 +203,15 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
             request.data = new Uint8Array(0)
             return data
         },
-        state: lighttor.state.started,
+        state: lnn.state.started,
         smwindow: null,
         endpoint: endpoint,
         callback: function(cell)
         {
             if (cell.cmd == "connected")
-                request.state = lighttor.state.created
+                request.state = lnn.state.created
             if (cell.cmd == "end")
-                request.state = lighttor.state.success
+                request.state = lnn.state.success
             if (cell.cmd == "data")
             {
                 var data = request.data
@@ -222,14 +222,14 @@ lighttor.stream.tcp = function(endpoint, host, port, handler)
 
             handler(request)
             if (cell.cmd == "connected")
-                request.state = lighttor.state.pending
+                request.state = lnn.state.pending
         }
     }
 
     var id = endpoint.stream.register(request)
 
-    var data = lighttor.relay.begin(host, port)
-    var cell = lighttor.onion.build(endpoint, "begin", id, data)
+    var data = lnn.relay.begin(host, port)
+    var cell = lnn.onion.build(endpoint, "begin", id, data)
     endpoint.io.send(cell)
 
     handler(request)

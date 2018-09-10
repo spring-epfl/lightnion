@@ -4,7 +4,7 @@ import io
 
 import nacl.public
 
-import lighttor as ltor
+import lightnion as lnn
 
 def circuit(state, descriptor):
     onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
@@ -13,32 +13,32 @@ def circuit(state, descriptor):
     addr = descriptor['router']['address']
     port = descriptor['router']['orport']
 
-    eph_key, hdata = ltor.crypto.ntor.hand(identity, onion_key)
+    eph_key, hdata = lnn.crypto.ntor.hand(identity, onion_key)
 
-    payload = ltor.cell.relay.extend2.pack(
+    payload = lnn.cell.relay.extend2.pack(
         hdata, [(addr, port)], [identity, eidentity])
 
-    state = ltor.hop.send(state,
-        ltor.cell.relay.cmd.RELAY_EXTEND2, payload.raw, stream_id=0)
+    state = lnn.hop.send(state,
+        lnn.cell.relay.cmd.RELAY_EXTEND2, payload.raw, stream_id=0)
 
-    state, cells = ltor.hop.recv(state, once=True)
+    state, cells = lnn.hop.recv(state, once=True)
     if not len(cells) == 1:
         raise RuntimeError('Expected exactly one cell, got: {}'.format(cells))
 
-    if not cells[0].relay.cmd == ltor.cell.relay.cmd.RELAY_EXTENDED2:
+    if not cells[0].relay.cmd == lnn.cell.relay.cmd.RELAY_EXTENDED2:
         raise RuntimeError('Expected EXTENDED2, got {} here: {}'.format(
             cells[0].relay.cmd, cell.relay.truncated))
 
-    payload = ltor.cell.relay.extended2.payload(cells[0].relay.data)
+    payload = lnn.cell.relay.extended2.payload(cells[0].relay.data)
     if not payload.valid:
         raise RuntimeError('Invalid EXTENDED2 payload: {}'.format(
             payload.truncated))
 
-    raw_material = ltor.crypto.ntor.shake(eph_key, payload.data, identity,
+    raw_material = lnn.crypto.ntor.shake(eph_key, payload.data, identity,
         onion_key, length=92)
 
-    material = ltor.crypto.ntor.kdf(raw_material)
-    extended = ltor.create.circuit(state.circuit.id, material)
+    material = lnn.crypto.ntor.kdf(raw_material)
+    extended = lnn.create.circuit(state.circuit.id, material)
 
-    state.wrap(ltor.onion.state(state.link, extended))
+    state.wrap(lnn.onion.state(state.link, extended))
     return state

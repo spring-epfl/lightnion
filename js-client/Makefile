@@ -1,14 +1,14 @@
 include config.mk
 
-all: lighttor.min.js lighttor.bundle.js
+all: lightnion.min.js lightnion.bundle.js
 
-lighttor.js:
+lightnion.js:
 	cat $(SOURCES) > $@
 
-lighttor.min.js: lighttor.js
+lightnion.min.js: lightnion.js
 	$(COMPRESSOR) $< > $@
 
-lighttor.bundle.js: lighttor.min.js $(BUNDLES)
+lightnion.bundle.js: lightnion.min.js $(BUNDLES)
 
 sjcl.js:
 	cp sjcl.patch sjcl
@@ -17,25 +17,25 @@ sjcl.js:
 	cd sjcl && git reset --hard && rm sjcl.patch
 
 cleanup-bundle:
-	rm -f ./lighttor.bundle.js
+	rm -f ./lightnion.bundle.js
 
-lighttor-bundle:
-	cat lighttor.min.js >> ./lighttor.bundle.js
+lightnion-bundle:
+	cat lightnion.min.js >> ./lightnion.bundle.js
 
-lighttor-bundle-license:
-	echo -e '\n\n--\n\nLICENSE lighttor\n\n--\n\n' >> $(BUNDLELICENSE)
+lightnion-bundle-license:
+	echo -e '\n\n--\n\nLICENSE lightnion\n\n--\n\n' >> $(BUNDLELICENSE)
 	cat ../LICENSE.txt* >> $(BUNDLELICENSE)
 
 sjcl-bundle: sjcl.js
-	cat sjcl.js >> ./lighttor.bundle.js
+	cat sjcl.js >> ./lightnion.bundle.js
 
 sjcl-bundle-license:	
 	echo -e '\n\n--\n\nLICENSE sjcl\n\n--\n\n' >> $(BUNDLELICENSE)
 	cat sjcl/LICENSE.txt >> $(BUNDLELICENSE)
 
 tweetnacl-bundle:
-	cat tweetnacl-js/nacl-fast.min.js >> ./lighttor.bundle.js
-	cat tweetnacl-util-js/nacl-util.min.js >> ./lighttor.bundle.js
+	cat tweetnacl-js/nacl-fast.min.js >> ./lightnion.bundle.js
+	cat tweetnacl-util-js/nacl-util.min.js >> ./lightnion.bundle.js
 
 tweetnacl-bundle-license:
 	echo -e '\n\n--\n\nLICENSE tweetnacl-js\n\n--\n\n' >> $(BUNDLELICENSE)
@@ -48,5 +48,5 @@ clean:
 
 mr_proper: clean
 	rm -f $(BUNDLELICENSE)
-	rm -f lighttor.js lighttor.min.js
-	rm -f lighttor.bundle.js lighttor.bundle.min.js
+	rm -f lightnion.js lightnion.min.js
+	rm -f lightnion.bundle.js lightnion.bundle.min.js

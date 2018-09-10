@@ -1,8 +1,8 @@
 import base64
 import hashlib
 
-import lighttor as ltor
-from lighttor import consensus
+import lightnion as lnn
+from lightnion import consensus
 
 def compute_descriptor_digest(fields, descriptors, entry, flavor):
     """
@@ -403,7 +403,7 @@ def download(state,
         cached_digests = []
         for digest in digests:
             try:
-                descriptor = ltor.cache.descriptors.get(flavor, digest)
+                descriptor = lnn.cache.descriptors.get(flavor, digest)
                 descriptors.append(descriptor)
                 cached_digests.append(digest)
             except BaseException as e:
@@ -412,7 +412,7 @@ def download(state,
 
     # retrieve descriptors via digests
     for query in batch_query(partial_digests, endpoint, separator):
-        state, answer = ltor.hop.directory_query(state, query)
+        state, answer = lnn.hop.directory_query(state, query)
 
         if answer is None or len(answer) == 0:
             continue
@@ -452,12 +452,12 @@ def download(state,
 
     if cache:
         for descriptor in descriptors:
-            ltor.cache.descriptors.put(descriptor)
+            lnn.cache.descriptors.put(descriptor)
 
     return state, descriptors
 
 def download_authority(state):
-    state, answer = ltor.hop.directory_query(state, '/tor/server/authority')
+    state, answer = lnn.hop.directory_query(state, '/tor/server/authority')
     if answer is None or len(answer) == 0:
         return state, None
 

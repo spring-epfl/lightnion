@@ -3,7 +3,7 @@ import socket
 import queue
 import ssl
 
-import lighttor as ltor
+import lightnion as lnn
 
 class link:
     """An established Tor link, send and receive messages in separate threads.
@@ -13,12 +13,12 @@ class link:
 
     Usage::
 
-      >>> import lighttor as ltor
-      >>> link = ltor.link.initiate('127.0.0.1', 5000)
+      >>> import lightnion as lnn
+      >>> link = lnn.link.initiate('127.0.0.1', 5000)
       >>> link.version
       5
-      >>> link.send(ltor.cell.create_fast.pack(2**31))
-      >>> ltor.cell.created_fast.cell(link.get(circuit_id=2**31)).valid
+      >>> link.send(lnn.cell.create_fast.pack(2**31))
+      >>> lnn.cell.created_fast.cell(link.get(circuit_id=2**31)).valid
       True
       >>> link.close()
     """
@@ -29,7 +29,7 @@ class link:
         self.io = io
 
         self.circuits = dict()
-        self.register(ltor.create.circuit(0, None))
+        self.register(lnn.create.circuit(0, None))
 
     def pull(self, block=True):
         try:
@@ -42,15 +42,15 @@ class link:
         #
         # We doesn't handle VERSIONS cells with shorter circuit_id.
         #
-        header = ltor.cell.header(payload)
+        header = lnn.cell.header(payload)
         if not header.circuit_id in self.circuits:
             raise RuntimeError('Got circuit {} outside {}, cell: {}'.format(
                 header.circuit_id, list(self.circuits), payload))
 
         # TODO: property handle DESTROY cells
         circuit = self.circuits[header.circuit_id]
-        if header.cmd is ltor.cell.cmd.DESTROY:
-            cell = ltor.cell.destroy.cell(payload)
+        if header.cmd is lnn.cell.cmd.DESTROY:
+            cell = lnn.cell.destroy.cell(payload)
             if not cell.valid:
                 raise RuntimeError('Got invalid DESTROY cell: {}'.format(
                     cell.truncated))
@@ -128,8 +128,8 @@ def negotiate_version(peer, versions, *, as_initiator):
     :param bool as_initiator: send VERSIONS cell first.
     """
     if as_initiator:
-        ltor.cell.versions.send(peer, ltor.cell.versions.pack(versions))
-    vercell = ltor.cell.versions.recv(peer)
+        lnn.cell.versions.send(peer, lnn.cell.versions.pack(versions))
+    vercell = lnn.cell.versions.recv(peer)
 
     common_versions = list(set(vercell.versions).intersection(versions))
     if len(common_versions) < 1:
@@ -142,7 +142,7 @@ def negotiate_version(peer, versions, *, as_initiator):
             version)
 
     if not as_initiator:
-        ltor.cell.versions.send(peer, ltor.cell.versions.pack(versions))
+        lnn.cell.versions.send(peer, lnn.cell.versions.pack(versions))
     return version
 
 def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
@@ -193,12 +193,12 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
     version = negotiate_version(peer, versions, as_initiator=True)
 
     # Wraps with socket.io
-    peer = ltor.socket.io(peer)
+    peer = lnn.socket.io(peer)
 
     # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
-    certs_cell = ltor.cell.certs.cell(peer.recv())
-    auth_cell = ltor.cell.challenge.cell(peer.recv())
-    netinfo_cell = ltor.cell.netinfo.cell(peer.recv())
+    certs_cell = lnn.cell.certs.cell(peer.recv())
+    auth_cell = lnn.cell.challenge.cell(peer.recv())
+    netinfo_cell = lnn.cell.netinfo.cell(peer.recv())
 
     # Sanity checks
     if not certs_cell.valid:
@@ -210,5 +210,5 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
         raise RuntimeError('Invalid NETINFO cell: {}'.format(netinfo_cell.raw))
 
     # Send our NETINFO to say "we don't want to authenticate"
-    peer.send(ltor.cell.netinfo.pack(address))
+    peer.send(lnn.cell.netinfo.pack(address))
     return link(peer, version)

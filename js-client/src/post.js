@@ -1,5 +1,5 @@
-lighttor.post = {}
-lighttor.post.create = function(endpoint, success, error)
+lnn.post = {}
+lnn.post.create = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -9,7 +9,7 @@ lighttor.post.create = function(endpoint, success, error)
             var info = JSON.parse(rq.responseText)
             if (endpoint.auth != null)
             {
-                info = lighttor.ntor.auth(endpoint, info["auth"], info["data"])
+                info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
             }
 
             endpoint.id = info["id"]
@@ -19,21 +19,21 @@ lighttor.post.create = function(endpoint, success, error)
             if (endpoint.fast)
             {
                 endpoint.guard = info["guard"]
-                endpoint.material.identity = lighttor.dec.base64(
+                endpoint.material.identity = lnn.dec.base64(
                     info["guard"].router.identity + "=")
-                endpoint.material.onionkey = lighttor.dec.base64(
+                endpoint.material.onionkey = lnn.dec.base64(
                     info["guard"]["ntor-onion-key"])
             }
 
-            var material = lighttor.ntor.shake(endpoint, info["ntor"])
+            var material = lnn.ntor.shake(endpoint, info["ntor"])
             if (material == null)
                 throw "Invalid guard handshake."
 
-            material = lighttor.ntor.slice(material)
+            material = lnn.ntor.slice(material)
             endpoint.material = material
 
-            endpoint.forward = lighttor.onion.forward(endpoint)
-            endpoint.backward = lighttor.onion.backward(endpoint)
+            endpoint.forward = lnn.onion.forward(endpoint)
+            endpoint.backward = lnn.onion.backward(endpoint)
             if (success !== undefined)
                 success(endpoint)
         }
@@ -45,14 +45,14 @@ lighttor.post.create = function(endpoint, success, error)
 
     var payload = null
     if (endpoint.fast)
-        payload = lighttor.ntor.fast(endpoint)
+        payload = lnn.ntor.fast(endpoint)
     else
-        payload = lighttor.ntor.hand(endpoint)
+        payload = lnn.ntor.hand(endpoint)
 
     payload = {ntor: payload}
     if (endpoint.auth != null)
     {
-        payload["auth"] = lighttor.enc.base64(endpoint.auth.ntor.publicKey)
+        payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)
     }
     payload = JSON.stringify(payload)
 
@@ -61,7 +61,7 @@ lighttor.post.create = function(endpoint, success, error)
     rq.send(payload)
 }
 
-lighttor.post.channel = function(endpoint, success, error)
+lnn.post.channel = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -110,17 +110,17 @@ lighttor.post.channel = function(endpoint, success, error)
     rq.send(JSON.stringify({cells: endpoint.io.outcoming}))
 }
 
-lighttor.post.extend = function(endpoint, descriptor, success, error)
+lnn.post.extend = function(endpoint, descriptor, success, error)
 {
-    var hand = lighttor.ntor.hand(endpoint, descriptor, false)
+    var hand = lnn.ntor.hand(endpoint, descriptor, false)
 
     var eidentity = descriptor["identity"]["master-key"] // (assuming ed25519)
     var identity = endpoint.material.identity
     var addr = descriptor["router"]["address"]
     var port = descriptor["router"]["orport"]
 
-    var data = lighttor.relay.extend(hand, addr, port, identity, eidentity)
-    var cell = lighttor.onion.build(endpoint, "extend2", 0, data)
+    var data = lnn.relay.extend(hand, addr, port, identity, eidentity)
+    var cell = lnn.onion.build(endpoint, "extend2", 0, data)
 
     var extend_error = error
     var extend_success = success
@@ -130,7 +130,7 @@ lighttor.post.extend = function(endpoint, descriptor, success, error)
     {
         endpoint.io.handler = normal_handler
 
-        var cell = lighttor.onion.peel(endpoint, endpoint.io.recv())
+        var cell = lnn.onion.peel(endpoint, endpoint.io.recv())
         if (cell == null || cell.cmd != "extended2")
         {
             if (extend_error !== undefined)
@@ -142,15 +142,15 @@ lighttor.post.extend = function(endpoint, descriptor, success, error)
         var length = view.getUint16(0, false)
         var data = cell.data.slice(2, 2+length)
 
-        var material = lighttor.ntor.shake(endpoint, data, false)
-        material = lighttor.ntor.slice(material)
+        var material = lnn.ntor.shake(endpoint, data, false)
+        material = lnn.ntor.slice(material)
         endpoint.material = material
 
         if (material == null && extend_error !== undefined)
             return extend_error(endpoint)
 
-        endpoint.forward = lighttor.onion.forward(endpoint)
-        endpoint.backward = lighttor.onion.backward(endpoint)
+        endpoint.forward = lnn.onion.forward(endpoint)
+        endpoint.backward = lnn.onion.backward(endpoint)
 
         if (extend_success !== undefined)
             extend_success(endpoint)

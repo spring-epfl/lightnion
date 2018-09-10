@@ -9,8 +9,8 @@ import time
 import websockets
 import asyncio
 
-import lighttor as ltor
-import lighttor.proxy
+import lightnion as lnn
+import lightnion.proxy
 
 debug = True
 tick_rate = 0.01 # (sleeps when nothing to do)
@@ -20,29 +20,29 @@ class clerk(threading.Thread):
     def __init__(self, slave_node, control_port, auth_dir=None):
         super().__init__()
         logging.info('Bootstrapping clerk.')
-        self.crypto = ltor.proxy.parts.crypto()
+        self.crypto = lnn.proxy.parts.crypto()
         self.dead = False
 
         self.auth = None
         self.auth_dir = auth_dir
         if auth_dir is not None:
             try:
-                self.auth = ltor.proxy.auth.getpkey(auth_dir)
+                self.auth = lnn.proxy.auth.getpkey(auth_dir)
             except FileNotFoundError:
-                ltor.proxy.auth.genpkey(auth_dir)
-                self.auth = ltor.proxy.auth.getpkey(auth_dir)
+                lnn.proxy.auth.genpkey(auth_dir)
+                self.auth = lnn.proxy.auth.getpkey(auth_dir)
             logging.debug('Note: authentication suffix is {}'.format(
                 self.auth.suffix))
 
         self.control_port = control_port
         self.slave_node = slave_node
 
-        self.producer           = ltor.proxy.jobs.producer(self)
-        self.slave              = ltor.proxy.jobs.slave(self)
-        self.consensus_getter   = ltor.proxy.jobs.consensus(self)
-        self.guard              = ltor.proxy.jobs.guard(self)
-        self.create             = ltor.proxy.jobs.create(self)
-        self.delete             = ltor.proxy.jobs.delete(self)
+        self.producer           = lnn.proxy.jobs.producer(self)
+        self.slave              = lnn.proxy.jobs.slave(self)
+        self.consensus_getter   = lnn.proxy.jobs.consensus(self)
+        self.guard              = lnn.proxy.jobs.guard(self)
+        self.create             = lnn.proxy.jobs.create(self)
+        self.delete             = lnn.proxy.jobs.delete(self)
 
         self.jobs = [
             self.slave,
@@ -88,7 +88,7 @@ class clerk(threading.Thread):
             if job.isfresh():
                 continue
 
-            for _ in range(ltor.proxy.jobs.refresh_batches):
+            for _ in range(lnn.proxy.jobs.refresh_batches):
                 if job.refresh():
                     bored = False
                     continue
@@ -125,7 +125,7 @@ async def channel_input(websocket, channel):
 
             await asyncio.sleep(0)
             continue
-        except ltor.proxy.jobs.expired:
+        except lnn.proxy.jobs.expired:
             pass
 
         await asyncio.sleep(async_rate / 2)
@@ -137,7 +137,7 @@ async def channel_output(websocket, channel):
             if cells is None:
                 try:
                     cells = channel.get(timeout=0)
-                except ltor.proxy.jobs.expired:
+                except lnn.proxy.jobs.expired:
                     channel.put([], timeout=async_rate/4)
                     cells = channel.get(timeout=async_rate/4)
             for cell in cells:
@@ -148,7 +148,7 @@ async def channel_output(websocket, channel):
 
             await asyncio.sleep(0)
             continue
-        except ltor.proxy.jobs.expired:
+        except lnn.proxy.jobs.expired:
             pass
 
         await asyncio.sleep(async_rate / 2)
@@ -189,20 +189,20 @@ class sockets(threading.Thread):
         asyncio.get_event_loop().run_forever()
 
 app = flask.Flask(__name__)
-url = ltor.proxy.base_url
+url = lnn.proxy.base_url
 
 @app.route(url + '/consensus')
 def get_consensus():
     try:
         return flask.jsonify(app.clerk.consensus_getter.perform()), 200
-    except ltor.proxy.jobs.expired:
+    except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 @app.route(url + '/guard')
 def get_guard():
     try:
         return flask.jsonify(app.clerk.guard.perform()), 200
-    except ltor.proxy.jobs.expired:
+    except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 @app.route(url + '/channels', methods=['POST'])
@@ -223,7 +223,7 @@ def create_channel():
             data = app.clerk.auth.perform(auth, data)
 
         return flask.jsonify(data), 201 # Created
-    except ltor.proxy.jobs.expired:
+    except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 @app.route(url + '/channels/<uid>', methods=['POST'])
@@ -236,16 +236,16 @@ def write_channel(uid):
     except RuntimeError:
         flask.abort(404)
 
-    if len(flask.request.json['cells']) > ltor.proxy.jobs.request_max_cells:
+    if len(flask.request.json['cells']) > lnn.proxy.jobs.request_max_cells:
         flask.abort(400)
 
     cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
-    if any([len(cell) > ltor.constants.full_cell_len for cell in cells]):
+    if any([len(cell) > lnn.constants.full_cell_len for cell in cells]):
         flask.abort(400)
 
     try:
         return flask.jsonify(dict(cells=channel.perform(cells))), 201
-    except ltor.proxy.jobs.expired:
+    except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 @app.route(url + '/channels/<uid>', methods=['DELETE'])
@@ -258,13 +258,13 @@ def delete_channel(uid):
     circuit = channel.circuit
     try:
         return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
-    except ltor.proxy.jobs.expired:
+    except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 def main(port, slave_node, control_port, purge_cache,
     static_files=None, auth_dir=None):
     if purge_cache:
-        ltor.cache.purge()
+        lnn.cache.purge()
 
     if static_files is not None:
         from werkzeug import SharedDataMiddleware

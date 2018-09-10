@@ -4,7 +4,7 @@ import base64
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM as gcm
 from cryptography.exceptions import InvalidTag
 
-import lighttor as ltor
+import lightnion as lnn
 
 class crypto:
     def __init__(self):
@@ -12,7 +12,7 @@ class crypto:
         self.gcm = gcm(gcm.generate_key(bit_length=128))
 
     def compute_token(self, circuit_id, binding):
-        circuit_id = ltor.cell.view.uint(4).write(b'', circuit_id)
+        circuit_id = lnn.cell.view.uint(4).write(b'', circuit_id)
 
         nonce = secrets.token_bytes(12)
         token = self.gcm.encrypt(nonce, circuit_id, self.binding + binding)

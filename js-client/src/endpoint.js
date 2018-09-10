@@ -1,5 +1,5 @@
 /**
- * Create an empty endpoint object, consider using {@link lighttor.open} first.
+ * Create an empty endpoint object, consider using {@link lnn.open} first.
  *
  * @todo TODO: migrate from http+ws to https+wss
  * @todo TODO: use only one port for https+wss
@@ -8,20 +8,20 @@
  * @param {string} port (ex: 4990, 8080, 5000, 443…)
  * @return {endpoint_t}
  */
-lighttor.endpoint = function(host, port)
+lnn.endpoint = function(host, port)
 {
     var http = "http://" + host + ":" + port.toString()
-    http += lighttor.api.url
+    http += lnn.api.url
 
-    var ws = "ws://" + host + ":" + lighttor.api.ws_port
-    ws += lighttor.api.url
+    var ws = "ws://" + host + ":" + lnn.api.ws_port
+    ws += lnn.api.url
 
     /**
      * Internal object, stores API urls used for parent endpoint calls.
      *
      * <pre>
-     * Note: {@link lighttor.api.ws_port} is inlined in .ws and .socket
-     *       (used by {@link lighttor.io.socket}).
+     * Note: {@link lnn.api.ws_port} is inlined in .ws and .socket
+     *       (used by {@link lnn.io.socket}).
      * </pre>
      *
      * @interface endpoint_t~urls_t
@@ -44,33 +44,33 @@ lighttor.endpoint = function(host, port)
         consensus: http + "/consensus"}
 
     /**
-     * Captures the state of a channel, returned by {@link lighttor.open}.
+     * Captures the state of a channel, returned by {@link lnn.open}.
      *
      * @interface endpoint_t
-     * @see lighttor.endpoint
+     * @see lnn.endpoint
      *
-     * @property {lighttor.state} state         channel state
+     * @property {lnn.state} state         channel state
      * @property {io.io_t} io                   io adapter in use
      * @property {endpoint_t~urls_t} urls       static API urls in use
      * @property {stream.backend_t} stream      stream backend in use
      * @property {onion.backward_t} backward    backward cryptographic state
      * @property {onion.forward_t} forward      forward cryptographic state
      * @property {material_t|half_t} material   shared cryptographic material
-     * @property {null|half_t} auth             stores {@link lighttor.auth}
+     * @property {null|half_t} auth             stores {@link lnn.auth}
      *                                          material
-     * @property {Boolean} fast                 is {@link lighttor.fast}
+     * @property {Boolean} fast                 is {@link lnn.fast}
      *                                          in use?
      */
     var endpoint = {
         /**
-         * Host in use, as given to {@link lighttor.endpoint} factory.
+         * Host in use, as given to {@link lnn.endpoint} factory.
          *
          * @name endpoint_t#host
          * @readonly
          */
         host: host,
         /**
-         * Port in use, as given to {@link lighttor.endpoint} factory.
+         * Port in use, as given to {@link lnn.endpoint} factory.
          *
          * @name endpoint_t#port
          * @readonly
@@ -84,11 +84,11 @@ lighttor.endpoint = function(host, port)
         /**
          * Last shared cryptographic material retrieved, written by:
          * <ul>
-         *  <li> {@link lighttor.post.create}
-         *  <li> {@link lighttor.post.extend}
-         *  <li> {@link lighttor.ntor.hand}
-         *  <li> {@link lighttor.ntor.fast}
-         *  <li> {@link lighttor.ntor.auth}
+         *  <li> {@link lnn.post.create}
+         *  <li> {@link lnn.post.extend}
+         *  <li> {@link lnn.ntor.hand}
+         *  <li> {@link lnn.ntor.fast}
+         *  <li> {@link lnn.ntor.auth}
          * </ul>
          *
          * Either stores {@link material_t} or {@link half_t}.
@@ -96,14 +96,14 @@ lighttor.endpoint = function(host, port)
          * @name endpoint_t#material
          * @type {material_t|half_t}
          *
-         * @see lighttor.ntor.hand
+         * @see lnn.ntor.hand
          */
         material: null,
         forward: null,
         backward: null,
         /**
          * Identifier of the channel in used, written by successful a
-         * {@link lighttor.post.create} call.
+         * {@link lnn.post.create} call.
          * @name endpoint_t#id
          * @readonly
          * @default null
@@ -111,8 +111,8 @@ lighttor.endpoint = function(host, port)
         id: null,
         /**
          * Polling url endpoint used for polling io requests.
-         * @see lighttor.post.channel
-         * @see lighttor.io.polling
+         * @see lnn.post.channel
+         * @see lnn.io.polling
          *
          * @name endpoint_t#url
          * @readonly
@@ -120,7 +120,7 @@ lighttor.endpoint = function(host, port)
          */
         url: null,
         /**
-         * Middle and Exit nodes descriptors obtained by {@link lighttor.open}
+         * Middle and Exit nodes descriptors obtained by {@link lnn.open}
          * during channel setup.
          *
          * <pre>
@@ -133,8 +133,8 @@ lighttor.endpoint = function(host, port)
          */
         path: null,
         /**
-         * Guard descriptor obtained by {@link lighttor.open} during channel
-         * setup, written by {@link lighttor.get.guard}.
+         * Guard descriptor obtained by {@link lnn.open} during channel
+         * setup, written by {@link lnn.get.guard}.
          *
          * @name endpoint_t#guard
          * @readonly
@@ -143,7 +143,7 @@ lighttor.endpoint = function(host, port)
         guard: null,
         stream: null,
         /**
-         * Consensus obtained by {@link lighttor.get.consensus} upon request.
+         * Consensus obtained by {@link lnn.get.consensus} upon request.
          *
          * @name endpoint_t#consensus
          * @readonly

@@ -4,8 +4,8 @@ import json
 
 headers = {'Content-Type': 'application/json'}
 
-import lighttor as ltor
-import lighttor.proxy
+import lightnion as lnn
+import lightnion.proxy
 
 from . import polling, websocket, ntor
 
@@ -14,7 +14,7 @@ class channel(collections.namedtuple('channel',
     pass
 
 def client(host, port=80, *, io, prefix='http', failures=5, **kwargs):
-    base_url = '{}://{}:{}{}'.format(prefix, host, port, ltor.proxy.base_url)
+    base_url = '{}://{}:{}{}'.format(prefix, host, port, lnn.proxy.base_url)
 
     guard = None
     try:
@@ -79,19 +79,19 @@ def client(host, port=80, *, io, prefix='http', failures=5, **kwargs):
             raise RuntimeError('Invalid ntor cryptographic material?')
 
         io = io(endpoint=base_url + '/channels/' + uid, **kwargs)
-        link = ltor.link.link(io, version='http')
+        link = lnn.link.link(io, version='http')
 
-        circuit = ltor.create.circuit(ltor.proxy.fake_circuit_id, handshake)
+        circuit = lnn.create.circuit(lnn.proxy.fake_circuit_id, handshake)
         link.register(circuit)
 
-        state = ltor.onion.state(link, circuit)
+        state = lnn.onion.state(link, circuit)
 
     except BaseException as e:
         raise RuntimeError(
             'Unable craft local state with {}, reason: {}'.format(io, e))
 
     try:
-        state = ltor.extend.circuit(state, path[0])
+        state = lnn.extend.circuit(state, path[0])
 
     except BaseException as e:
         raise RuntimeError(
@@ -99,7 +99,7 @@ def client(host, port=80, *, io, prefix='http', failures=5, **kwargs):
                 path[0]['router']['nickname'], e))
 
     try:
-        state = ltor.extend.circuit(state, path[1])
+        state = lnn.extend.circuit(state, path[1])
 
     except BaseException as e:
         raise RuntimeError(

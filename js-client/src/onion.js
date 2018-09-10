@@ -1,7 +1,7 @@
-lighttor.onion = {}
-lighttor.onion.ctr = function(key)
+lnn.onion = {}
+lnn.onion.ctr = function(key)
 {
-    var key = lighttor.enc.bits(key)
+    var key = lnn.enc.bits(key)
     var aes = new sjcl.cipher.aes(key)
 
     var ctr = {
@@ -20,8 +20,8 @@ lighttor.onion.ctr = function(key)
                 var nonce = new Uint8Array(16)
                 new DataView(nonce.buffer).setUint32(12, ctr.nonce, false)
 
-                nonce = lighttor.enc.bits(nonce)
-                var pad = lighttor.dec.bits(ctr.prf.encrypt(nonce))
+                nonce = lnn.enc.bits(nonce)
+                var pad = lnn.dec.bits(ctr.prf.encrypt(nonce))
 
                 ctr.buffer.set(pad, idx)
                 ctr.nonce = ctr.nonce + 1
@@ -45,17 +45,17 @@ lighttor.onion.ctr = function(key)
     return ctr
 }
 
-lighttor.onion.sha = function(digest)
+lnn.onion.sha = function(digest)
 {
-    var digest = lighttor.enc.bits(digest)
+    var digest = lnn.enc.bits(digest)
 
     var sha = {
         hash: new sjcl.hash.sha1(),
         digest: function(data)
         {
-            sha.hash.update(lighttor.enc.bits(data))
+            sha.hash.update(lnn.enc.bits(data))
             data = new sjcl.hash.sha1(sha.hash).finalize()
-            return lighttor.dec.bits(data)
+            return lnn.dec.bits(data)
         }
     }
 
@@ -63,7 +63,7 @@ lighttor.onion.sha = function(digest)
     return sha
 }
 
-lighttor.onion.forward = function(endpoint)
+lnn.onion.forward = function(endpoint)
 {
     var early = 8
     var layers = []
@@ -76,13 +76,13 @@ lighttor.onion.forward = function(endpoint)
 
     var forward = {
         iv: 0,
-        ctr: lighttor.onion.ctr(endpoint.material.forward_key),
-        sha: lighttor.onion.sha(endpoint.material.forward_digest),
+        ctr: lnn.onion.ctr(endpoint.material.forward_key),
+        sha: lnn.onion.sha(endpoint.material.forward_digest),
         early: early, // (first 8 relay cells will be replaced by relay_early)
         layers: layers,
         encrypt: function(cell)
         {
-            if ((cell.length) != lighttor.relay.full_len)
+            if ((cell.length) != lnn.relay.full_len)
                 throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
@@ -101,7 +101,7 @@ lighttor.onion.forward = function(endpoint)
         },
         digest: function(cell)
         {
-            if ((cell.length) != lighttor.relay.full_len)
+            if ((cell.length) != lnn.relay.full_len)
                 throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
@@ -112,7 +112,7 @@ lighttor.onion.forward = function(endpoint)
     return forward
 }
 
-lighttor.onion.backward = function(endpoint)
+lnn.onion.backward = function(endpoint)
 {
     var layers = []
     if (endpoint.backward != null)
@@ -123,12 +123,12 @@ lighttor.onion.backward = function(endpoint)
 
     var backward = {
         iv: 0,
-        ctr: lighttor.onion.ctr(endpoint.material.backward_key),
-        sha: lighttor.onion.sha(endpoint.material.backward_digest),
+        ctr: lnn.onion.ctr(endpoint.material.backward_key),
+        sha: lnn.onion.sha(endpoint.material.backward_digest),
         layers: layers,
         decrypt: function(cell)
         {
-            if ((cell.length) != lighttor.relay.full_len)
+            if ((cell.length) != lnn.relay.full_len)
                 throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
@@ -141,7 +141,7 @@ lighttor.onion.backward = function(endpoint)
         },
         digest: function(cell)
         {
-            if ((cell.length) != lighttor.relay.full_len)
+            if ((cell.length) != lnn.relay.full_len)
                 throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
@@ -152,14 +152,14 @@ lighttor.onion.backward = function(endpoint)
     return backward
 }
 
-lighttor.onion.build = function(endpoint, cmd, stream_id, data)
+lnn.onion.build = function(endpoint, cmd, stream_id, data)
 {
-    var cell = lighttor.relay.pack(cmd, stream_id, data)
+    var cell = lnn.relay.pack(cmd, stream_id, data)
     cell.set(endpoint.forward.digest(cell), 10)
     return endpoint.forward.encrypt(cell)
 }
 
-lighttor.onion.peel = function(endpoint, cell)
+lnn.onion.peel = function(endpoint, cell)
 {
     var cell = endpoint.backward.decrypt(cell)
     var digest = cell.slice(10, 14)
@@ -182,13 +182,13 @@ lighttor.onion.peel = function(endpoint, cell)
     }
 
     var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
-    if (length > lighttor.relay.data_len)
+    if (length > lnn.relay.data_len)
     {
         throw "Invalid cell data length."
     }
 
     var id = new DataView(cell.slice(8, 10).buffer).getUint16(0, false)
-    var cmd = lighttor.relay.cmd[cell.slice(5, 6)[0]]
+    var cmd = lnn.relay.cmd[cell.slice(5, 6)[0]]
     var data = cell.slice(16, 16 + length)
     var relay = {cmd: cmd, stream_id: id, data: data}
     return relay

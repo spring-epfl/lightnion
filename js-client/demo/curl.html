@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
     <script>
         var ini = 'artscene.textfiles.com/asciiart/penguin'
@@ -16,9 +16,9 @@
         "use strict"
 
         var channel = null
-        lighttor.fast('localhost', 4990, function(endpoint)
+        lnn.fast('localhost', 4990, function(endpoint)
         {
-            if (endpoint.state != lighttor.state.success)
+            if (endpoint.state != lnn.state.success)
                 return
             channel = endpoint
             document.getElementById('curl').disabled = false
@@ -84,12 +84,12 @@
             var headers = null
             var handler = function(request)
             {
-                if (request.state != lighttor.state.pending)
+                if (request.state != lnn.state.pending)
                     return
 
                 var payload = request.recv()
                 rawlen += payload.length
-                data += lighttor.enc.utf8(payload)
+                data += lnn.enc.utf8(payload)
                 if (length == null)
                 {
                     if (data.match('\r\n\r\n'))
@@ -109,7 +109,7 @@
             }
 
             host = host.split(':')[0]
-            lighttor.stream.tcp(channel, host, port, handler).send(payload)
+            lnn.stream.tcp(channel, host, port, handler).send(payload)
         }
 
         var agents = [

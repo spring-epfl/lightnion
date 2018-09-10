@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -14,49 +14,48 @@
     <pre id='log'></pre>
 
     <script>
-
-        lighttor.open('localhost', 4990,
+        lnn.open('localhost', 4990,
         function(endpoint)
         {
             switch(endpoint.state)
             {
-                case lighttor.state.started:
+                case lnn.state.started:
                     document.getElementById('loaded').innerHTML = 'Started!'
                     return
-                case lighttor.state.guarded:
+                case lnn.state.guarded:
                     document.getElementById('guard').innerHTML += (
                         endpoint.guard.router.identity)
                     return
-                case lighttor.state.created:
+                case lnn.state.created:
                     document.getElementById('id').innerHTML += endpoint.id
                     document.getElementById('one').innerHTML += 'yes'
                     return
-                case lighttor.state.pending:
+                case lnn.state.pending:
                     document.getElementById('loaded').innerHTML += '!'
                     return
-                case lighttor.state.extpath:
+                case lnn.state.extpath:
                     document.getElementById('two').innerHTML += 'yes'
                     return
-                case lighttor.state.success:
+                case lnn.state.success:
                     document.getElementById('three').innerHTML += 'yes'
             }
-            lighttor.stream.dir(endpoint, '/tor/server/authority', handler)
+            lnn.stream.dir(endpoint, '/tor/server/authority', handler)
         })
 
         function handler(request)
         {
             switch(request.state)
             {
-                case lighttor.state.started:
+                case lnn.state.started:
                     document.getElementById('log').innerHTML = 'Stream...'
                     return
-                case lighttor.state.created:
+                case lnn.state.created:
                     document.getElementById('log').innerHTML += ' open!\n\n'
                     return
-                case lighttor.state.pending:
+                case lnn.state.pending:
                     document.getElementById('log').innerHTML += request.recv()
                     return
-                case lighttor.state.success:
+                case lnn.state.success:
                     document.getElementById('log').innerHTML += '\nFinished!'
                     return
             }

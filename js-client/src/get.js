@@ -1,9 +1,9 @@
 /**
  * GET operations.
  * @namespace
- * @see lighttor.get.guard
+ * @see lnn.get.guard
  */
-lighttor.get = {}
+lnn.get = {}
 
 /**
  * Perform GET /guard and update endpoint accordingly,
@@ -13,15 +13,15 @@ lighttor.get = {}
  * @param {callback} success        optional, called on success
  * @param {callback} error          optional, called on error
  * @example
- * // Note: lighttor.open perform these steps for you whenever needed.
- * endpoint = lighttor.endpoint('localhost', 4990)
- * lighttor.get.guard(endpoint, function (endpoint)
+ * // Note: lnn.open perform these steps for you whenever needed.
+ * endpoint = lnn.endpoint('localhost', 4990)
+ * lnn.get.guard(endpoint, function (endpoint)
  * {
  *     console.log('Guard identity:', endpoint.guard.router.identity)
  * })
  * // (can also have error callback: function (endpoint, xhttp_status) { })
  */
-lighttor.get.guard = function(endpoint, success, error)
+lnn.get.guard = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -49,16 +49,16 @@ lighttor.get.guard = function(endpoint, success, error)
  * Note: provided for testing purposes and currently have no use.
  * </pre>
  *
- * Usage and parameters are similar to {@link lighttor.get.guard}, stores the
+ * Usage and parameters are similar to {@link lnn.get.guard}, stores the
  * consensus as parsed from the proxy-server answer.
  *
  * @param {endpoint_t} endpoint     endpoint in use, stores answer
  * @param {callback} success        optional, called on success
  * @param {callback} error          optional, called on error
  *
- * @see lighttor.get.guard
+ * @see lnn.get.guard
  */
-lighttor.get.consensus = function(endpoint, success, error)
+lnn.get.consensus = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()

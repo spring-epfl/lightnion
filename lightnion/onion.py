@@ -2,7 +2,7 @@ import cryptography
 import hashlib
 import copy
 
-import lighttor as ltor
+import lightnion as lnn
 
 class state:
     '''Handle Tor onion-encryption cryptographic states.
@@ -64,7 +64,7 @@ class state:
                 'Unable to set RELAY_EARLY counter from the outer layers!')
 
     def wrap(self, inner):
-        '''Wraps an inner state w/ self as outer state (see lighttor.extend).
+        '''Wraps an inner state w/ self as outer state (see lightnion.extend).
 
         Usage:
             1. A one-hop circuit is build with stateA.
@@ -164,10 +164,10 @@ def core(state, command, payload=b'', stream_id=0):
     rollback = state._clone()
 
     # Send RELAY_EARLY cells first
-    relay_pack = ltor.cell.relay.pack
+    relay_pack = lnn.cell.relay.pack
     if rollback.early_count > 0:
         rollback.early_count -= 1
-        relay_pack = ltor.cell.relay_early.pack
+        relay_pack = lnn.cell.relay_early.pack
 
     # Compute the cell with a zeroed 'digest' field.
     cell = relay_pack(

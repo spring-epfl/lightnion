@@ -5,7 +5,7 @@ import time
 
 import nacl.public
 
-import lighttor as ltor
+import lightnion as lnn
 
 class circuit(collections.namedtuple('circuit', ['id', 'material'])):
     stream_windows = None # per-stream window (see onion._auto_sendme hack)
@@ -52,15 +52,15 @@ def fast(link):
 
     # Sanity checks
     try:
-        packed = ltor.cell.view.uint(4).write(value=circuit_id)
-        assert circuit_id == ltor.cell.view.uint(4).value(packed)
+        packed = lnn.cell.view.uint(4).write(value=circuit_id)
+        assert circuit_id == lnn.cell.view.uint(4).value(packed)
     except (OverflowError, AssertionError):
         link.last_id = 0
         raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
             circuit_id, packed))
 
     # Send CREATE_FAST cell (contains OP material)
-    op_cell = ltor.cell.create_fast.pack(circuit_id)
+    op_cell = lnn.cell.create_fast.pack(circuit_id)
     link.send(op_cell)
 
     # (register a dummy circuit first to reuse the circuit API)
@@ -69,7 +69,7 @@ def fast(link):
 
     # Receive CREATED_FAST cell (contains OR material and key confirmation)
     try:
-        or_cell = ltor.cell.created_fast.cell(link.get(dummy))
+        or_cell = lnn.cell.created_fast.cell(link.get(dummy))
     except KeyError:
         raise RuntimeError('Got DESTROY cell while creating circuit.')
 
@@ -79,7 +79,7 @@ def fast(link):
         raise RuntimeError('Got invalid CREATED cell: {}'.format(or_cell.raw))
 
     # Compute KDF-TOR on OP+OR materials
-    material = ltor.crypto.kdf_tor(
+    material = lnn.crypto.kdf_tor(
         op_cell.create_fast.material + or_cell.created_fast.material)
 
     # Confirm shared derived material
@@ -92,7 +92,7 @@ def fast(link):
     final = circuit(circuit_id, material)
     link.register(final)
 
-    return ltor.onion.state(link, final)
+    return lnn.onion.state(link, final)
 
 def ntor_raw(link, payload, timeout=None):
     # Pick an available ID (link version > 3)
@@ -103,15 +103,15 @@ def ntor_raw(link, payload, timeout=None):
 
     # Sanity checks
     try:
-        packed = ltor.cell.view.uint(4).write(value=circuit_id)
-        assert circuit_id == ltor.cell.view.uint(4).value(packed)
+        packed = lnn.cell.view.uint(4).write(value=circuit_id)
+        assert circuit_id == lnn.cell.view.uint(4).value(packed)
     except (OverflowError, AssertionError):
         link.last_id = 0
         raise RuntimeError('Erroneous circuit ID: {} ({})'.format(
             circuit_id, packed))
 
     # Build a CREATE2 cell containing this first handshake part
-    link.send(ltor.cell.create2.pack(circuit_id, payload))
+    link.send(lnn.cell.create2.pack(circuit_id, payload))
 
     # (register a dummy circuit first to reuse the circuit API)
     dummy = circuit(circuit_id, None)
@@ -121,11 +121,11 @@ def ntor_raw(link, payload, timeout=None):
     cell = None
     try:
         if timeout is None:
-            cell = ltor.cell.created2.cell(link.get(dummy))
+            cell = lnn.cell.created2.cell(link.get(dummy))
         else:
             for _ in range(10):
                 try:
-                    cell = ltor.cell.created2.cell(
+                    cell = lnn.cell.created2.cell(
                         link.get(dummy, block=False))
                     break
                 except queue.Empty:
@@ -148,16 +148,16 @@ def ntor(link, descriptor):
     onion_key = base64.b64decode(descriptor['ntor-onion-key'] + '====')
 
     # Perform the first part of our handshake
-    ephemeral_key, payload = ltor.crypto.ntor.hand(identity, onion_key)
+    ephemeral_key, payload = lnn.crypto.ntor.hand(identity, onion_key)
 
     circuit_id, payload = ntor_raw(link, payload)
 
     # Perform the last part of our handshake
-    material = ltor.crypto.ntor.shake(ephemeral_key, payload,
+    material = lnn.crypto.ntor.shake(ephemeral_key, payload,
         identity, onion_key, length=92)
 
     # Register the real circuit
-    final = circuit(circuit_id, ltor.crypto.ntor.kdf(material))
+    final = circuit(circuit_id, lnn.crypto.ntor.kdf(material))
     link.register(final)
 
-    return ltor.onion.state(link, final)
+    return lnn.onion.state(link, final)

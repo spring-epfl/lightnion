@@ -1,80 +1,80 @@
 /**
  * Cryptographic operations related to ntor handshakes.
  * @namespace
- * @see lighttor.ntor.hand
- * @see lighttor.ntor.shake
+ * @see lnn.ntor.hand
+ * @see lnn.ntor.shake
  */
-lighttor.ntor = {}
+lnn.ntor = {}
 
 /**
  * Number of bytes to derive from successful ntor handshakes.
  * @readonly
  * @default
  */
-lighttor.ntor.keybytes = 92
+lnn.ntor.keybytes = 92
 
 /**
  * Protocol identifier, prefix tweaks used in ntor handshakes various hashes.
  * @readonly
  * @default
  *
- * @see lighttor.ntor.tweaks
+ * @see lnn.ntor.tweaks
  */
-lighttor.ntor.protoid = "ntor-curve25519-sha256-1"
+lnn.ntor.protoid = "ntor-curve25519-sha256-1"
 
 /**
  * Tweaks used in ntor handshakes various hashes and key derivation.
  * @enum
  * @readonly
  *
- * @see lighttor.ntor.hash
+ * @see lnn.ntor.hash
  */
-lighttor.ntor.tweaks = {
+lnn.ntor.tweaks = {
     /**
      * rfc5869 Expand {info}
      * @type kdf
      */
-    expand: lighttor.ntor.protoid + ":key_expand",
+    expand: lnn.ntor.protoid + ":key_expand",
     /**
      * rfc5869 Extract {salt}
      * @type kdf
      */
-    key: lighttor.ntor.protoid + ":key_extract",
+    key: lnn.ntor.protoid + ":key_extract",
     /**
      * H({secret_input}, t_verify)
      * @type ntor
      */
-    verify: lighttor.ntor.protoid + ":verify",
+    verify: lnn.ntor.protoid + ":verify",
     /**
      * suffix of {auth_input}
      * @type ntor
      */
-    server: lighttor.ntor.protoid + "Server",
+    server: lnn.ntor.protoid + "Server",
     /**
      * H({auth_input}, t_mac)
      * @type ntor
      */
-    mac: lighttor.ntor.protoid + ":mac"}
+    mac: lnn.ntor.protoid + ":mac"}
 
 /**
- * Tweaked pseudo-random function factory, see {@link lighttor.ntor.hash}.
+ * Tweaked pseudo-random function factory, see {@link lnn.ntor.hash}.
  *
- * @param {lighttor.ntor.tweaks} tweak      tweak to use
+ * @param {lnn.ntor.tweaks} tweak      tweak to use
  * @return {hash_t}
  *
- * @see lighttor.ntor.hash
+ * @see lnn.ntor.hash
  */
-lighttor.ntor.hash_factory = function(tweak)
+lnn.ntor.hash_factory = function(tweak)
 {
-    tweak = lighttor.ntor.tweaks[tweak]
+    tweak = lnn.ntor.tweaks[tweak]
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
     /**
-     * Tweaked pseudo-random function used by {@link lighttor.ntor}, returned
-     * by {@link lighttor.ntor.hash_factory}.
+     * Tweaked pseudo-random function used by {@link lnn.ntor}, returned
+     * by {@link lnn.ntor.hash_factory}.
      *
      * @interface hash_t
-     * @see lighttor.ntor.hash
+     * @see lnn.ntor.hash
      *
      * @property {Object} hmac      underlying hmac provider
      */
@@ -89,9 +89,9 @@ lighttor.ntor.hash_factory = function(tweak)
          */
         encrypt: function(data)
         {
-            data = lighttor.enc.bits(data)
+            data = lnn.enc.bits(data)
             data = hash.hmac.encrypt(data)
-            return lighttor.dec.bits(data)
+            return lnn.dec.bits(data)
         }}
     return hash
 }
@@ -101,21 +101,21 @@ lighttor.ntor.hash_factory = function(tweak)
  * @enum
  * @type hash_t
  *
- * @see lighttor.ntor.tweaks
+ * @see lnn.ntor.tweaks
  */
-lighttor.ntor.hash = {
+lnn.ntor.hash = {
         /**
          * used for H({secret_input}, t_verify) during ntor handshakes
          */
-        verify: lighttor.ntor.hash_factory("verify"),
+        verify: lnn.ntor.hash_factory("verify"),
         /**
          * used for H({auth_input}, t_mac) during ntor handshakes
          */
-        mac: lighttor.ntor.hash_factory("mac"),
+        mac: lnn.ntor.hash_factory("mac"),
         /**
          * used for extraction during ntor handshakes key derivation
          */
-        prk: lighttor.ntor.hash_factory("key")
+        prk: lnn.ntor.hash_factory("key")
     }
 
 /**
@@ -125,20 +125,20 @@ lighttor.ntor.hash = {
  * @param {int} n                   number of bytes to output
  * @return {Uint8Array}
  */
-lighttor.ntor.kdf = function(material, n)
+lnn.ntor.kdf = function(material, n)
 {
-    material = lighttor.ntor.hash.prk.encrypt(material)
-    var hash = new sjcl.misc.hmac(lighttor.enc.bits(material))
+    material = lnn.ntor.hash.prk.encrypt(material)
+    var hash = new sjcl.misc.hmac(lnn.enc.bits(material))
 
-    var tweak = lighttor.ntor.tweaks["expand"]
+    var tweak = lnn.ntor.tweaks["expand"]
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
     var idx = 1
-    var out = lighttor.enc.bits([])
-    var last = lighttor.enc.bits([])
+    var out = lnn.enc.bits([])
+    var last = lnn.enc.bits([])
     while (sjcl.bitArray.bitLength(out) < n * 8)
     {
-        var idxbits = lighttor.enc.bits([idx])
+        var idxbits = lnn.enc.bits([idx])
         var current = sjcl.bitArray.concat(tweak, idxbits)
 
         last = hash.encrypt(sjcl.bitArray.concat(last, current))
@@ -146,7 +146,7 @@ lighttor.ntor.kdf = function(material, n)
         idx = idx + 1
     }
 
-    return lighttor.dec.bits(sjcl.bitArray.clamp(out, n * 8))
+    return lnn.dec.bits(sjcl.bitArray.clamp(out, n * 8))
 }
 
 
@@ -159,25 +159,25 @@ lighttor.ntor.kdf = function(material, n)
  * @param {Boolean} encode          if true, returns base64 (default: true)
  * @return {Uint8Array|string}
  *
- * @see lighttor.ntor.shake
+ * @see lnn.ntor.shake
  */
-lighttor.ntor.hand = function(endpoint, descriptor, encode)
+lnn.ntor.hand = function(endpoint, descriptor, encode)
 {
     if (encode === undefined)
         encode = true
     if (descriptor === undefined)
         descriptor = endpoint.guard
 
-    var identity = lighttor.dec.base64(descriptor.router.identity + "=")
-    var onionkey = lighttor.dec.base64(descriptor["ntor-onion-key"])
+    var identity = lnn.dec.base64(descriptor.router.identity + "=")
+    var onionkey = lnn.dec.base64(descriptor["ntor-onion-key"])
 
     /**
     * Internal object, half-finished ntor handshake state in {@link
     * endpoint_t#material}, created by:
     * <ul>
-    *   <li> {@link lighttor.ntor.hand}
-    *   <li> {@link lighttor.ntor.fast}
-    *   <li> {@link lighttor.auth}
+    *   <li> {@link lnn.ntor.hand}
+    *   <li> {@link lnn.ntor.fast}
+    *   <li> {@link lnn.auth}
     * </ul>
     * Captures cryptographic state required to finish the handshake.
     *
@@ -202,13 +202,13 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
     payload.set(pubkey, identity.length+onionkey.length)
 
     if (encode)
-        return lighttor.enc.base64(payload)
+        return lnn.enc.base64(payload)
     return payload
 }
 
 /**
- * Just as {@link lighttor.ntor.hand} but without node information – used by
- * {@link lighttor.fast}, writes a {@link half_t} in
+ * Just as {@link lnn.ntor.hand} but without node information – used by
+ * {@link lnn.fast}, writes a {@link half_t} in
  * {@link endpoint_t#material}.
  *
  * <pre>Note: always returns base64-encoded handshake.</pre>
@@ -216,20 +216,20 @@ lighttor.ntor.hand = function(endpoint, descriptor, encode)
  * @param {endpoint_t} endpoint     state where to store half-finished material
  * @return {string}
  *
- * @see lighttor.fast
+ * @see lnn.fast
  */
-lighttor.ntor.fast = function(endpoint)
+lnn.ntor.fast = function(endpoint)
 {
     endpoint.material = {}
     endpoint.material.ntor = nacl.box.keyPair()
     endpoint.material.identity = null
     endpoint.material.onionkey = null
-    return lighttor.enc.base64(endpoint.material.ntor.publicKey)
+    return lnn.enc.base64(endpoint.material.ntor.publicKey)
 }
 
 /**
  * Compute the second part of a ntor handshake, returns derived bytes suitable
- * for {@link lighttor.ntor.slice} use.
+ * for {@link lnn.ntor.slice} use.
  *
  * <pre>Note: returns null if handshake is invalid.</pre>
  *
@@ -239,14 +239,14 @@ lighttor.ntor.fast = function(endpoint)
  *                                  (default: true)
  * @return {Uint8Array|null}
  *
- * @see lighttor.ntor.hand
+ * @see lnn.ntor.hand
  */
-lighttor.ntor.shake = function(endpoint, data, encoded)
+lnn.ntor.shake = function(endpoint, data, encoded)
 {
     if (encoded === undefined)
         encoded = true
     if (encoded)
-        data = lighttor.dec.base64(data)
+        data = lnn.dec.base64(data)
 
     var client_pubkey = endpoint.material.ntor.publicKey
     var client_secret = endpoint.material.ntor.secretKey
@@ -259,7 +259,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     var exp_share = nacl.scalarMult(client_secret, server_pubkey)
     var exp_onion = nacl.scalarMult(client_secret, onionkey)
 
-    var protoid = lighttor.dec.utf8(lighttor.ntor.protoid)
+    var protoid = lnn.dec.utf8(lnn.ntor.protoid)
     var length = exp_share.length * 2 + identity.length + onionkey.length * 3
     var off = 0
 
@@ -271,9 +271,9 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     secret_input.set(client_pubkey, off); off += client_pubkey.length
     secret_input.set(server_pubkey, off); off += server_pubkey.length
     secret_input.set(protoid, off)
-    var verify = lighttor.ntor.hash.verify.encrypt(secret_input)
+    var verify = lnn.ntor.hash.verify.encrypt(secret_input)
 
-    var server = lighttor.dec.utf8(lighttor.ntor.tweaks["server"])
+    var server = lnn.dec.utf8(lnn.ntor.tweaks["server"])
     var length = verify.length + identity.length + onionkey.length * 3
     var off = 0
 
@@ -284,7 +284,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
     auth_input.set(server_pubkey, off); off += server_pubkey.length
     auth_input.set(client_pubkey, off); off += client_pubkey.length
     auth_input.set(server, off)
-    var client_auth = lighttor.ntor.hash.mac.encrypt(auth_input)
+    var client_auth = lnn.ntor.hash.mac.encrypt(auth_input)
 
     var valid = true
     length = client_auth.length
@@ -310,7 +310,7 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
 
     if (valid)
     {
-        return lighttor.ntor.kdf(secret_input, lighttor.ntor.keybytes)
+        return lnn.ntor.kdf(secret_input, lnn.ntor.keybytes)
     }
     return null
 }
@@ -318,27 +318,27 @@ lighttor.ntor.shake = function(endpoint, data, encoded)
 /**
  * Build a shared cryptographic {@link material_t} for
  * {@link endpoint_t#material}
- * from the output of {@link lighttor.ntor.shake}.
+ * from the output of {@link lnn.ntor.shake}.
  *
  * <pre>
  * Note: assume KEY_LEN == 16 (aes256) and HASH_LEN == 20 (sha1) internally.
  * </pre>
  *
- * @param {Uint8Array} material     exactly {@link lighttor.ntor.keybytes}
+ * @param {Uint8Array} material     exactly {@link lnn.ntor.keybytes}
  *                                  bytes
  * @return {material_t}
  */
-lighttor.ntor.slice = function(material)
+lnn.ntor.slice = function(material)
 {
     var k = 16 // KEY_LEN
     var h = 20 // HASH_LEN
 
     /**
      * Internal object, stores shared cryptographic material
-     * as {@link endpoint_t#material}, returned by {@link lighttor.ntor.slice}.
+     * as {@link endpoint_t#material}, returned by {@link lnn.ntor.slice}.
      *
      * @interface material_t
-     * @see lighttor.ntor.slice
+     * @see lnn.ntor.slice
      *
      * @property {Uint8Array} key_hash          unused
      * @property {Uint8Array} forward_key       used in {@link forward_t}
@@ -357,13 +357,13 @@ lighttor.ntor.slice = function(material)
 }
 
 // (function only used for proxy auth, not a part of regular ntor handshake)
-lighttor.ntor.auth = function(endpoint, client, data)
+lnn.ntor.auth = function(endpoint, client, data)
 {
     var pending_material = endpoint.material
     endpoint.material = endpoint.auth
 
-    var data = lighttor.dec.base64(data)
-    var material = lighttor.ntor.shake(endpoint, client)
+    var data = lnn.dec.base64(data)
+    var material = lnn.ntor.shake(endpoint, client)
     if (material == null)
         throw "Invalid auth."
     endpoint.material = pending_material
@@ -371,5 +371,5 @@ lighttor.ntor.auth = function(endpoint, client, data)
     var key = material.slice(0, 32)
     var nonce = material.slice(32, 32+24)
     data = nacl.secretbox.open(data, nonce, key)
-    return JSON.parse(lighttor.enc.utf8(data))
+    return JSON.parse(lnn.enc.utf8(data))
 }

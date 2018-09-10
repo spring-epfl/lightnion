@@ -1,33 +1,33 @@
-lighttor.fast = function(host, port, success, error, io)
+lnn.fast = function(host, port, success, error, io)
 {
-    return lighttor.open(host, port, success, error, io, true)
+    return lnn.open(host, port, success, error, io, true)
 }
 
-lighttor.auth = function(host, port, suffix, success, error, io)
+lnn.auth = function(host, port, suffix, success, error, io)
 {
     if (typeof(suffix) == "string")
     {
         suffix = suffix.replace(/-/g, "+").replace(/_/g, "/")
-        suffix = lighttor.dec.base64(suffix)
+        suffix = lnn.dec.base64(suffix)
     }
-    if (lighttor.enc.utf8(suffix.slice(0, 5)) != "auth ")
+    if (lnn.enc.utf8(suffix.slice(0, 5)) != "auth ")
         throw "Invalid prefix in auth. suffix!"
 
     suffix = suffix.slice(5)
     if (suffix.length != 20 + 32)
         throw "Invalid auth. suffix length!"
 
-    return lighttor.open(host, port, success, error, io, true, {
+    return lnn.open(host, port, success, error, io, true, {
         identity: suffix.slice(0, 20),
         onionkey: suffix.slice(20),
         ntor: nacl.box.keyPair()})
 }
 
-lighttor.open = function(host, port, success, error, io, fast, auth)
+lnn.open = function(host, port, success, error, io, fast, auth)
 {
-    var endpoint = lighttor.endpoint(host, port)
+    var endpoint = lnn.endpoint(host, port)
     if (io === undefined)
-        io = lighttor.io.socket
+        io = lnn.io.socket
     if (fast === undefined)
         fast = false
     if (error === undefined)
@@ -40,52 +40,52 @@ lighttor.open = function(host, port, success, error, io, fast, auth)
     var cb = {
         guard: function(endpoint)
         {
-            endpoint.state = lighttor.state.guarded
+            endpoint.state = lnn.state.guarded
             success(endpoint)
 
-            lighttor.post.create(endpoint, cb.create, error)
+            lnn.post.create(endpoint, cb.create, error)
         },
         create: function(endpoint)
         {
-            endpoint.state = lighttor.state.created
+            endpoint.state = lnn.state.created
             success(endpoint)
 
-            endpoint.stream = lighttor.stream.backend(error)
-            io(endpoint, lighttor.stream.handler, function(endpoint)
+            endpoint.stream = lnn.stream.backend(error)
+            io(endpoint, lnn.stream.handler, function(endpoint)
             {
                 var state = endpoint.state
 
-                endpoint.state = lighttor.state.pending
+                endpoint.state = lnn.state.pending
                 success(endpoint)
                 endpoint.state = state
             }, error)
 
-            lighttor.post.extend(endpoint, endpoint.path[0], cb.extend, error)
+            lnn.post.extend(endpoint, endpoint.path[0], cb.extend, error)
             endpoint.io.start()
         },
         extend: function(endpoint)
         {
-            endpoint.state = lighttor.state.extpath
+            endpoint.state = lnn.state.extpath
             success(endpoint)
 
-            lighttor.post.extend(endpoint, endpoint.path[1], cb.success, error)
+            lnn.post.extend(endpoint, endpoint.path[1], cb.success, error)
         },
         success: function(endpoint)
         {
-            endpoint.state = lighttor.state.success
+            endpoint.state = lnn.state.success
             success(endpoint)
             endpoint.io.success = function() { }
         }
     }
 
-    endpoint.state = lighttor.state.started
+    endpoint.state = lnn.state.started
     success(endpoint)
 
     // fast channel: one-request channel creation (no guard pinning)
     if (endpoint.fast)
-        lighttor.post.create(endpoint, cb.create, error)
+        lnn.post.create(endpoint, cb.create, error)
     else
-        lighttor.get.guard(endpoint, cb.guard, error)
+        lnn.get.guard(endpoint, cb.guard, error)
 
     return endpoint
 }

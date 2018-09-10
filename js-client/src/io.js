@@ -1,5 +1,5 @@
-lighttor.io = {}
-lighttor.io.polling = function(endpoint, handler, success, error)
+lnn.io = {}
+lnn.io.polling = function(endpoint, handler, success, error)
 {
     var io = {
         incoming: [],
@@ -13,12 +13,12 @@ lighttor.io.polling = function(endpoint, handler, success, error)
         {
             setTimeout(function()
             {
-                lighttor.post.channel(endpoint, io.poll)
+                lnn.post.channel(endpoint, io.poll)
             }, 100)
         },
         send: function(cell)
         {
-            io.outcoming.push(lighttor.enc.base64(cell))
+            io.outcoming.push(lnn.enc.base64(cell))
         },
         recv: function()
         {
@@ -26,18 +26,18 @@ lighttor.io.polling = function(endpoint, handler, success, error)
                 return undefined
 
             io.cell = io.incoming.shift()
-            return lighttor.dec.base64(io.cell)
+            return lnn.dec.base64(io.cell)
         },
         start: function()
         {
-            lighttor.post.channel(endpoint, io.poll)
+            lnn.post.channel(endpoint, io.poll)
         }
     }
     endpoint.io = io
     return io
 }
 
-lighttor.io.socket = function(endpoint, handler, success, error)
+lnn.io.socket = function(endpoint, handler, success, error)
 {
     if (handler === undefined)
         handler = function(endpoint) { }

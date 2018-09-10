@@ -1,8 +1,8 @@
-lighttor.relay = {}
-lighttor.relay.payload_len = 509
-lighttor.relay.data_len = lighttor.relay.payload_len - 11
-lighttor.relay.full_len = 5 + lighttor.relay.payload_len
-lighttor.relay.cmd = {
+lnn.relay = {}
+lnn.relay.payload_len = 509
+lnn.relay.data_len = lnn.relay.payload_len - 11
+lnn.relay.full_len = 5 + lnn.relay.payload_len
+lnn.relay.cmd = {
         "begin"     : 1,   1: "begin",
         "data"      : 2,   2: "data",
         "end"       : 3,   3: "end",
@@ -20,7 +20,7 @@ lighttor.relay.cmd = {
         "extended2" : 15, 15: "extended2"
     }
 
-lighttor.relay.pack = function(cmd, stream_id, data)
+lnn.relay.pack = function(cmd, stream_id, data)
 {
     if (data === undefined)
         data = new Uint8Array(0)
@@ -28,14 +28,14 @@ lighttor.relay.pack = function(cmd, stream_id, data)
         stream_id = 0
 
     if (typeof(data) == "string")
-        data = lighttor.dec.utf8(data)
+        data = lnn.dec.utf8(data)
 
-    var cell = new Uint8Array(lighttor.relay.full_len) /* padded with \x00 */
+    var cell = new Uint8Array(lnn.relay.full_len) /* padded with \x00 */
     var view = new DataView(cell.buffer)
 
     view.setUint32(0, 2147483648 /* fake circuit_id */, false)
     view.setUint8(4, 3 /* RELAY CELL */, false)
-    view.setUint8(5, lighttor.relay.cmd[cmd], false)
+    view.setUint8(5, lnn.relay.cmd[cmd], false)
     view.setUint16(6, 0 /* recognized */, false)
     view.setUint16(8, stream_id, false)
     // (implicit 4-bytes zeroed digest at offset 10)
@@ -45,7 +45,7 @@ lighttor.relay.pack = function(cmd, stream_id, data)
     return cell
 }
 
-lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
+lnn.relay.extend = function(handshake, host, port, identity, eidentity)
 {
     // (assuming that host is an IPv4)
     var addr = new Uint8Array(host.split("."))
@@ -54,9 +54,9 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
 
     port = parseInt(port)
     if (typeof(identity) == "string")
-        identity = lighttor.dec.base64(identity)
+        identity = lnn.dec.base64(identity)
     if (typeof(eidentity) == "string")
-        eidentity = lighttor.dec.base64(eidentity + "=")
+        eidentity = lnn.dec.base64(eidentity + "=")
 
     var nspec = 2
     if (eidentity !== undefined)
@@ -100,7 +100,7 @@ lighttor.relay.extend = function(handshake, host, port, identity, eidentity)
     return data
 }
 
-lighttor.relay.begin = function(host, port)
+lnn.relay.begin = function(host, port)
 {
     valid = false
     if (host.match("(\\d\+\\.){3}\\d\+"))
@@ -116,7 +116,7 @@ lighttor.relay.begin = function(host, port)
 
     if (!valid)
         throw "Invalid host provided?"
-    var address = lighttor.dec.utf8(host + ":" + port)
+    var address = lnn.dec.utf8(host + ":" + port)
 
     var data = new Uint8Array(address.length + 1 + 4) // (1o null, 4o flags)
     data.set(address, 0)

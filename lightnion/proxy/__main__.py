@@ -1,11 +1,11 @@
-import lighttor.proxy.forward
+import lightnion.proxy.forward
 
 import ipaddress
 import argparse
 import logging
 import os
 
-default_auth = '.lighttor-auth.d'
+default_auth = '.lightnion-auth.d'
 
 log_format = "%(levelname)s: %(message)s"
 log_levels = {None: logging.ERROR, 1: logging.WARNING, 2: logging.INFO}
@@ -73,7 +73,7 @@ if __name__ == '__main__':
             'No authentication for slave, using {} is unsafe!'.format(argv.s))
     _, argv.c = _validate_host('{}:{}'.format(argv.s[0], argv.c))
 
-    lighttor.proxy.forward.main(
+    lightnion.proxy.forward.main(
         port=argv.p,
         slave_node=argv.s,
         control_port=argv.c,

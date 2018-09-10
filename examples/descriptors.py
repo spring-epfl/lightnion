@@ -1,4 +1,4 @@
-import lighttor as ltor
+import lightnion as lnn
 
 import argparse
 import pdb
@@ -10,16 +10,16 @@ if __name__ == '__main__':
     parser.add_argument('port', nargs='?', type=int, default=9050)
     sys_argv = parser.parse_args()
 
-    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    link = lnn.link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 
-    endpoint = ltor.create.fast(link)
+    endpoint = lnn.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
     # downloading descriptors
-    endpoint, descriptors = ltor.descriptors.download(endpoint)
-    endpoint, undescriptors = ltor.descriptors.download(endpoint,
+    endpoint, descriptors = lnn.descriptors.download(endpoint)
+    endpoint, undescriptors = lnn.descriptors.download(endpoint,
         flavor='unflavored')
 
     # matching fields of microdescriptors against unflavored one
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         print(' - ntor-onion-key: {}'.format(d['ntor-onion-key']))
 
     # asking politely for our OR's descriptor
-    endpoint, authority = ltor.descriptors.download_authority(endpoint)
+    endpoint, authority = lnn.descriptors.download_authority(endpoint)
 
     print('\nWe are connected to the following node:')
     print(' - ntor-onion-key: {}'.format(authority['ntor-onion-key']))

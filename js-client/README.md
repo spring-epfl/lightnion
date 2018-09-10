@@ -1,8 +1,8 @@
-## lighttor-js
+## lightnion-js
 
-The Lighttor Javascript client.
+The Lightnion Javascript client.
 
-_TL;DR: Use lighttor.open + lighttor.stream.tcp_
+_TL;DR: Use lnn.open + lnn.stream.tcp_
 
 ## Quick setup
 
@@ -11,34 +11,33 @@ _TL;DR: Use lighttor.open + lighttor.stream.tcp_
 You will have to clone the repository as follows:
 
 ```
-git clone --recurse-submodules https://github.com/plcp/tor-scripts/
-cd lighttor
-git checkout ltor
+git clone --recurse-submodules https://github.com/spring-epfl/lighttor lightnion
+cd lightnion
 cd js-client
 make
 ```
 
-Use `lighttor.bundle.js` in your projects.
+Use `lightnion.bundle.js` in your projects.
 
 ## Usage
 
 Here are a sample usage:
 
 ```
-<script src="lighttor.bundle.js"></script>
+<script src="lightnion.bundle.js"></script>
 <script>
-lighttor.open('localhost', 4990, function(endpoint)
+lnn.open('localhost', 4990, function(endpoint)
 {
-    if (endpoint.state == lighttor.state.success)
+    if (endpoint.state == lnn.state.success)
     {
-        var tcp = lighttor.stream.tcp(endpoint, host, port, handler)
+        var tcp = lnn.stream.tcp(endpoint, host, port, handler)
         tcp.send('ping')
     }
 })
 
 function handler(request)
 {
-    if (request.state == lighttor.state.pending)
+    if (request.state == lnn.state.pending)
     {
         console.log(request.recv())
         request.send('ping')
@@ -58,7 +57,7 @@ If you wish to provide dependencies by yourself, include only:
 nacl-fast.min.js
 nacl-util.min.js
 sjcl.js
-lighttor.min.js
+lightnion.min.js
 ```
 Note that you have to build few things with `sjcl.patch` to enable some
 codecs.

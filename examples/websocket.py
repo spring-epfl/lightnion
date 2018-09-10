@@ -1,6 +1,6 @@
-import lighttor as ltor
-import lighttor.proxy
-import lighttor.http
+import lightnion as lnn
+import lightnion.proxy
+import lightnion.http
 
 import argparse
 import time
@@ -16,12 +16,12 @@ if __name__ == "__main__":
     sys_argv = parser.parse_args()
 
     io_used = dict(
-        polling=ltor.http.polling.io,
-        websocket=ltor.http.websocket.io)[sys_argv.method] # or 'polling'
+        polling=lnn.http.polling.io,
+        websocket=lnn.http.websocket.io)[sys_argv.method] # or 'polling'
 
     print('Building a HTTP channel powered by {}...'.format(sys_argv.method))
     endpoint = sys_argv.host, sys_argv.port
-    state, channel = ltor.http.client(*endpoint, io=io_used)
+    state, channel = lnn.http.client(*endpoint, io=io_used)
 
     print('Success!\n\nChannel {} opened with:'.format(channel.id))
     print(' - Guard is {}'.format(channel.guard['router']['nickname']))
@@ -31,17 +31,17 @@ if __name__ == "__main__":
     # send bunch of padding
     for i in range(sys_argv.padding):
         print('Send padding: {}/{}'.format(i+1, sys_argv.padding), end='\r')
-        state = ltor.hop.send(state, ltor.cell.relay.cmd.RELAY_DROP)
+        state = lnn.hop.send(state, lnn.cell.relay.cmd.RELAY_DROP)
     print('')
 
     start = time.time()
     for _ in range(sys_argv.nb_downloads):
         # retrieve something
-        state, authority = ltor.descriptors.download_authority(state)
+        state, authority = lnn.descriptors.download_authority(state)
         print('\nSuccessfully retrieved exit node descriptor through channel.')
 
         # retrieve something heavier
-        state, _ = ltor.hop.directory_query(state,
+        state, _ = lnn.hop.directory_query(state,
             '/tor/status-vote/current/consensus',
             compression='identity') # (no cache nor parsing nor compression)
         print('Successfully retrieved full consensus through channel.')

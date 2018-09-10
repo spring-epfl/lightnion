@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src='lighttor.bundle.js'></script>
+    <script src='lightnion.bundle.js'></script>
     <meta charset='UTF-8'>
 
     <!-- Third-part provided TLS library & its dependencies -->
@@ -35,15 +35,15 @@
         var tcp = null
         function connect()
         {
-            lighttor.open('localhost', 4990, function(endpoint)
+            lnn.open('localhost', 4990, function(endpoint)
             {
                 document.getElementById('open').disabled = true
-                if (endpoint.state == lighttor.state.success)
+                if (endpoint.state == lnn.state.success)
                 {
                     // create a tcp stream
                     host = document.getElementById('host').value
                     port = document.getElementById('port').value
-                    lighttor.stream.tcp(endpoint, host, port, handler)
+                    lnn.stream.tcp(endpoint, host, port, handler)
                 }
             })
             return false
@@ -64,7 +64,7 @@
             tlsDataReady: function(connection)
             {
                 // (decode binary data into array before processing)
-                tcp.send(lighttor.dec.bin(connection.tlsData.getBytes()))
+                tcp.send(lnn.dec.bin(connection.tlsData.getBytes()))
             },
             dataReady: function(connection)
             {
@@ -95,7 +95,7 @@
         {
             switch(request.state)
             {
-                case lighttor.state.created:
+                case lnn.state.created:
                     tcp = request
                     tls.handshake()
                     // ^ bootstrap tls transport on tcp stream creation
@@ -110,12 +110,12 @@
                     '\\r\\nHost: check.torproject.org\\r\\n\\r\\n')
 
                     return
-                case lighttor.state.pending:
-                    tls.process(lighttor.enc.bin(request.recv()))
+                case lnn.state.pending:
+                    tls.process(lnn.enc.bin(request.recv()))
                     // ^ forwards incoming tcp traffic to tcp transport
 
                     return
-                case lighttor.state.success:
+                case lnn.state.success:
                     tcp = null
 
                     // (cosmetics)

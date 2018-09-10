@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -35,12 +35,12 @@
             }
 
             run += 1
-            var channel = lighttor.fast('localhost', 4990, function(endpoint)
+            var channel = lnn.fast('localhost', 4990, function(endpoint)
             {
-                if (endpoint.state == lighttor.state.started)
+                if (endpoint.state == lnn.state.started)
                     time_start = performance.now()
 
-                if (endpoint.state != lighttor.state.success)
+                if (endpoint.state != lnn.state.success)
                     return
 
                 time_total.push(performance.now() - time_start)

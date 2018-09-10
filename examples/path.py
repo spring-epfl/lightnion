@@ -1,5 +1,5 @@
-import lighttor as ltor
-import lighttor.proxy
+import lightnion as lnn
+import lightnion.proxy
 
 import multiprocessing
 import argparse
@@ -17,17 +17,17 @@ if __name__ == '__main__':
 
     if sys_argv.tor_local == 0:
         # probably using chutney here, thus purge consensus cache just in case
-        ltor.cache.purge()
+        lnn.cache.purge()
 
-    link = ltor.link.initiate(address=sys_argv.addr, port=sys_argv.port)
+    link = lnn.link.initiate(address=sys_argv.addr, port=sys_argv.port)
     print('Link v{} established – {}'.format(link.version, link.io))
 
-    endpoint = ltor.create.fast(link)
+    endpoint = lnn.create.fast(link)
     print('Circuit {} created – Key hash: {}'.format(endpoint.circuit.id,
         endpoint.circuit.material.key_hash.hex()))
 
     print('Downloading a consensus for later use.')
-    endpoint, consensus = ltor.consensus.download(endpoint,
+    endpoint, consensus = lnn.consensus.download(endpoint,
         flavor='unflavored')
 
     print('Closing the link now.')
@@ -37,14 +37,14 @@ if __name__ == '__main__':
 
         # here, we do it manually to pass a nice debug print
         print('\nCreating a local, ephemeral Tor node (via stem)...')
-        tor = ltor.proxy.path.get_tor(
+        tor = lnn.proxy.path.get_tor(
             msg_handler=lambda line: print(' ' * 4, line))
 
         print('\nFetching paths now...'.format(sys_argv.target))
-        producer = ltor.proxy.path.fetch(tor_process=tor)
+        producer = lnn.proxy.path.fetch(tor_process=tor)
     else:
         print('\nFetching at least {} paths now.'.format(sys_argv.target))
-        producer = ltor.proxy.path.fetch(sys_argv.target, tor_process=False,
+        producer = lnn.proxy.path.fetch(sys_argv.target, tor_process=False,
             control_port=sys_argv.control_port)
 
     # retrieve the required number of paths
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # convert (fingerprint, nickname) into a full consensus entry
     guard = producer.guard
-    guard, paths = ltor.proxy.path.convert(guard, paths, consensus=consensus)
+    guard, paths = lnn.proxy.path.convert(guard, paths, consensus=consensus)
 
     print('With guard {}: {}'.format(guard['nickname'], guard['digest']))
     for middle, exit in paths:

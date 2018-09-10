@@ -1,18 +1,18 @@
 "use strict"
 
 /**
- * The Lighttor Javascript client, top-level namespace.
+ * The Lightnion Javascript client, top-level namespace.
  *
  * @namespace
- * @see lighttor.open
- * @see lighttor.stream.tcp
- * @see lighttor.state
+ * @see lnn.open
+ * @see lnn.stream.tcp
+ * @see lnn.state
  * @example
- * lighttor.open('proxy.server', 4990, function(endpoint)
+ * lnn.open('proxy.server', 4990, function(endpoint)
  * {
- *     if (endpoint.state != lighttor.state.success)
+ *     if (endpoint.state != lnn.state.success)
  *         return
- *     tcp = lighttor.stream.tcp(endpoint, 'api.ipify.org', 80, handler)
+ *     tcp = lnn.stream.tcp(endpoint, 'api.ipify.org', 80, handler)
  *     tcp.send('GET / HTTP/1.1\r\nHost: api.ipify.org\r\n\r\n')
  * })
  *
@@ -20,50 +20,50 @@
  * {
  *     switch(request.state)
  *     {
- *         case lighttor.state.created: console.log('ready')
+ *         case lnn.state.created: console.log('ready')
  *             return
- *         case lighttor.state.pending:
- *             console.log(lighttor.enc.utf8(request.recv()))
+ *         case lnn.state.pending:
+ *             console.log(lnn.enc.utf8(request.recv()))
  *             return
- *         case lighttor.state.success: console.log('closed')
+ *         case lnn.state.success: console.log('closed')
  *             return
  *     }
  * }
  *
  */
-var lighttor = {}
+var lnn = {}
 
 /**
  * Common API constants.
  * @namespace
  */
-lighttor.api = {}
+lnn.api = {}
 
 /**
  * Supported API version.
  * @readonly
  * @default
  */
-lighttor.api.version = "0.1"
+lnn.api.version = "0.1"
 
 /**
  * Prefix used to craft API endpoints.
  * @default
  **/
-lighttor.api.url = "/lighttor/api/v0.1"
+lnn.api.url = "/lnn/api/v0.1"
 
 /**
  * Port used to craft websockets.
  * @default
  **/
-lighttor.api.ws_port = "8765"
+lnn.api.ws_port = "8765"
 
 /**
  * Request state enumeration.
  * @enum
  * @readonly
  **/
-lighttor.state = {
+lnn.state = {
         /**
          * operation started
          * @type channel

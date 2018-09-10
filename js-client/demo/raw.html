@@ -1,6 +1,6 @@
 <html>
 <head>
-    <script src="lighttor.bundle.js"></script>
+    <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -8,15 +8,14 @@
     <pre id='log'></pre>
 
     <script>
-
-        lighttor.open('localhost', 4990,
+        lnn.open('localhost', 4990,
         function success(endpoint)
         {
-            if (endpoint.state != lighttor.state.success)
+            if (endpoint.state != lnn.state.success)
                 return
             document.getElementById('loaded').innerHTML = '(channel opened)'
 
-            var stream = lighttor.stream.raw(endpoint, handler)
+            var stream = lnn.stream.raw(endpoint, handler)
             stream.send('begin_dir')
         },
         function error(endpoint)
@@ -26,14 +25,14 @@
 
         function handler(request)
         {
-            if (request.state == lighttor.state.created)
+            if (request.state == lnn.state.created)
             {
                 var data = 'GET /tor/status-vote/current/consensus HTTP/1.0'
                 data += '\r\nAccept-Encoding: identity\r\n\r\n'
                 request.send('data', data)
             }
 
-            if (request.state != lighttor.state.pending)
+            if (request.state != lnn.state.pending)
                 return
 
             cells = request.recv()
@@ -43,7 +42,7 @@
                 if (cell.cmd != 'data')
                     continue
 
-                var data = lighttor.enc.utf8(cell.data)
+                var data = lnn.enc.utf8(cell.data)
                 document.getElementById('log').innerHTML += data
             }
         }
