@@ -183,7 +183,7 @@ class sockets(threading.Thread):
         logging.getLogger(websockets.__name__).setLevel(logging.ERROR)
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-        server = websockets.serve(self.handler, 'localhost', 8765,
+        server = websockets.serve(self.handler, '0.0.0.0', 8765,
             compression=None)
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
