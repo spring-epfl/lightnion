@@ -50,7 +50,7 @@ lnn.api.version = "0.1"
  * Prefix used to craft API endpoints.
  * @default
  **/
-lnn.api.url = "/lnn/api/v0.1"
+lnn.api.url = "/lightnion/api/v0.1"
 
 /**
  * Port used to craft websockets.

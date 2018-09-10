@@ -2,7 +2,7 @@ include config.mk
 
 all: lightnion.min.js lightnion.bundle.js
 
-lightnion.js:
+lightnion.js: $(SOURCES)
 	cat $(SOURCES) > $@
 
 lightnion.min.js: lightnion.js
