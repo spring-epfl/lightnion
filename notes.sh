@@ -9,6 +9,7 @@ exit 1
 # quick setup
 git clone --recurse-submodules https://github.com/spring-epfl/lighttor lightnion
 cd lightnion
+virtualenv venv # virtualenv --python=python3 venv
 source venv/bin/activate
 pip install -r requirements.txt -r requirements-proxy.txt # install deps
 
@@ -26,6 +27,7 @@ cp lightnion/tools/chutney/small-chut chutney # or read tools/chutney/README.md
 cd chutney
 git apply ../lightnion/tools/chutney/sandbox_patch # disable sandbox if you need
 ./small-chut
+# note: you'll need python2 on your machine for chutney
 
 
 # library examples, run with real Tor
@@ -39,6 +41,7 @@ python examples/consensus.py # 34 loc – download both flavors of consensus
 python examples/descriptors.py # 72 loc – download all descriptors +checks
 python examples/directory_query.py # 48 loc – get both consensus (low level)
 # -: performs directory queries on a lower level and writes result in /tmp
+python examples/create_ntor.py # 31 loc – create a circuit using ntor hand.
 python examples/extend_circuit.py # 89 loc – create extended circuit
 # -: random depth, will download exit nodes descriptor and consensus through it
 
@@ -70,7 +73,7 @@ python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000
 # ^C to exit
 
 
-# library examples, run with real Tor
+# library examples, run with real Tor (using the Tor client against lightnion)
 cd lightnion
 source venv/bin/activate
 export PYTHONPATH="$(pwd)"

@@ -273,4 +273,4 @@ def main(port, slave_node, control_port, purge_cache,
     with clerk(slave_node, control_port, auth_dir) as app.clerk:
         logging.info('Bootstrapping HTTP server.')
         sockets(app.clerk).start()
-        app.run(port=port, debug=debug, use_reloader=False)
+        app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=False)

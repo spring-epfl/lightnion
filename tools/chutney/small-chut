@@ -2,8 +2,8 @@
 set -Eeuo pipefail
 
 CHUTNEY="${CHUTNEY:-$PWD/chutney}"
-CHUTNEY_TOR="/usr/bin/tor"
-CHUTNEY_TOR_GENCERT="/usr/bin/tor-gencert"
+CHUTNEY_TOR="$(which tor)"
+CHUTNEY_TOR_GENCERT="$(which tor-gencert)"
 CHUTNEY_DNS_CONF="/etc/resolv.conf" # default
 export CHUTNEY CHUTNEY_TOR CHUTNEY_TOR_GENCERT CHUTNEY_DNS_CONF
 
