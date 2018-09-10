@@ -79,6 +79,11 @@ lnn.state = {
          * @type channel
          */
         created: 3,
+        /**
+         * circuit negotiation
+         * @type channel
+         */
+        pending: 4,
         /** circuit extended (channel only)
          * @type channel
          */
@@ -88,11 +93,6 @@ lnn.state = {
          * @type channel
          */
         success: 6,
-        /**
-         * circuit negotiation
-         * @type channel
-         */
-        pending: 4,
         /**
          * operation started
          * @type stream

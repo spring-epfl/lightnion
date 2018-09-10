@@ -4,36 +4,36 @@
 # 1st draft (see below for 2nd draft)
 #
 
-# perform handshake (as client) -> br.accept(handler) as server
-async with br.link(host, port, *, ssl, transport=br.io.link) as link:
+# perform handshake (as client) -> lnn.accept(handler) as server
+async with lnn.link(host, port, *, ssl, transport=lnn.io.link) as link:
     await link.write(*cells) # sends all cells provided
 
-    async with link.fast(*, transport=br.io.circuit) as circuit:
-    async with link.ntor(descriptor, transport=br.io.circuit) as circuit:
+    async with link.fast(*, transport=lnn.io.circuit) as circuit:
+    async with link.ntor(descriptor, transport=lnn.io.circuit) as circuit:
         circuit.write(*payloads) # sends all payloads provided (add header)
 
         # extend the circuit to target nodes
         await circuit.extend(*descriptors)
 
-        async with circuit.raw(*, transport=br.io.stream) as raw:
+        async with circuit.raw(*, transport=lnn.io.stream) as raw:
             raw.write(*payloads) # sends all payloads provided (add header)
 
             # receive RELAY payloads
             async for payload in raw:
                 # perform work
 
-        async with circuit.dir(query, *, transport=br.io.stream) as request:
+        async with circuit.dir(query, *, transport=lnn.io.stream) as request:
             request.{headers,data,text, ...} # (query already performed)
 
         # returns the protocol
         async with circuit.tcp(host, port, *,
-            protocol=br.io.socket, transport=br.io.stream) as socket:
+            protocol=lnn.io.socket, transport=lnn.io.stream) as socket:
 
             # socket-like interface
             socket.send(data)
             socket.recv()
 
-# class custom(br.io.{link,circuit,stream}):
+# class custom(lnn.io.{link,circuit,stream}):
 #    # custom control (or non-"relay_data") cells handling
 #    async def perform_control(self, cells): # (cells is an async generator)
 #        async for cell in super().perform_control(cells):
@@ -45,27 +45,27 @@ async with br.link(host, port, *, ssl, transport=br.io.link) as link:
 # 2nd draft (see below for stack summary)
 #
 
-async with br.link(host, port, handler=None, *, ssl, transport=br.t.link) as link:
+async with lnn.link(host, port, handler=None, *, ssl, transport=lnn.t.link) as link:
     # note that explicitly ssl=None must be stated to disable ssl cert. auth.
     #   (a context can be provided either way)
     #
-    # if (handler == None), defaults to br.lp.initiator (if br.link)
-    #                                or br.lp.responder (if br.accept)
+    # if (handler == None), defaults to lnn.lp.initiator (if lnn.link)
+    #                                or lnn.lp.responder (if lnn.accept)
     #
-    # (inherit from br.lp.basic)
+    # (inherit from lnn.lp.basic)
     # (context manager can only be used if (handler == None) here)
     #
     # See link.fast below for handler-related behaviors.
     #
     #
-    # br.link is a convenience wrapper around:
-    #   br.create_link(br.io.ssl, br.lp.initiator, *kargs, *
-    #       transport=br.t.link, loop=None)
-    # br.accept is a convenience wrapper around:
-    #   br.create_link(br.io.ssl, br.lp.responder, *kargs, *,
-    #       transport=br.t.link, loop=None)
+    # lnn.link is a convenience wrapper around:
+    #   lnn.create_link(lnn.io.ssl, lnn.lp.initiator, *kargs, *
+    #       transport=lnn.t.link, loop=None)
+    # lnn.accept is a convenience wrapper around:
+    #   lnn.create_link(lnn.io.ssl, lnn.lp.responder, *kargs, *,
+    #       transport=lnn.t.link, loop=None)
     #
-    # (where internally br.io.ssl is build using given br.lp, kargs & loop)
+    # (where internally lnn.io.ssl is build using given lnn.lp, kargs & loop)
     #
     #
     # They all have extra callbacks:
@@ -78,20 +78,20 @@ async with br.link(host, port, handler=None, *, ssl, transport=br.t.link) as lin
     #   fast
     #   ntor
 
-    async with link.fast(handler=None, *, transport=br.t.circuit) as circuit:
-        # if (handler == None), defaults to br.cp.fast  (if link.fast)
-        #                                or br.cp.ntor  (if link.ntor)
-        # (inherit from br.cp.basic)
+    async with link.fast(handler=None, *, transport=lnn.t.circuit) as circuit:
+        # if (handler == None), defaults to lnn.cp.fast  (if link.fast)
+        #                                or lnn.cp.ntor  (if link.ntor)
+        # (inherit from lnn.cp.basic)
         # (context manager can only be used if (handler == None) here)
         #
         #
         # link.fast is a convenience wrapper around:
-        #   br.create_circuit(br.cp.fast, link, *kargs, *,
-        #       transport=br.t.circuit)
+        #   lnn.create_circuit(lnn.cp.fast, link, *kargs, *,
+        #       transport=lnn.t.circuit)
         #
         # link.ntor is a convenience wrapper around:
-        #   br.create_circuit(br.cp.ntor, link, *kargs, *,
-        #       transport=br.t.circuit)
+        #   lnn.create_circuit(lnn.cp.ntor, link, *kargs, *,
+        #       transport=lnn.t.circuit)
         #
         # (where protocol is build using link and *kargs)
         #
@@ -108,56 +108,56 @@ async with br.link(host, port, handler=None, *, ssl, transport=br.t.link) as lin
         #   tcp
 
     # if handler is a callable, the transport is passed as:
-    async with link.fast(handler=None, *, transport=br.io.circuit) as circuit:
+    async with link.fast(handler=None, *, transport=lnn.io.circuit) as circuit:
         await handler(circuit)
 
     # thus expected call is:
     asyncio.ensure_future(link.fast(handler))
 
 # pre-build transports:
-#   br.t.link for lightnion.transports.link
-#   br.t.circuit for lightnion.transports.circuit
-#   br.t.stream for lightnion.transports.stream
+#   lnn.t.link for lightnion.transports.link
+#   lnn.t.circuit for lightnion.transports.circuit
+#   lnn.t.stream for lightnion.transports.stream
 
 # pre-build protocols:
-#   br.lp for lightnion.link_protocols
-#       br.lp.basic
-#       br.lp.initiator
-#       br.lp.responder
-#   br.cp for lightnion.circuit_protocols
-#       br.cp.basic
-#       br.cp.raw
-#       br.cp.fast
-#       br.cp.ntor
-#   br.sp for lightnion.stream_protocols
-#       br.sp.basic
-#       br.sp.raw
-#       br.sp.dir
-#       br.sp.tcp
-#   br.dp for lightnion.data_protocols
-#       br.dp.basic
-#       br.dp.socket
+#   lnn.lp for lightnion.link_protocols
+#       lnn.lp.basic
+#       lnn.lp.initiator
+#       lnn.lp.responder
+#   lnn.cp for lightnion.circuit_protocols
+#       lnn.cp.basic
+#       lnn.cp.raw
+#       lnn.cp.fast
+#       lnn.cp.ntor
+#   lnn.sp for lightnion.stream_protocols
+#       lnn.sp.basic
+#       lnn.sp.raw
+#       lnn.sp.dir
+#       lnn.sp.tcp
+#   lnn.dp for lightnion.data_protocols
+#       lnn.dp.basic
+#       lnn.dp.socket
 
 # stack summary
 #
-# · br.link
-# | ~ br.create_link
+# · lnn.link
+# | ~ lnn.create_link
 # |
 # | io
-# | br.transports.link
-# | br.link_protocols.{initiator, responder} (responder NOT implemented)
+# | lnn.transports.link
+# | lnn.link_protocols.{initiator, responder} (responder NOT implemented)
 # |
 # · link.{raw, fast, ntor}
-# | ~ br.create_circuit
+# | ~ lnn.create_circuit
 # |
-# | br.transports.circuit
-# | br.circuit_protocols.{raw, fast, ntor}
+# | lnn.transports.circuit
+# | lnn.circuit_protocols.{raw, fast, ntor}
 # |
 # · circuit.{raw, dir, tcp}
-# | ~ br.create_stream
+# | ~ lnn.create_stream
 # |
-# | br.transports.stream
-# | br.stream_protocols.{raw, dir, tcp}
+# | lnn.transports.stream
+# | lnn.stream_protocols.{raw, dir, tcp}
 # @
 
 # raw protocols gives direct access to cell reader/writer
@@ -180,7 +180,7 @@ asyncio.ensure_future(circuit.tcp(handler))
 
 # dir is just like tcp, but sends a BEGIN_DIR instead
 
-# providing a br.adapters.socket(circuit) can be fun
+# providing a lnn.adapters.socket(circuit) can be fun
 #   - returns an object that exposes main socket modules functions
 #       create_connection
 #
@@ -200,7 +200,7 @@ asyncio.ensure_future(circuit.tcp(handler))
 #       #   - have python native ssl module working
 #       #   - have asyncio.get_event_loop().create_connection(sock=) working
 #
-# providing a br.adapters.requests(circuit) can be fun
+# providing a lnn.adapters.requests(circuit) can be fun
 #   - returns an object that exposes main requests module functions
 #
 #       adapters.HTTPAdapter (must work for both HTTP & HTTPs)
@@ -214,8 +214,8 @@ asyncio.ensure_future(circuit.tcp(handler))
 #       patch
 #       delete
 #
-# providing a br.adapters.directory(circuit) can be fun
-#   - same a br.adapters.requests, but create dir streams instead
+# providing a lnn.adapters.directory(circuit) can be fun
+#   - same a lnn.adapters.requests, but create dir streams instead
 #
 #       adapters.HTTPAdapter (but building dir streams)
 #

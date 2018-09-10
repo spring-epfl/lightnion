@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This script starts a local Tor relay that connects to the public network, but
 # doesn't publish its descriptor.
