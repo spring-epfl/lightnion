@@ -1,0 +1,66 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='guard'>Guard identity is: </pre>
+    <pre id='id'>Channel create id: </pre>
+    <pre id='one'>First hop working: </pre>
+    <pre id='two'>Second hop extend: </pre>
+    <pre id='three'>Third hop working: </pre>
+    <br>
+    <pre id='log'></pre>
+
+    <script>
+
+        lighttor.open('localhost', 4990,
+        function(endpoint)
+        {
+            switch(endpoint.state)
+            {
+                case lighttor.state.started:
+                    document.getElementById('loaded').innerHTML = 'Started!'
+                    return
+                case lighttor.state.guarded:
+                    document.getElementById('guard').innerHTML += (
+                        endpoint.guard.router.identity)
+                    return
+                case lighttor.state.created:
+                    document.getElementById('id').innerHTML += endpoint.id
+                    document.getElementById('one').innerHTML += 'yes'
+                    return
+                case lighttor.state.pending:
+                    document.getElementById('loaded').innerHTML += '!'
+                    return
+                case lighttor.state.extpath:
+                    document.getElementById('two').innerHTML += 'yes'
+                    return
+                case lighttor.state.success:
+                    document.getElementById('three').innerHTML += 'yes'
+            }
+            lighttor.stream.dir(endpoint, '/tor/server/authority', handler)
+        })
+
+        function handler(request)
+        {
+            switch(request.state)
+            {
+                case lighttor.state.started:
+                    document.getElementById('log').innerHTML = 'Stream...'
+                    return
+                case lighttor.state.created:
+                    document.getElementById('log').innerHTML += ' open!\n\n'
+                    return
+                case lighttor.state.pending:
+                    document.getElementById('log').innerHTML += request.recv()
+                    return
+                case lighttor.state.success:
+                    document.getElementById('log').innerHTML += '\nFinished!'
+                    return
+            }
+        }
+    </script>
+</body>
+</html>

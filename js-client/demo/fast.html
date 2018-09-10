@@ -1,0 +1,34 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='open'>Open: </pre>
+    <pre id='fast'>Fast: </pre>
+
+    <script>
+        function ms(endpoint)
+        {
+            return (performance.now() - endpoint.start).toString() + 'ms'
+        }
+
+        lighttor.open('localhost', 4990, function(endpoint)
+            {
+                if (endpoint.state == lighttor.state.started)
+                    endpoint.start = performance.now()
+
+                if (endpoint.state == lighttor.state.success)
+                    document.getElementById('open').innerHTML += ms(endpoint)
+            })
+        lighttor.fast('localhost', 4990, function(endpoint)
+            {
+                if (endpoint.state == lighttor.state.started)
+                    endpoint.start = performance.now()
+
+                if (endpoint.state == lighttor.state.success)
+                    document.getElementById('fast').innerHTML += ms(endpoint)
+            })
+    </script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='run'></pre>
+    <pre id='per'></pre>
+    <pre id='out'></pre>
+    <pre id='log'></pre>
+
+    <script>
+        // configuration of the experiment
+        var target_runs = 3
+        var target_load = 250
+        var nb_measured = 2500
+        var restart_lat = 1000
+        var accept_port = 12003 // (port used in tools/loop.py)
+
+        // metrics of the experiment
+        var time_start = null
+        var time_total = []
+        var everything = []
+
+        // cell packers
+        function pack_perf(length)
+        {
+            var data = new Uint8Array(lighttor.relay.data_len)
+            var view = new DataView(data.buffer)
+
+            view.setUint32(0, Math.floor(performance.now() / 10), false)
+            data[10] = 0x11
+            data[17] = 0xff
+            return data
+        }
+
+        function unpack_perf(data)
+        {
+            // drop unaligned payloads (simpler)
+            if (data[10] != 0x11 || data[17] != 0xff)
+                return null
+
+            var view = new DataView(data.buffer)
+            var last = view.getUint32(0, false)
+
+            return performance.now() - last * 10
+        }
+
+        // global variables
+        var out = 0
+        var per = 0
+        var run = 0
+        function send_load(tcp)
+        {
+            if(out >= nb_measured)
+                return
+
+            while (out < nb_measured)
+            {
+                out += 1
+                tcp.send(pack_perf(lighttor.relay.data_len))
+
+                // (only using setTimeout is not precise enough)
+                var current = performance.now() - time_start
+                var target = (out + 1) * (1000 / target_load)
+                if (target - current > 5)
+                {
+                    setTimeout(send_load, target - current, tcp)
+                    return
+                }
+            }
+        }
+
+        function disp()
+        {
+            document.getElementById('run').innerText = (
+                run + '/' + target_runs + ' run')
+            document.getElementById('per').innerText = (
+                Math.floor(per / lighttor.relay.data_len)
+                + '/' + nb_measured + ' inbound')
+            document.getElementById('out').innerText = (
+                out + '/' + nb_measured + ' outbound')
+            setTimeout(disp, 100)
+        }
+
+        // start a run
+        function start_run()
+        {
+            var log = document.getElementById('log')
+            if (run > 0)
+                log.innerText += 'run' + run + ' = [' + everything + ']\n'
+
+            if (run >= target_runs)
+            {
+                log.innerText += 'totals = [' + time_total + ']\n'
+                return
+            }
+
+            out = 0
+            per = 0
+            everything = []
+
+            var channel = lighttor.fast('localhost', 4990, function(endpoint)
+            {
+                if (endpoint.state != lighttor.state.success)
+                    return
+
+                // create the stream
+                lighttor.stream.tcp(
+                    endpoint, '127.0.0.1', accept_port, handler)
+
+            })
+        }
+
+        function handler(request)
+        {
+            // measure time *after* circuit negotiation
+            if (request.state == lighttor.state.created)
+            {
+                time_start = performance.now()
+
+                // start the storm
+                setTimeout(send_load, 1000 / target_load, request)
+            }
+
+            if (request.state == lighttor.state.pending)
+            {
+                var data = request.recv()
+                if (data.length == 0)
+                    return
+                per += data.length
+
+                // measure only aligned, full cells
+                if (data.length == lighttor.relay.data_len)
+                {
+                    var last = unpack_perf(data)
+                    if (last != null)
+                        everything.push(last)
+                }
+
+                // terminate the run
+                if (per >= nb_measured * lighttor.relay.data_len)
+                {
+                    time_total.push(performance.now() - time_start)
+                    setTimeout(start_run, restart_lat)
+                    run += 1
+                }
+            }
+        }
+
+        disp()
+        setTimeout(start_run, restart_lat)
+    </script>
+</body>
+</html>

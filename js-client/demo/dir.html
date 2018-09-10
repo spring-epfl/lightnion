@@ -1,0 +1,23 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='log'></pre>
+
+    <script>
+        var path = '/tor/status-vote/current/consensus'
+        lighttor.open('localhost', 4990, function(endpoint)
+        {
+            if (endpoint.state == lighttor.state.success)
+                lighttor.stream.dir(endpoint, path, handler)
+        })
+        function handler(request)
+        {
+            if (request.state == lighttor.state.success)
+                document.getElementById('log').innerHTML += request.data
+        }
+    </script>
+</body>
+</html>

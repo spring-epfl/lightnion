@@ -1,0 +1,43 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+CHUTNEY="${CHUTNEY:-$PWD/chutney}"
+CHUTNEY_TOR="/usr/bin/tor"
+CHUTNEY_TOR_GENCERT="/usr/bin/tor-gencert"
+CHUTNEY_DNS_CONF="/etc/resolv.conf" # default
+export CHUTNEY CHUTNEY_TOR CHUTNEY_TOR_GENCERT CHUTNEY_DNS_CONF
+
+function chutney()
+{
+    "$CHUTNEY" "$@"
+}
+
+function cleanup()
+{
+    trap - EXIT
+    echo -e "Exiting...\n\n"
+    chutney stop networks/basic
+
+    tput rmcup
+}
+
+tput smcup
+trap cleanup EXIT
+
+chutney configure networks/basic
+chutney start networks/basic
+chutney status networks/basic
+
+ports="$(
+    cat "$(dirname "$CHUTNEY")/net/nodes/"*"/torrc" | \
+    grep -E "^(Socks|Or|Dir|Control)Port [0-9]*$" | grep -v " 0$")"
+
+echo -e "\n"
+for flavor in Control Dir Or Socks
+do
+    echo "${flavor}Ports: $(
+        (grep "$flavor"|grep -Eo "[0-9]*"|tr "\n" " ") <<< "$ports")"
+done
+
+echo -en "\nPress return to shutdown chutney... "
+read && cleanup

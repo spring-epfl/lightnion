@@ -1,0 +1,55 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='run'></pre>
+    <pre id='log'></pre>
+
+    <script>
+        // configuration of the experiment
+        var target_runs = 3
+        var restart_lat = 1000
+
+        // metrics of the experiment
+        var time_start = null
+        var time_total = []
+
+        function disp()
+        {
+            document.getElementById('run').innerText = (
+                run + '/' + target_runs + ' run')
+            setTimeout(disp, 100)
+        }
+
+        // start a run
+        var run = 0
+        function start_run()
+        {
+            var log = document.getElementById('log')
+            if (run >= target_runs)
+            {
+                log.innerText += 'totals = [' + time_total + ']\n'
+                return
+            }
+
+            run += 1
+            var channel = lighttor.fast('localhost', 4990, function(endpoint)
+            {
+                if (endpoint.state == lighttor.state.started)
+                    time_start = performance.now()
+
+                if (endpoint.state != lighttor.state.success)
+                    return
+
+                time_total.push(performance.now() - time_start)
+                setTimeout(start_run, restart_lat)
+            })
+        }
+
+        disp()
+        setTimeout(start_run, restart_lat)
+    </script>
+</body>
+</html>

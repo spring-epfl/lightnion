@@ -1,0 +1,210 @@
+:s/ponion/bronion/g
+
+Summary:
+ - Can be used as proxy or pluggable transport.
+ - Add some headers during websocket UPGRADE handshake.
+ - Upon successful negotiation, gives access to a circuit.
+ - Upon failure, acts as if there is no websocket listener.
+ - Returns negotiation results in handshake answer.
+
+Notes:
+ - this "spec" is only notes, i.e. "brain farts".
+ - python websockets provides everything we need to bind unholy handshakes.
+
+
+-------------
+original file
+-------------
+
+Some notes about anything I can think of in term of features and implementation
+that can be included in ponion for now. Note that here we assume that ponion
+provides no path selection mechanism -- also note that a client can recover at
+any time a consensus or descriptors by doing an attempt without X-PNN-IDENTITY
+and further perform signature validation and path selection locally.
+
+No mechanism for feature negotiation is provided to avoid trivial probing, note
+that both PNN-OTP-SEED and PNN-HTTP-PROXY should be set to avoid active probes
+(assuming a proper implementation of the ponion proxy)
+
+ponion config, only read once during startup:
+    PNN-LISTEN host:port (required)
+        incoming connections host:port
+        if ponion is started as a pluggable transport, host:port are overridden
+    PNN-ORPORT host:port:fast (required)
+        parent Tor node
+        if ponion is started as a pluggable transport, host:port are overridden
+        if :fast is omitted, attempts without X-PNN-NTOR will be unrecognized.
+        if :fast is present, ponion circuit creation defaults to CREATE_FAST
+        whenever X-PNN-NTOR is omitted in the attempt.
+    PNN-PER-LINK nb (optional)
+        set the number of channel allocated per link, i.e. number of circuits
+        created before rotating a link.
+        (defaults to 16)
+    PNN-MAX-LINK nb (optional)
+        set the number of links that can exists in parallel.
+        (destroying oldest links first whenever needed)
+        (defaults to 64)
+    PNN-EXPIRACY seconds (optional)
+        number of seconds of inactivity before destroying channel.
+        (defaults to 600)
+    PNN-TIMEOUT seconds (optional)
+        number of seconds before timeout during circuit creation.
+        (defaults to 10)
+    PNN-SSL-CERT path (recommended)
+        if present, PNN-SSL-KEY must be set.
+        if present, ponion will only accept TLS connections and will use the
+        certificate at the given path.
+        if not present, ponion will not recognize attempts without X-PNN-NTOR.
+    PNN-SSL-KEY path (recommended)
+        if present, PNN-SSL-CERT must be set.
+        if present, ponion will only accept TLS connections and will use the
+        key material at the given path.
+        if not present, ponion will not recognize attempts without X-PNN-NTOR.
+    PNN-NTOR-AUTH hex/path (optional)
+        if present and either PNN-SSL-CERT or PNN-SSL-KEY is not set, ponion
+        will not recognize attempts without a X-PNN-AUTH header.
+        if present, ponion will accept X-PNN-AUTH headers if its value can be
+        interpreted as a valid x25519 key (either 32 hex-encoded bytes or a
+        path as described below).
+        if present and is not 64 hexadecimal digits, ponion will interpret the
+        given value as the path of a PEM-encoded file and will take the last
+        32 bytes of its base64-encoded material as key.
+        (effectively ignoring plausible x25519 ASN.1 headers)
+        if not present and either PNN-SSL-CERT or PNN-SSL-KEY is not present,
+        ponion fails.
+    PNN-HTTP-PROXY protocol:host:port (experimental)
+        if not present, any unrecognized attempt will fail with no content, no
+        extra header and a status code of 400.
+        if present, any unrecognized attempt of opening a channel will be
+        forwarded as-is to the specified host:port and the answer, status code
+        and headers will be returned as-is to the client -- note that protocol
+        can only take "http" and "https" as value and that ponion will
+        return a status code 500 without content nor extra header if it is
+        unable to complete the request.
+    PNN-OTP-SEED hex (experimental)
+        if present, ponion will not recognize any attempt of opening any
+        channel without a valid X-PNN-OTP header and the hex-encoded seed
+        will be used to check validity.
+        (the seed must contain at least 32 bytes of uniform randomness and thus
+         ponion will reject any seed shorter than 32 bytes)
+    PNN-MIN-POISSON milliseconds (experimental)
+        if not present, ponion will not recognize any attempt that provides a
+        X-PNN-POISSON header.
+        if present, ponion will not recognize any attempts that set a
+        X-PNN-POISSON header value below the value set here.
+        (should approximate PNN-LINK-POISSON * PNN-PER-LINK)
+        (recommended to 256)
+    PNN-LINK-POISSON milliseconds (experimental)
+        if present and PNN-MIN-POISSON not present, ponion fails.
+        (defaults to 16)
+
+1. the client arrives, begin a websocket handshake providing extra headers:
+    - X-PNN-IDENTITY base64 (recommended)
+        target Tor node identity, must be the first X-PNN prefixed header and
+        must be equal to the parent Tor node identity to recognize the attempt.
+        if not present, defaults to the parent Tor node identity.
+        (can be used to implement header-based reverse proxies)
+    - X-PNN-NTOR base64 (recommended)
+        if present, a CREATE2 cell is send during circuit creation instead of a
+        CREATE_FAST cell, effectively performing a ntor handshake with parent
+        Tor node.
+        if present, ponion will set X-PNN-NTORED header with the server
+        base64-encoded part of the handshake:
+            either a full identity+onionkey+pubkey
+            either a short only-pubkey
+        if X-PNN-NTOR is short, identity+onionkey used are of parent Tor node
+    - X-PNN-AUTH base64 (optional)
+        if present, it must be 32 base64-encoded bytes that represents an
+        x25519 public key.
+        if present, ponion will perform a ntor handshake between the given
+        x25519 X-PNN-AUTH public key, the ntor onion key provided by
+        PNN-NTOR-AUTH and the identity set to parent Tor node's identity and
+        will only set X-PNN-DONE and X-PNN-AUTHED headers in the answer,
+        respectively to all X-PNN prefixed headers that should have been set
+        without X-PNN-AUTH in the attempt as a base64-encoded encrypted payload
+        and to the server base64-encoded part of the handshake.
+        (encryption uses here as key the first 32 bytes of the key material
+         issued during the handshake and as nonce the next 24 bytes)
+    - X-PNN-OTP hex (experimental)
+        if present, must be the last X-PNN prefixed header of the attempt.
+        if present and the server doesn't have PNN-OTP-SEED set, the attempt
+        will be unrecognized.
+        if not present and the server does have PNN-OTP-SEED set, the attempt
+        will be unrecognized.
+        if present and the server does have PNN-OTP-SEED set, the attempt will
+        be recognized if and only if X-PNN-OTP hex value is 128 digits (64
+        bytes) and equal to TOTP with key set to all X-PNN prefixed headers
+        as set in the attempt except for X-PNN-OTP set to PNN-OTP-SEED,
+        separated by a new line and ordered as in the attempt, using the
+        default TOTP parameters and sha512 as hash function.
+    - X-PNN-POISSON milliseconds (experimental)
+        if present, ponion will queue cells in both directions, each queue
+        emptying itself at intervals drawn from an exponential distribution
+        with an average set to the given milliseconds.
+        note that whenever a backward queue (from node to client) is empty,
+        a DROP cell is generated then queued.
+        note that each forward queue (from client to node) empties itself in
+        a common link queue that empties itself at intervals draw from an
+        exponential distribution with an average set to PNN-LINK-POISSON
+        milliseconds.
+        note that whenever a link queue is empty, a DROP cell is generated
+        then queued.
+        (DROP cells neither tags circuits nor links as active)
+
+2. the server creates a channel and its associated circuit for the client:
+    - a channel creation attempt can be either recognized or unrecognized, it
+      is recognized if all constraints put on X-PNN prefixed headers of the
+      attempt are filled.
+    - unrecognized channel creation attempts gives either 400 status codes with
+      no content and no extra headers or are forwarded as-is to PNN_HTTP_PROXY
+      if it was set during ponion startup.
+    - circuit creation is attempted if and only if the attempt is recognized
+      and must be the last step performed during channel creation.
+    - if circuit creation timeouts, the channel creation failed and a status
+      code HTTP 503 is returned.
+    - every channel that does not receive messages from a client for more than
+      PNN-EXPIRACY is destroyed together with its circuit.
+    - whenever a link have no channel alive and is not the last link alive, it
+      is destroyed.
+    - after creating PNN-PER-LINK circuits for a link, a new link is created
+      and used for further circuits.
+    - the server attributes the circuit id used during creation to the channel
+      and will not use it again.
+
+3. the server gives an answer to the handshake and set several headers:
+    - X-PNN-IDENTITY base64
+        target Tor node identity used as guard in this context, set whenever
+        X-PNN-DONE is not present
+    - X-PNN-NTORED base64
+        set whenever X-PNN-NTOR was provided in the channel creation attempt,
+        except if X-PNN-DONE is present
+    - X-PNN-EXPIRACY seconds
+        set whenever PNN-EXPIRACY is different from its default value,
+        except if X-PNN-DONE is present
+    - X-PNN-DONE base64
+        set whenever X-PNN-AUTH was provided in the channel creation attempt
+    - X-PNN-AUTHED base64
+        set whenever X-PNN-DONE is present, see X-PNN-AUTH
+    - X-PNN-OTP-STAMP seconds
+        set as an integer equal to the unix timestamp as used during TOTP
+        whenever X-PNN-OTP was provided in the channel creation attempt,
+        except if X-PNN-DONE is present
+
+4. the server will forward binary data in both directions between the client
+   and the parent Tor node:
+    - every cell going from the client to the parent node will be dropped
+      whenever its circuit id is different from 0x80000000 or whenever its
+      command is different from 0x03 (RELAY cell).
+    - every cell going from the client to the parent node will see its circuit
+      id replaced by the id of the circuit id attached to the channel.
+    - every cell going from the parent node to the client will be dropped if
+      its command is different from 0x03 (RELAY cell).
+    - every cell going from the parent node to the client will see its circuit
+      id replaced by 0x80000000.
+    - if for any reason, the circuit attached to the channel is destroyed, the
+      channel is destroyed and its connection closed.
+
+Whenever encryption that are not explicitly required by the Tor protocol is
+performed by ponion or its client, we use xsalsa20-poly1305 authenticated
+encryption as implemented by nacl via secretbox. This case is for now only used
+whenever X-PNN-DONE is set.

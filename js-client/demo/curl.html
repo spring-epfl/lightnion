@@ -1,0 +1,157 @@
+<html>
+<head>
+    <script src="lighttor.bundle.js"></script>
+    <meta charset="UTF-8">
+    <script>
+        var ini = 'artscene.textfiles.com/asciiart/penguin'
+    </script>
+</head>
+<body>
+    <form id='form' onsubmit='return perform()'>
+      <input id='url' onfocus="this.value=ini" autofocus>
+      <input id='curl' type='submit' value='curl' disabled>
+    </form>
+    <pre id='log'></pre>
+    <script>
+        "use strict"
+
+        var channel = null
+        lighttor.fast('localhost', 4990, function(endpoint)
+        {
+            if (endpoint.state != lighttor.state.success)
+                return
+            channel = endpoint
+            document.getElementById('curl').disabled = false
+        })
+
+        function perform()
+        {
+            var url = document.getElementById('url').value
+            var success = function(request)
+            {
+                console.log(request.headers)
+                document.getElementById('log').innerText = request.data
+
+                switch(url)
+                {
+                    case ini:
+                        url = 'api.ipify.org'
+                        break
+                    case 'api.ipify.org':
+                        url = 'wttr.in/?0T'
+                        break
+                    case 'wttr.in/?0T':
+                        url = ''
+                        break
+                }
+                document.getElementById('url').value = url
+                document.getElementById('curl').disabled = false
+            }
+
+            curl('http://' + url, success)
+            document.getElementById('curl').disabled = true
+            return false
+        }
+
+        function curl(url, success)
+        {
+            console.log('curl', url)
+            if (url.slice(0, 7) == "http://")
+                url = url.slice(7)
+            else
+                throw 'Urls must start with http://'
+
+            var path = "/" + url.split("/").slice(1).join("/")
+            var host = null
+            if (url.match("/") == null)
+                host = url
+            else
+                host = url.split("/", 1)[0]
+
+            var port = "80"
+            if (host.match(":") != null)
+                port = host.split(":", 2)[1]
+
+            var payload = [
+                ["GET", path, "HTTP/1.1"].join(" "),
+                ["Host:", host].join(" "),
+                ["User-Agent:", agent].join(" "),
+                ["Accept:", "*/*"].join(" ")].join("\r\n") + "\r\n\r\n"
+
+            var data = ''
+            var length = null
+            var rawlen = 0
+            var headers = null
+            var handler = function(request)
+            {
+                if (request.state != lighttor.state.pending)
+                    return
+
+                var payload = request.recv()
+                rawlen += payload.length
+                data += lighttor.enc.utf8(payload)
+                if (length == null)
+                {
+                    if (data.match('\r\n\r\n'))
+                    {
+                        headers = data.split('\r\n\r\n')[0]
+                        var len = headers.match('Content-Length: ([^\r]*)')
+                        length = parseInt(len[1])
+                    }
+                }
+
+                if (rawlen < headers.length + length)
+                    return
+
+                success({headers: headers,
+                    data: data.slice(headers.length + 4)})
+                success = function(request) { }
+            }
+
+            host = host.split(':')[0]
+            lighttor.stream.tcp(channel, host, port, handler).send(payload)
+        }
+
+        var agents = [
+            "curl/7.61.0",
+            "curl/7.60.0",
+            "curl/7.59.0",
+            "curl/7.58.0",
+            "curl/7.57.0",
+            "curl/7.56.1",
+            "curl/7.56.0",
+            "curl/7.55.1",
+            "curl/7.55.0",
+            "curl/7.54.1",
+            "curl/7.54.0",
+            "curl/7.53.1",
+            "curl/7.53.0",
+            "curl/7.52.1",
+            "curl/7.52.0",
+            "curl/7.51.0",
+            "curl/7.50.3",
+            "curl/7.50.2",
+            "curl/7.50.1",
+            "curl/7.50.0",
+            "curl/7.50.0",
+            "curl/7.49.1",
+            "curl/7.49.0",
+            "curl/7.48.0",
+            "curl/7.47.1",
+            "curl/7.47.0",
+            "curl/7.46.0",
+            "curl/7.45.0",
+            "curl/7.44.0",
+            "curl/7.43.0",
+            "curl/7.42.1",
+            "curl/7.42.0",
+            "curl/7.41.0",
+            "curl/7.40.0",
+            "curl/7.39.0",
+            "curl/7.38.0"
+        ]
+        var agent = agents[Math.floor(Math.random() * agents.length)]
+        document.getElementById('curl').disabled = true
+    </script>
+</body>
+</html>
