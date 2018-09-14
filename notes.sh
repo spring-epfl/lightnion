@@ -9,7 +9,7 @@ exit 1
 # quick setup
 git clone --recurse-submodules https://github.com/spring-epfl/lighttor lightnion
 cd lightnion
-virtualenv venv # virtualenv --python=python3 venv
+virtualenv --python=python3 venv
 source venv/bin/activate
 pip install -r requirements.txt -r requirements-proxy.txt # install deps
 

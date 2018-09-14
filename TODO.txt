@@ -1,5 +1,9 @@
+Misc:
+ - "grep -rni todo"
+
 Roadmap python implementation:
  - download consensus via HTTP whenever possible
+ - less basic error reporting / proper exceptions
  - asyncio-only (sans-IO?) rewrite of core components
  - websockets-only (no flask, perform_request-based) rewrite of the proxy
  - link authentication
@@ -15,6 +19,7 @@ Roadmap javascript implementation:
  - remove nacl, use HACL* Curve25519 build in WebAssembly instead
 
 Roadmap common:
+ - use same port for HTTP and websocket
  - pluggable transport+proxy websocket-only approach (maybe .extra/spec.txt)
  - a nginx proxy integration
 
