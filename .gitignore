@@ -4,3 +4,5 @@ local-relay-*
 *env
 .vagrant
 *.pyc
+ubuntu-bionic-18.04-cloudimg-console.log
+

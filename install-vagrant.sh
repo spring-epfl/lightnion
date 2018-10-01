@@ -61,13 +61,14 @@ else
 	echo "Virtualenv is already installed"
 fi
 
-
+cd /vagrant
 virtualenv --python=python3 venv
 source venv/bin/activate
-$PIPINSTALL -r /vagrant/requirements.txt -r /vagrant/requirements-proxy.txt
+$PIPINSTALL -r requirements.txt -r requirements-proxy.txt
 
 if ! [ -d "chutney" ]; then
 	echo "Installing chutney"	
+	cd /home/vagrant
 	git clone https://github.com/torproject/chutney.git
 	cp /vagrant/tools/chutney/small-chut chutney
 	cd chutney
