@@ -6,6 +6,8 @@ APTGET="sudo DEBIAN_FRONTEND=noninteractive apt-get"
 APTGETINSTALL="$APTGET -y install"
 PIP="sudo -H pip3"
 PIPINSTALL="$PIP install"
+VENVPIP=" sudo -H venv/bin/pip3"
+VPIPINSTALL="$VENVPIP install"
 
 echo "Updating the packages"
 $APTGET update
@@ -64,7 +66,7 @@ fi
 cd /vagrant
 virtualenv --python=python3 venv
 source venv/bin/activate
-$PIPINSTALL -r requirements.txt -r requirements-proxy.txt
+$VPIPINSTALL -r requirements.txt -r requirements-proxy.txt
 
 if ! [ -d "chutney" ]; then
 	echo "Installing chutney"	

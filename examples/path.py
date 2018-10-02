@@ -65,3 +65,4 @@ if __name__ == '__main__':
         print(' - {} -> {}'.format(middle['nickname'], exit['nickname']))
         print('     - mid. node digest:', middle['digest'])
         print('     - exit node digest:', exit['digest'])
+
