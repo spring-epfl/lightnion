@@ -40,7 +40,7 @@ if __name__ == '__main__':
         tor = lnn.proxy.path.get_tor(
             msg_handler=lambda line: print(' ' * 4, line))
 
-        print('\nFetching paths now...'.format(sys_argv.target))
+        print('\nFetching paths now...')
         producer = lnn.proxy.path.fetch(tor_process=tor)
     else:
         print('\nFetching at least {} paths now.'.format(sys_argv.target))

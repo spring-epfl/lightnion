@@ -747,3 +747,4 @@ def download(state, flavor='microdesc', cache=True):
         lnn.cache.consensus.put(consensus)
 
     return state, consensus
+
