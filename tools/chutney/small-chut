@@ -6,6 +6,7 @@ CHUTNEY_TOR="$(which tor)"
 CHUTNEY_TOR_GENCERT="$(which tor-gencert)"
 CHUTNEY_DNS_CONF="/etc/resolv.conf" # default
 export CHUTNEY CHUTNEY_TOR CHUTNEY_TOR_GENCERT CHUTNEY_DNS_CONF
+CHUTNEY_NET="networks/basic"
 
 function chutney()
 {
@@ -16,7 +17,7 @@ function cleanup()
 {
     trap - EXIT
     echo -e "Exiting...\n\n"
-    chutney stop networks/basic
+    chutney stop 
 
     tput rmcup
 }
@@ -24,9 +25,9 @@ function cleanup()
 tput smcup
 trap cleanup EXIT
 
-chutney configure networks/basic
-chutney start networks/basic
-chutney status networks/basic
+chutney configure $CHUTNEY_NET 
+chutney start $CHUTNEY_NET 
+chutney status $CHUTNEY_NET 
 
 ports="$(
     cat "$(dirname "$CHUTNEY")/net/nodes/"*"/torrc" | \

@@ -12,7 +12,7 @@
 orport='9050' # -: relay will listen for connections on this port
 dirport='9051' # -: relay will advertise the directory service on this port
 controlport='8000' # -: relay will advertise the specified control port
-log_level='warn' # -: available levels: {debug, info, notice, warn, err}
+log_level='info' # -: available levels: {debug, info, notice, warn, err}
 
 function cleanup()
 {

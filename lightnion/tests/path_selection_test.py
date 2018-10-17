@@ -1,13 +1,18 @@
-from lightnion import path_selection as ps
-from lightnion import link
-from lightnion import create
-from lightnion import consensus
+import random
+
 import pytest
+
+from lightnion import cache
+from lightnion import consensus
+from lightnion import create
+from lightnion import link
+from lightnion import path_selection as ps
 
 
 @pytest.fixture()
 def get_chutney_consensus():
     """Get chutney's consensus"""
+    cache.purge()
     lk = link.initiate(port=5000)
     state = create.fast(lk)
     state, cons = consensus.download(state, flavor='unflavored')
@@ -41,6 +46,18 @@ def test_pick_good_exit_returns_a_router(get_chutney_consensus):
 
     state, exit_node = ps.pick_good_exit(routers, state)
 
-    print(exit_node)
-
     assert exit_node is not None
+
+
+def test_path_selection_works(get_chutney_consensus):
+    state, cons = get_chutney_consensus
+    routers = cons.values()
+
+    ps.select_path(routers, state, testing=True)
+
+
+def test_obey_minimal_constraint_with_one_router(get_chutney_consensus):
+    state, cons = get_chutney_consensus
+
+    assert not ps.obey_minimal_constraint(cons['test005r'], cons['test005r'])
+
