@@ -67,6 +67,7 @@ cd /vagrant
 virtualenv --python=python3 venv
 source venv/bin/activate
 $VPIPINSTALL -r requirements.txt -r requirements-proxy.txt
+$VPIPINSTALL pytest
 
 if ! [ -d "chutney" ]; then
 	echo "Installing chutney"	

@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
    torMachine.vm.provision "shell", path: "install-vagrant.sh" 
 
     torMachine.vm.provider "virtualbox" do |v|
-      v.memory = 4096
+      v.memory = 6144 
       v.cpus = 2
     end
   end

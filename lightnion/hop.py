@@ -148,6 +148,7 @@ def directory_query(
         raise RuntimeError('Expecting RELAY_CONNECTED after RELAY_BEGIN_DIR,'
             + ' got {} in cell:'.format(cells[0].relay.cmd, cells[0].raw))
 
+
     http = directory_request.format(query=query, compression=compression)
 
     http = bytes(http, 'utf8')

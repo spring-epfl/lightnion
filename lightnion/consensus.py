@@ -2,8 +2,10 @@ from base64 import b64encode, b64decode
 import datetime
 import binascii
 import time
+import os
 
 import lightnion as lnn
+
 
 # TODO: remove extra (useless) checks/exceptions within this file
 
@@ -28,6 +30,7 @@ def scrap(consensus, end_of_field):
         return consensus, None
     return remaining, line
 
+
 def scrap_signature(consensus, fix=b'SIGNATURE'):
     """
         Consume a signature field if there is one to consume.
@@ -39,7 +42,7 @@ def scrap_signature(consensus, fix=b'SIGNATURE'):
     if not consensus.startswith(b'-----BEGIN ' + fix + b'-----'):
         return consensus, None
 
-    lines = consensus.split(b'\n', 22) # fits 0-1024o (for 256o sig)
+    lines = consensus.split(b'\n', 22)  # fits 0-1024o (for 256o sig)
     try:
         idx_endsig = lines.index(b'-----END ' + fix + b'-----')
     except ValueError:
@@ -48,6 +51,7 @@ def scrap_signature(consensus, fix=b'SIGNATURE'):
     remaining = b'\n'.join(lines[idx_endsig + 1:])
     content = b''.join(lines[1:idx_endsig])
     return remaining, content
+
 
 def parse_address(address):
     """
@@ -80,6 +84,7 @@ def parse_address(address):
 
     return address, int(port), guessed_type
 
+
 def parse_range_once(value, expand=True):
     """
         Take Tor-formatted ranges, then returns it as a list of integers if
@@ -108,6 +113,7 @@ def parse_range_once(value, expand=True):
             subvalues += [int(subvalue)]
     return subvalues
 
+
 def parse_ranges(ranges, expand=True):
     """
         Take Tor-formatted named ranges, then returns a keyword-based
@@ -128,6 +134,7 @@ def parse_ranges(ranges, expand=True):
         content[key] = parse_range_once(value, expand)
     return content
 
+
 def parse_params(params):
     """
         Take Tor-formatted parameters, then returns a keyword-based dictionary
@@ -146,14 +153,16 @@ def parse_params(params):
         content[key] = int(value)
     return content
 
+
 def parse_fingerprint(payload):
     asbytes = bytes.fromhex(payload)
     fingers = asbytes.hex().upper()
-    fingers = ' '.join([fingers[i:i+4] for i in range(0, len(fingers), 4)])
+    fingers = ' '.join([fingers[i:i + 4] for i in range(0, len(fingers), 4)])
     if not fingers == payload:
         raise RuntimeError(
             'Fingerprint not conform: {} vs {}'.format(fingers, payload))
     return fingers
+
 
 def parse_base64(payload, decode=False):
     """
@@ -182,6 +191,7 @@ def parse_base64(payload, decode=False):
 
     return value
 
+
 def parse_time(timedate):
     """
         Take a Tor-formatted (Y-m-d H:M:S) time, parse it, then returns the
@@ -197,8 +207,9 @@ def parse_time(timedate):
 
     # convert to UTC-aware datetime object
     when = datetime.datetime(*when.timetuple()[:6],
-        tzinfo=datetime.timezone.utc)
+                             tzinfo=datetime.timezone.utc)
     return (when.strftime('%Y-%m-%d'), when.strftime('%H:%M:%S'), when)
+
 
 def consume_http(consensus):
     """
@@ -209,6 +220,7 @@ def consume_http(consensus):
 
         :returns: a tuple (remaining-input, headers-or-None)
     """
+
     def end_of_field(line):
         return line[-1:] != b'\r'
 
@@ -236,6 +248,7 @@ def consume_http(consensus):
         keyword, content = header.split(' ', 1)
         if keyword[-1:] == ':':
             fields['headers'][keyword[:-1]] = content
+
 
 def consume_headers(consensus, flavor='unflavored'):
     """
@@ -278,6 +291,7 @@ def consume_headers(consensus, flavor='unflavored'):
         b'recommended-client-protocols', b'recommended-relay-protocols',
         b'required-client-protocols', b'required-relay-protocols', b'params',
         b'shared-rand-previous-value', b'shared-rand-current-value']
+
     def end_of_field(line):
         if b' ' not in line:
             return True
@@ -333,17 +347,17 @@ def consume_headers(consensus, flavor='unflavored'):
             if keyword == 'valid-after':
                 if not time.time() > content['stamp']:
                     raise RuntimeError('{} not yet valid! {}'.format(
-                        keyword, content)) # valid-after
+                        keyword, content))  # valid-after
 
             if keyword == 'fresh-until':
                 if not content['stamp'] > fields['valid-after']['stamp']:
                     raise RuntimeError('{} not fresh! {}'.format(
-                        keyword, content)) # fresh-until
+                        keyword, content))  # fresh-until
 
             if keyword == 'valid-until':
                 if not time.time() < content['stamp']:
                     raise RuntimeError('{} no more valid! {}'.format(
-                        keyword, content)) # valid-until
+                        keyword, content))  # valid-until
 
         if keyword == 'voting-delay':
             vote, dist = content.split(' ', 1)
@@ -373,6 +387,7 @@ def consume_headers(consensus, flavor='unflavored'):
 
         fields[keyword] = content
 
+
 def consume_dir_sources(consensus):
     """
         Consume directory source listing if present, then returns the remaining
@@ -389,6 +404,7 @@ def consume_dir_sources(consensus):
         :returns: a tuple (remaining-input, headers-or-None)
     """
     whitelist = [b'dir-source', b'contact', b'vote-digest']
+
     def end_of_field(line):
         if b' ' not in line:
             return True
@@ -432,8 +448,8 @@ def consume_dir_sources(consensus):
             identity = value
 
             content = dict(nickname=nickname, identity=identity,
-                hostname=hostname, address=address, dirport=int(dirport),
-                orport=int(orport))
+                           hostname=hostname, address=address, dirport=int(dirport),
+                           orport=int(orport))
 
             if not 0 < content['dirport'] < 65536:
                 raise RuntimeError('Invalid dirport here: {}'.format(content))
@@ -459,6 +475,7 @@ def consume_dir_sources(consensus):
         fields = [v for k, v in fields]
 
     return consensus, fields
+
 
 def consume_routers(consensus, flavor='unflavored'):
     """
@@ -491,7 +508,8 @@ def consume_routers(consensus, flavor='unflavored'):
         whitelist = [b'r', b'm', b's', b'v', b'pr', b'w', b'a']
 
     aliases = dict(m='micro-digest', pr='protocols', s='flags', v='version',
-        p='exit-policy', a='or-address')
+                   p='exit-policy', a='or-address')
+
     def end_of_field(line):
         if b' ' not in line:
             return True
@@ -543,15 +561,15 @@ def consume_routers(consensus, flavor='unflavored'):
 
         if keyword == 'r' and flavor == 'unflavored':
             (nickname, identity, digest, date, time, address, orport,
-                dirport) = content.split(' ', 7)
+             dirport) = content.split(' ', 7)
 
             digest = parse_base64(digest)
             identity = parse_base64(identity)
             date, time, when = parse_time(' '.join([date, time]))
 
             content = dict(nickname=nickname, identity=identity, digest=digest,
-                date=date, time=time, stamp=when.timestamp(), address=address,
-                dirport=int(dirport), orport=int(orport))
+                           date=date, time=time, stamp=when.timestamp(), address=address,
+                           dirport=int(dirport), orport=int(orport))
 
             if not 0 <= content['dirport'] < 65536:
                 raise RuntimeError('Invalid dirport here: {}'.format(content))
@@ -566,8 +584,8 @@ def consume_routers(consensus, flavor='unflavored'):
             date, time, when = parse_time(date + ' ' + time)
 
             content = dict(nickname=nickname, identity=identity, date=date,
-                time=time, stamp=when.timestamp(), address=address,
-                dirport=int(dirport), orport=int(orport))
+                           time=time, stamp=when.timestamp(), address=address,
+                           dirport=int(dirport), orport=int(orport))
 
             if not 0 <= content['dirport'] < 65536:
                 raise RuntimeError('Invalid dirport here: {}'.format(content))
@@ -585,7 +603,7 @@ def consume_routers(consensus, flavor='unflavored'):
 
             if not (keyword not in fields[-1][1]):
                 raise RuntimeError('Unexpected {} with: {}'.format(keyword,
-                    fields[-1]))
+                                                                   fields[-1]))
 
             fields[-1][1][keyword] = content
             continue
@@ -600,6 +618,7 @@ def consume_routers(consensus, flavor='unflavored'):
         fields = [v for k, v in fields]
 
     return consensus, fields
+
 
 def consume_footer(consensus, flavor='unflavored'):
     """
@@ -681,6 +700,7 @@ def consume_footer(consensus, flavor='unflavored'):
         fields[keyword] = content
     return consensus, fields
 
+
 def parse(consensus, flavor='unflavored'):
     """
         Parse a raw consensus with the given flavor, then returns sanitized
@@ -714,12 +734,13 @@ def parse(consensus, flavor='unflavored'):
         fields['footer'] = footer
 
     if not ('headers' in fields
-        and 'dir-sources' in fields
-        and 'routers' in fields
-        and 'footer' in fields):
+            and 'dir-sources' in fields
+            and 'routers' in fields
+            and 'footer' in fields):
         raise RuntimeError('Missing entry: {}'.format(list(fields)))
 
     return fields, consensus
+
 
 def download(state, flavor='microdesc', cache=True):
     if flavor not in ['unflavored', 'microdesc']:
@@ -747,3 +768,34 @@ def download(state, flavor='microdesc', cache=True):
         lnn.cache.consensus.put(consensus)
 
     return state, consensus
+
+
+def load(file_name, cache=True):
+    """Load the consensus from a file
+    :param file_name: the name of the file in consensus_file
+    :param cache: if we cache the newly downloaded consensus
+    :return: the parsed consensus"""
+
+    abs_path = "/vagrant/consensus_files/"+file_name
+
+    if not os.path.exists(abs_path):
+        raise FileNotFoundError()
+
+    if cache:
+        try:
+            return lnn.cache.consensus.get("unflavored")
+        except BaseException:
+            pass
+
+    with open(abs_path, "r") as file:
+        answer = file.read()
+
+    consensus, remaining = consume_routers(answer)
+
+    if consensus is None or remaining is None or not len(remaining) == 0:
+        raise RuntimeError('Unable to parse downloaded consensus!')
+
+    if cache:
+        lnn.cache.consensus.put(consensus)
+
+    return consensus
