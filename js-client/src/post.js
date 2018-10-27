@@ -11,7 +11,6 @@ lnn.post.create = function(endpoint, success, error)
             {
                 info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
             }
-
             endpoint.id = info["id"]
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
             endpoint.path = info["path"]
