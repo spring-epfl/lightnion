@@ -191,6 +191,13 @@ class sockets(threading.Thread):
 app = flask.Flask(__name__)
 url = lnn.proxy.base_url
 
+@app.route(url + '/descriptors')
+def get_descriptors():
+    try:
+        return flask.jsonify(app.clerk.slave.descriptors(app.clerk.slave.consensus())), 200
+    except lnn.proxy.jobs.expired:
+        flask.abort(503)
+
 @app.route(url + '/consensus')
 def get_consensus():
     try:

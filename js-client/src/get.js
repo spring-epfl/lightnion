@@ -77,3 +77,23 @@ lnn.get.consensus = function(endpoint, success, error)
     rq.open("GET", endpoint.urls.consensus, true)
     rq.send()
 }
+
+/**
+ * Perform GET /descriptors 
+ */
+lnn.get.descriptors = function(endpoint, success, error){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.descriptors = JSON.parse(rq.responseText)
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.descriptors, true)
+    rq.send()
+}
