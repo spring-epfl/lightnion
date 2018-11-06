@@ -77,6 +77,29 @@ lnn.get.consensus = function(endpoint, success, error)
     rq.open("GET", endpoint.urls.consensus, true)
     rq.send()
 }
+/**
+ * Get the consensus from the web
+ * 
+ * @param {endpoint_t} endpoint     endpoint in use, stores answer
+ * @param {callback} success        optional, called on success
+ * @param {callback} error          optional, called on error
+ */
+lnn.get.consensusFromWeb = function(endpoint, success, error){
+    let src = "dannenberg.torauth.de/tor/status-vote/current/consensus.z"
+    let rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState === XMLHttpRequest.DONE){
+            if(rq.status === 200 && success !== undefined){
+                success(endpoint)
+            }else if(rq.status !== 200 && error !== undefined){
+                error(endpoint, rq.status)
+            }
+        }
+    }
+
+    rq.open("GET", src)
+    rq.send()
+}
 
 /**
  * Perform GET /descriptors 
@@ -97,3 +120,5 @@ lnn.get.descriptors = function(endpoint, success, error){
     rq.open("GET", endpoint.urls.descriptors, true)
     rq.send()
 }
+
+

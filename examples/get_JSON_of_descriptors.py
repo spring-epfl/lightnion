@@ -8,6 +8,9 @@ if __name__ == "__main__":
     state = lnn.create.fast(link)
     state, cons = lnn.consensus.download(state, flavor='unflavored')
 
+    with open("/vagrant/cons.json", 'w') as file:
+        file.write(json.dumps(cons))
+
     state, descriptors = lnn.descriptors.download(state, flavor="unflavored")
 
     with open("/vagrant/descriptors.json", 'w') as file:
