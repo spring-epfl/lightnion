@@ -21,6 +21,7 @@ class ConsensusParser{
      */
     parse() {
         this.consumeHeaders()
+        this.consumeAuthority()
 
         return this.consensus
 
@@ -221,6 +222,58 @@ class ConsensusParser{
         }
     }
 
+    //-------------------AUTHORITY PARSER--------------------------------
+    /**
+     * Parses the authority part of the consensus
+     * @throws InvalidIPException if address or IP are not valid IP addresses
+     * @throws InvalidPortException if dirport or orport are not valid ports
+     */
+    consumeAuthority(){
+        if(this.words[0] !== 'dir-source') throw `WrongFieldException: there must be at least one dir-source`
+        this.consensus['dir-sources'] = []
+        
+        while(this.words[0] === 'dir-source'){
+            this.consumeDirSource()
+        }
+    }
+
+    /**
+     * Parse a dir-source
+     * @throws InvalidIPException if the IP-address is not valid
+     * @throws InvalidPortException if dirport or orport are not valid
+     * @throws InvalidParameterException if the vote-digest is not in hexadecimal
+     */
+    consumeDirSource(){
+        let dirSource = {}
+        this.checkFormat(7, 'dir-source')
+
+        dirSource['nickname'] = this.words[1]
+        dirSource['identity'] = this.words[2]
+        dirSource['hostname'] = this.words[3]
+
+        if(!this.isValidIP(this.words[4])) throw `InvalidIPException: ${this.words[4]} is not valid`
+
+        dirSource['address'] = this.words[4]
+
+        if(!this.isValidPort(this.words[5]) || !this.isValidPort(this.words[6])) throw `InvalidPortException`
+
+        dirSource['dirport'] = this.words[5]
+        dirSource['orport'] = this.words[6]
+
+        this.nextLine()
+        dirSource['contact'] = this.words.splice(1, this.words.length).join(' ')
+        this.nextLine()
+        let digest = this.tryParseKeyValueString('vote-digest').toLowerCase()
+
+        if(!this.isHex(digest)) throw `InvalidParameterException: vote-digest ${digest} must be in hexadecimal` 
+
+        dirSource['vote-digest'] = digest
+        this.consensus['dir-sources'].push(dirSource)
+        this.nextLine()
+        
+
+    }
+
     //-------------------GENERAL PARSER-----------------------------------
 
      /**
@@ -339,6 +392,29 @@ class ConsensusParser{
         if (typeof time !== 'string') return false
         let regex = /^(0[0-9]|1[0-9]|2[0-3])[:][0-5][0-9][:][0-5][0-9]$/
         return regex.test(time)
+    }
+
+    /**
+     * Check if the IP address is valid
+     * @param {string} IP the address we want to check
+     */
+    isValidIP(IP){
+        let regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+        return regex.test(IP)
+    }
+
+    isValidPort(port){
+        if(isNaN(port)) return false
+        return port > 0 && port < 65535
+    }
+
+    /**
+     * Check if the given string is in hexadecimal
+     * @param {string} str 
+     */
+    isHex(str){
+        let regex = /^[a-fA-F0-9]+$/
+        return regex.test(str)
     }
 
     /**
