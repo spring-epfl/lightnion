@@ -1,0 +1,34 @@
+<html>
+
+<head>
+    <script src="consensusParser.js"></script>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <script>
+
+        //let rawText = readTextFile('beautify_cons.txt')
+        let rawText = readTextFile('test.consensus.txt')
+
+
+
+        function readTextFile(file) {
+            let rawFile = new XMLHttpRequest();
+            rawFile.open("GET", file, false);
+            rawFile.onreadystatechange = function () {
+                if (rawFile.readyState === 4) {
+                    if (rawFile.status === 200 || rawFile.status == 0) {
+                        let parser = new ConsensusParser(rawFile.responseText)
+                        let cons = parser.parse()
+                        console.log(cons)
+                    }
+                }
+            }
+            rawFile.send(null);
+        }
+
+    </script>
+</body>
+
+</html>

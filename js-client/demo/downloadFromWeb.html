@@ -1,0 +1,30 @@
+<html>
+
+<head>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='log'></pre>
+
+    <script>
+        lnn.open('localhost', 4990,
+            function success(endpoint) {
+                lnn.get.consensusFromWeb(endpoint,
+                    endpoint => {
+                        console.log("Everything went fine")
+                    },
+                    (endpoint, err) => {
+                        console.log("Error: " + err)
+                    })
+            },
+            function error(endpoint) {
+                document.getElementById('loaded').innerHTML = '(unable to open)'
+            })
+
+    </script>
+</body>
+
+</html>

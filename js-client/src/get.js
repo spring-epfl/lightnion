@@ -85,7 +85,7 @@ lnn.get.consensus = function(endpoint, success, error)
  * @param {callback} error          optional, called on error
  */
 lnn.get.consensusFromWeb = function(endpoint, success, error){
-    let src = "dannenberg.torauth.de/tor/status-vote/current/consensus.z"
+    let src = "http://dannenberg.torauth.de/tor/status-vote/current/consensus.z"
     let rq = new XMLHttpRequest()
     rq.onreadystatechange = function(){
         if(rq.readyState === XMLHttpRequest.DONE){
