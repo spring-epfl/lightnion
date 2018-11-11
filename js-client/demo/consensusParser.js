@@ -1,4 +1,4 @@
-class ConsensusParser{
+class ConsensusParser {
 
     /**
      * Constructor for the class ConsensusParser.
@@ -22,6 +22,8 @@ class ConsensusParser{
     parse() {
         this.consumeHeaders()
         this.consumeAuthority()
+        this.consumeRouters()
+        this.consumeFooter()
 
         return this.consensus
 
@@ -112,8 +114,8 @@ class ConsensusParser{
         if (isNaN(this.words[2])) throw `WrongParameterException: ${words[2]} is not a number`
 
         this.consensus['headers']['voting-delay'] = {
-            'vote': this.words[1],
-            'dist': this.words[2]
+            'vote': Number(this.words[1]),
+            'dist': Number(this.words[2])
         }
 
         this.nextLine()
@@ -164,13 +166,7 @@ class ConsensusParser{
      * @throws NotValidFlagException if one of the flags is not in the valid flag list
      */
     consumeKnownFlags() {
-        let flags = this.words.splice(1, this.words.length)
-
-        for (let f of flags) {
-            if (!this.validFlags.includes(f)) throw `NotValidFlagException: ${f} is not a valid flag`
-        }
-
-        this.consensus['headers']['flags'] = flags
+        this.consensus['headers']['flags'] = this.tryParseFlags()
         this.nextLine()
     }
 
@@ -191,14 +187,7 @@ class ConsensusParser{
      */
     tryConsumeParams() {
         if (this.words[0] === 'params') {
-
-            let content = {}
-            for (let param of this.words.splice(1, this.words.length)) {
-                let tmp = param.split('=')
-                content[tmp[0]] = Number(tmp[1])
-            }
-
-            this.consensus['headers']['params'] = content
+            this.consensus['headers']['params'] = this.tryParseParams()
             this.nextLine()
         }
     }
@@ -212,6 +201,8 @@ class ConsensusParser{
         if (this.words[0] === word) {
             let reveals = Number(this.words[1])
             let value = this.words[2]
+
+            if (!this.isBase64(value)) throw `InvalidParameterException: value ${value} must be in hexadecimal`
 
             this.consensus['headers'][word] = {
                 'NumReveals': reveals,
@@ -228,11 +219,11 @@ class ConsensusParser{
      * @throws InvalidIPException if address or IP are not valid IP addresses
      * @throws InvalidPortException if dirport or orport are not valid ports
      */
-    consumeAuthority(){
-        if(this.words[0] !== 'dir-source') throw `WrongFieldException: there must be at least one dir-source`
+    consumeAuthority() {
+        if (this.words[0] !== 'dir-source') throw `WrongFieldException: there must be at least one dir-source`
         this.consensus['dir-sources'] = []
-        
-        while(this.words[0] === 'dir-source'){
+
+        while (this.words[0] === 'dir-source') {
             this.consumeDirSource()
         }
     }
@@ -243,49 +234,273 @@ class ConsensusParser{
      * @throws InvalidPortException if dirport or orport are not valid
      * @throws InvalidParameterException if the vote-digest is not in hexadecimal
      */
-    consumeDirSource(){
+    consumeDirSource() {
         let dirSource = {}
         this.checkFormat(7, 'dir-source')
 
         dirSource['nickname'] = this.words[1]
-        dirSource['identity'] = this.words[2]
+
+        if (!this.isHex(this.words[2])) throw `InvalidParameterException: vote-digest ${this.words[2]} must be in hexadecimal`
+        dirSource['identity'] = this.words[2].toUpperCase()
+
         dirSource['hostname'] = this.words[3]
 
-        if(!this.isValidIP(this.words[4])) throw `InvalidIPException: ${this.words[4]} is not valid`
+        if (!this.isValidIP(this.words[4])) throw `InvalidIPException: ${this.words[4]} is not a valid IP`
 
         dirSource['address'] = this.words[4]
 
-        if(!this.isValidPort(this.words[5]) || !this.isValidPort(this.words[6])) throw `InvalidPortException`
+        if (!this.isValidPort(Number(this.words[5])) || !this.isValidPort(Number(this.words[6]))) throw `InvalidPortException`
 
-        dirSource['dirport'] = this.words[5]
-        dirSource['orport'] = this.words[6]
+        dirSource['dirport'] = Number(this.words[5])
+        dirSource['orport'] = Number(this.words[6])
 
         this.nextLine()
         dirSource['contact'] = this.words.splice(1, this.words.length).join(' ')
         this.nextLine()
-        let digest = this.tryParseKeyValueString('vote-digest').toLowerCase()
+        let digest = this.tryParseKeyValueString('vote-digest').toUpperCase()
 
-        if(!this.isHex(digest)) throw `InvalidParameterException: vote-digest ${digest} must be in hexadecimal` 
+        if (!this.isHex(digest)) throw `InvalidParameterException: vote-digest ${digest} must be in hexadecimal`
 
         dirSource['vote-digest'] = digest
         this.consensus['dir-sources'].push(dirSource)
         this.nextLine()
-        
+
 
     }
 
+    //-------------------ROUTER PARSER-----------------------------------
+    /**
+     * Consume each router status entry
+     * @throws WrongFieldException if there is no router entry
+     */
+    consumeRouters() {
+        if (this.words[0] !== 'r') throw `WrongFieldException: there must be at least one router`
+        this.consensus['routers'] = []
+
+        while (this.words[0] === 'r') {
+            let router = {}
+            this.consumeRfield(router)
+
+            if (this.words[0] === 'a') router['a'] = []
+            while (this.words[0] === 'a') {
+                this.consumeAfield(router)
+            }
+
+            this.consumeSfield(router)
+            this.tryConsumeVfield(router)
+            this.tryConsumePrField(router)
+            this.tryConsumeWfield(router)
+            this.tryConsumePfield(router)
+
+            this.consensus['routers'].push(router)
+        }
+
+    }
+
+    /**
+     * Parses the field 'r' of the router status entry
+     * @param {} router 
+     * @throws InvalidParameterException if the fields are not valid
+     */
+    consumeRfield(router) {
+        this.checkFormat(9, 'r')
+        router['nickname'] = this.words[1]
+
+        if (!this.isBase64(this.words[2] + "=")) throw `InvalidParameterException: identity ${this.words[2]} must be in base64`
+        router['identity'] = this.words[2]
+
+        if (!this.isBase64(this.words[3] + "=")) throw `InvalidParameterException: digest ${this.words[3]} must be in base64`
+        router['digest'] = this.words[3]
+
+        if (!this.isValidDate(this.words[4])) throw `InvalidParameterException: date ${this.words[4]} must have the format YYYY-MM-DD`
+        router['date'] = this.words[4]
+
+        if (!this.isValidTime(this.words[5])) throw `InvalidParameterException: time ${this.words[5]} must have the format HH:MM:SS`
+        router['time'] = this.words[5]
+
+        if (!this.isValidIP(this.words[6])) throw `InvalidParameterException: IP ${this.words[6]} must be a valid IP address`
+        router['address'] = this.words[6]
+
+        if (!this.isValidPort(Number(this.words[7]))) throw `InvalidParameterException: ORPort ${this.words[7]} must be a valid port`
+        router['orport'] = Number(this.words[7])
+
+        if (!this.isValidPort(Number(this.words[8]))) throw `InvalidParameterException: DirPort ${this.words[8]} must be a valid port`
+        router['dirport'] = Number(this.words[8])
+
+        this.nextLine()
+    }
+
+    /**
+     * Parses the field 'a' of the router status entry
+     * @param {} router 
+     * @throws InvalidParameterException if the fields are not valid
+     */
+    consumeAfield(router) {
+        let i = this.words[1].indexOf("]")
+        let address = this.words[1].slice(1, i)
+        if (!this.isValidIP(address)) throw `InvalidParameterException: IP ${address} must be a valid IP address`
+
+        let guessedType = 'IPv6'
+        if (this.isIPv4(address)) {
+            guessedType = 'IPv4'
+        }
+
+        let port = Number(this.words[1].slice(address.length + 3, this.words[1].length))
+
+        if (!this.isValidPort(port)) throw `InvalidParameterException: port ${port} must be a valid port`
+
+        router['a'].push({
+            'ip': address,
+            'port': port,
+            'type': guessedType
+        })
+
+        this.nextLine()
+
+    }
+
+    /**
+     * Parses the field 's' of the router status entry
+     * @param {} router 
+     */
+    consumeSfield(router) {
+        router['flags'] = this.tryParseFlags()
+        this.nextLine()
+    }
+
+    /**
+     * Tries to parse the field 'v' of the router status entry
+     * @param {} router 
+     */
+    tryConsumeVfield(router) {
+        if (this.words[0] === 'v') {
+            this.checkFormat(3, 'v')
+            router['version'] = this.words.splice(1, this.words.length).join(' ')
+            this.nextLine()
+        }
+    }
+    /**
+     * Tries to parse the field 'v' of the router status entry
+     * @param {} router 
+     */
+    tryConsumePrField(router) {
+        if (this.words[0] === 'pr') {
+            router['protocols'] = this.tryParseRanges(this.words.splice(1, this.words.length))
+            this.nextLine()
+        }
+    }
+    /**
+     * Tries to parse the field 'w' of the router status entry
+     * @param {} router 
+     */
+    tryConsumeWfield(router) {
+        if (this.words[0] === 'w') {
+            router['w'] = this.tryParseParams()
+            this.nextLine()
+        }
+    }
+    /**
+     * Tries to parse the field 'p' of the router status entry
+     * @param {} router 
+     */
+    tryConsumePfield(router) {
+        if (this.words[0] === 'p') {
+            this.checkFormat(3, 'p')
+            if (this.words[1] !== 'accept' && this.words[1] !== 'reject') throw `WrongParameterException: ${this.words[1]} must be either accept or reject`
+
+
+            let portList = this.parse_range_once(this.words[2])
+
+            router['exit-policy'] = {
+                'type': this.words[1],
+                'PortList': portList
+            }
+            this.nextLine()
+        }
+    }
+
+
+    //-------------------FOOTER PARSER ----------------------------------
+
+    /**
+     * Consume the footer
+     * @throws WrongFieldException if there is no footer or no signature
+     */
+    consumeFooter() {
+        if (this.words[0] !== 'directory-footer') throw `WrongFieldException: there must be a footer`
+        this.nextLine()
+        this.consensus['footer'] = {}
+        this.tryConsumeBandwidthWeights()
+
+        if (this.words[0] !== 'directory-signature') throw `WrongFieldException: there must be at least one signature`
+        this.consensus['footer']['directory-signatures'] = []
+
+        while(this.words[0] === 'directory-signature'){
+            this.consensus['footer']['directory-signatures'].push(this.consumeSignature());
+        }
+
+    }
+
+    /**
+     * Tries to consume the bandwidth weights
+     */
+    tryConsumeBandwidthWeights() {
+        if (this.words[0] === 'bandwidth-weights') {
+            this.consensus['footer'] = this.tryParseParams()
+            this.nextLine()
+        }
+    }
+
+    /**
+     * Consumes the signature
+     * @throws WrongFieldException if the first field is not directory-signature
+     * @throws InvalidParameterException if either the identity or the signing-key-digest are not in hexadecimal
+     */
+    consumeSignature() {
+        if (this.words[0] !== 'directory-signature') throw `WrongFieldException: next field must be directory-signature`
+        let length = this.words.length
+        
+        let algo
+        let remaining
+        if (length === 4) {
+            algo = this.words[1]
+            remaining = this.words.splice(2, length)
+        } else if(length === 3){
+            algo = 'sha1'
+            remaining = this.words.splice(1, length)
+        }
+        else throw `WrongParameterException: directory-signature has 3 or 4 arguments`
+
+        let identity = remaining[0]
+        if (!this.isHex(identity)) throw `InvalidParameterException: the identity ${identity} must be in hexadecimal`
+    
+        let digest = remaining[1]
+        if (!this.isHex(digest)) throw `InvalidParameterException: the signing-key-digest ${digest} must be in hexadecimal`
+
+        this.nextLine()
+
+        let signature = this.parseSignature()
+        this.nextLine()
+
+        return {
+            'Algorithm': algo,
+            'identity': identity,
+            'signing-key-digest': digest,
+            'signature': signature
+        }
+    }
     //-------------------GENERAL PARSER-----------------------------------
 
-     /**
-     * Parses lines with the format "field value" where value is an integer and field must be equal to word and return value. 
-     * @param {string} word indicates to which field we are adding the newly parsed line
-     * @throws NotEqualException if this.words[0] != word
-     * @throws WrongParameterException if this.words[1] is not a number
-     * @throws WrongFormatException if this.words.length is not 2
-     */
+    /**
+    * Parses lines with the format "field value" where value is an integer and field must be equal to word and return value. 
+    * @param {string} word indicates to which field we are adding the newly parsed line
+    * @throws NotEqualException if this.words[0] != word
+    * @throws WrongParameterException if this.words[1] is not a number
+    * @throws WrongFormatException if this.words.length is not 2
+    */
     tryParseKeyValueInteger(word) {
         this.checkFormat(2, word)
-        if (isNaN(this.words[1])) throw `WrongParameterException: ${words[1]} is not a number`
+        if (isNaN(this.words[1])) throw `WrongParameterException: ${this.words[1]} is not a number`
 
         return Math.floor(this.words[1])
     }
@@ -371,8 +586,48 @@ class ConsensusParser{
                 subvalues.push([Number(subvalue)])
             }
         }
-
         return subvalues
+    }
+    /**
+     * Parse the flags
+     * @throws NotValidFlagException if one of the flags is not valid
+     */
+    tryParseFlags() {
+        let flags = this.words.splice(1, this.words.length)
+
+        for (let f of flags) {
+            if (!this.validFlags.includes(f)) throw `NotValidFlagException: ${f} is not a valid flag`
+        }
+
+        return flags
+    }
+
+    /**
+     * Parse signature 
+     * @throws WrongFormatException if the line does not start with ----BEGIN
+     */
+    parseSignature(){
+        if(this.words[0] !== '-----BEGIN') throw `WrongFormatException`
+        this.nextLine()
+        let signature = ''
+        while(this.lines[0] !== "-----END SIGNATURE-----"){
+            signature += this.lines[0]
+            this.nextLine()
+        }
+        return signature
+    }
+
+
+    /**
+     * parase parameters
+     */
+    tryParseParams() {
+        let content = {}
+        for (let param of this.words.splice(1, this.words.length)) {
+            let tmp = param.split('=')
+            content[tmp[0]] = Number(tmp[1])
+        }
+        return content
     }
 
     /**
@@ -395,25 +650,48 @@ class ConsensusParser{
     }
 
     /**
-     * Check if the IP address is valid
+     * Check if the IP address is valid (either IPv4 or IPv6)
      * @param {string} IP the address we want to check
      */
-    isValidIP(IP){
-        let regex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+    isValidIP(IP) {
+        let regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/
         return regex.test(IP)
     }
 
-    isValidPort(port){
-        if(isNaN(port)) return false
-        return port > 0 && port < 65535
+    /**
+     * Check if the IP is an IPv4 address
+     * @param {string} IP 
+     */
+    isIPv4(IP) {
+        let regex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+        return regex.test(IP)
+    }
+
+    /**
+     * Check if the given port is valid
+     * @param {number} port
+     */
+    isValidPort(port) {
+        if (isNaN(port)) return false
+        //TODO: < or <= ?
+        return port >= 0 && port <= 65535
     }
 
     /**
      * Check if the given string is in hexadecimal
      * @param {string} str 
      */
-    isHex(str){
+    isHex(str) {
         let regex = /^[a-fA-F0-9]+$/
+        return regex.test(str)
+    }
+
+    /**
+     * Check if the given string is in base 64
+     * @param {string} str 
+     */
+    isBase64(str) {
+        let regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
         return regex.test(str)
     }
 
@@ -424,7 +702,6 @@ class ConsensusParser{
     nextLine() {
 
         if (this.lines.length === 0) throw `EndOfFileException: there are no lines to parse`
-
         this.lines = this.lines.splice(1, this.lines.length)
         this.words = this.lines[0].split(" ")
 
