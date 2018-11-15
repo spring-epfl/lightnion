@@ -14,6 +14,8 @@ class ConsensusParser {
         this.words = this.lines[0].split(' ')
         this.consensus = {}
         this.validFlags = ['Authority', 'BadExit', 'Exit', 'Fast', 'Guard', 'HSDir', 'Named', 'Stable', 'Running', 'Unnamed', 'Valid', 'V2Dir', 'NoEdConsensus']
+        this.index = 0
+        this.totalLines = this.lines.length
     }
 
     /**
@@ -480,7 +482,7 @@ class ConsensusParser {
         this.nextLine()
 
         let signature = this.parseSignature()
-        this.nextLine()
+        if(this.index < this.totalLines - 1) this.nextLine()
 
         return {
             'Algorithm': algo,
@@ -610,8 +612,8 @@ class ConsensusParser {
         if(this.words[0] !== '-----BEGIN') throw `WrongFormatException`
         this.nextLine()
         let signature = ''
-        while(this.lines[0] !== "-----END SIGNATURE-----"){
-            signature += this.lines[0]
+        while(this.lines[this.index] !== "-----END SIGNATURE-----"){
+            signature += this.lines[this.index]
             this.nextLine()
         }
         return signature
@@ -696,16 +698,12 @@ class ConsensusParser {
     }
 
     /**
-     * Updates this.lines and this.words and returns true if it reached the end of the file
+     * Updates this.index and this.words
      * @throws EndOfFileException if the end of the file has already been reached
      */
     nextLine() {
-
-        if (this.lines.length === 0) throw `EndOfFileException: there are no lines to parse`
-        this.lines = this.lines.splice(1, this.lines.length)
-        this.words = this.lines[0].split(" ")
-
-        return this.lines.length === 0
+        if(this.index >= this.totalLines)throw `EndOfFileException: there are no lines to parse`
+        this.words = this.lines[++this.index].split(" ")
     }
 
     /**
