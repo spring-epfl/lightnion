@@ -448,7 +448,7 @@ class ConsensusParser {
      */
     tryConsumeBandwidthWeights() {
         if (this.words[0] === 'bandwidth-weights') {
-            this.consensus['footer'] = this.tryParseParams()
+            this.consensus['footer']['bandwidth-weights'] = this.tryParseParams()
             this.nextLine()
         }
     }
