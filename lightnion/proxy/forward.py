@@ -17,6 +17,13 @@ tick_rate = 0.01 # (sleeps when nothing to do)
 async_rate = 0.01 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
+    """
+    WIP: The maintenance thread for the proxy
+
+    The clerk keeps track of current connections made on behalf of clients. It
+    also tracks several jobs that the proxy needs to run periodically.j
+    """
+
     def __init__(self, slave_node, control_port, auth_dir=None):
         super().__init__()
         logging.info('Bootstrapping clerk.')
@@ -63,6 +70,11 @@ class clerk(threading.Thread):
         raise e
 
     def channel_from_uid(self, uid):
+        """
+        Returns channel given an encrypted token
+
+        WL: parameter naming, maybe 'uid' is not the right name.
+        """
         circuit_id = self.crypto.decrypt_token(uid, self.maintoken)
         if circuit_id is None:
             logging.debug('Got an invalid token: {}'.format(uid))
@@ -79,6 +91,8 @@ class clerk(threading.Thread):
 
     def main(self):
         channels = [channel for _, channel in self.channels.items()]
+
+        # Reset any process (both jobs and channels) that are not alive
         for job in self.jobs + channels:
             if not job.isalive():
                 job.reset()
@@ -88,7 +102,9 @@ class clerk(threading.Thread):
             if job.isfresh():
                 continue
 
+            # Refresh job at most refresh_batches times
             for _ in range(lnn.proxy.jobs.refresh_batches):
+                # WL hint: refresh means "do something useful"
                 if job.refresh():
                     bored = False
                     continue
@@ -115,6 +131,7 @@ class clerk(threading.Thread):
         self.join()
 
 async def channel_input(websocket, channel):
+    # Forward traffic from JS client to guard
     cell = None
     while True:
         try:
@@ -131,6 +148,7 @@ async def channel_input(websocket, channel):
         await asyncio.sleep(async_rate / 2)
 
 async def channel_output(websocket, channel):
+    # Forward traffic guard to JS client
     cells = None
     while True:
         try:
@@ -158,6 +176,7 @@ def channel_handler(clerk):
         if not path.startswith(url + '/channels/'):
             return
 
+        # TODO: fix naming of path, this is a hack to get the UID/TOKEN
         path = path[len(url + '/channels/'):]
         if len(path) > 50:
             return
@@ -167,6 +186,8 @@ def channel_handler(clerk):
             channel.tasks.append(
                 asyncio.ensure_future(task(websocket, channel)))
 
+        # QUESTION: if we cancel the other task, could it be that things get
+        # dropped or are never completed?
         done, pending = await asyncio.wait(channel.tasks,
             return_when=asyncio.FIRST_COMPLETED)
 
@@ -228,6 +249,7 @@ def create_channel():
 
 @app.route(url + '/channels/<uid>', methods=['POST'])
 def write_channel(uid):
+    # TODO: Return proper error strings (also helps document)
     if not flask.request.json or 'cells' not in flask.request.json:
         flask.abort(400)
 
@@ -244,6 +266,7 @@ def write_channel(uid):
         flask.abort(400)
 
     try:
+        # WL: Somehow this seems very synchronous to me
         return flask.jsonify(dict(cells=channel.perform(cells))), 201
     except lnn.proxy.jobs.expired:
         flask.abort(503)
