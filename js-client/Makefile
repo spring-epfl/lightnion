@@ -24,7 +24,7 @@ lightnion-bundle:
 
 lightnion-bundle-license:
 	echo -e '\n\n--\n\nLICENSE lightnion\n\n--\n\n' >> $(BUNDLELICENSE)
-	cat ../LICENSE.txt* >> $(BUNDLELICENSE)
+	cat ../LICENSE >> $(BUNDLELICENSE)
 
 sjcl-bundle: sjcl.js
 	cat sjcl.js >> ./lightnion.bundle.js
