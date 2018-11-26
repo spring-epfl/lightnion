@@ -17,7 +17,7 @@ function cleanup()
 {
     trap - EXIT
     echo -e "Exiting...\n\n"
-    chutney stop 
+    chutney stop $CHUTNEY_NET
 
     tput rmcup
 }
