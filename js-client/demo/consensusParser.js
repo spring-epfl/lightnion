@@ -10,6 +10,7 @@ class ConsensusParser {
      */
     constructor(rawText) {
         if (typeof rawText !== 'string') throw `Error: the consensus must be given as a string`
+        this.raw_consensus = rawText
         this.lines = rawText.split('\n')
         this.words = this.lines[0].split(' ')
         this.consensus = {}
@@ -441,6 +442,8 @@ class ConsensusParser {
             this.consensus['footer']['directory-signatures'].push(this.consumeSignature());
         }
 
+        this.verify_consensus_signatures()
+
     }
 
     /**
@@ -714,5 +717,24 @@ class ConsensusParser {
     checkFormat(expectedLength, expectedWord) {
         if (this.words.length != expectedLength) throw `WrongFormatException: ${expectedLength} fields are expected`
         if (this.words[0] != expectedWord) throw `NotEqualException:b ${expectedWord} is not equal to ${this.words[0]}`
+    }
+
+    /**
+     * Verifies the signatures of the
+     */
+    verify_consensus_signatures(){
+        let to_hash = this.raw_consensus.split("directory-signature")[0]+"directory-signature "
+        
+        for(let signature of this.consensus['footer']['directory-signatures']){
+            let hash
+            if(signature["Algorithm"] === 'sha1'){
+                hash = sjcl.hash.sha1.hash(to_hash)
+            }else{
+                hash = sjcl.hash.sha256.hash(to_hash)
+            }
+
+            console.log(hash)
+        }
+        
     }
 }

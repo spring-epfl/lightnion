@@ -1,6 +1,7 @@
 <html>
 
 <head>
+    <script src="lightnion.bundle.js"></script>
     <script src="consensusParser.js"></script>
     <meta charset="UTF-8">
 </head>
@@ -19,9 +20,9 @@
                     if (rawFile.status === 200 || rawFile.status == 0) {
                         let parser = new ConsensusParser(rawFile.responseText)
                         let cons = parser.parse()
-                        console.log(cons)
+                        //console.log(cons)
                     }
-                }else{
+                } else {
                     console.log("Failed")
                 }
             }
