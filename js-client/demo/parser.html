@@ -17,9 +17,8 @@
             rawFile.onreadystatechange = function () {
                 if (rawFile.readyState === 4) {
                     if (rawFile.status === 200 || rawFile.status == 0) {
-                        console.log(rawFile.responseText)
                         let des = parser.descriptors.parse(rawFile.responseText)
-                        let json = JSON.stringify(des, null, 4)
+                        let json = JSON.stringify(des, null, '\t')
                         console.log(json)
                         document.getElementById("descriptor").textContent = json
                     }
