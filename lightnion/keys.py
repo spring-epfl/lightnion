@@ -11,7 +11,7 @@ def download_signing_keys():
     of identity digest and keys
     :return: dictionary or none if there is a problem during the request"""
     ip = random.choice(ips)
-    # TODO: should be all.z to get a compressed version of the file
+    # TODO: should be all.z to get a compressed version of the file + cached them if not expired?
     url = "http://{}/tor/keys/all".format(ip)
     rq = requests.get(url)
 
