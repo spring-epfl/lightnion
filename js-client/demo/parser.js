@@ -3,14 +3,19 @@ parser = {}
 
 parser.descriptors = {
     line_count: 0,
+    total_lines: -1,
     lines: undefined,
+    valid_bridge_distribution: ["none", "any", "https", "email", "moat", "hyphae"],
+    exactly_once: ["router", "bandwidth", "published", "onion-key", "signing-key", "router-signatures"],
 
     parse: function (raw_descriptors, endpoint) {
         let descriptors = []
         parser.descriptors.lines = raw_descriptors.split('\n')
-        if (parser.descriptors.lines[0].startsWith('@')) parser.descriptors.line_count++
-        let descriptor = parser.descriptors.consume_one_node()
-        descriptors.push(descriptor)
+        parser.descriptors.total_lines = parser.descriptors.lines.length
+        while (parser.descriptors.line_count < parser.descriptors.total_lines) {
+            let descriptor = parser.descriptors.consume_one_node()
+            descriptors.push(descriptor)
+        }
         return descriptors
     }
 }
@@ -20,6 +25,9 @@ parser.descriptors = {
  * @returns {object} the descriptor of the parsed node
  */
 parser.descriptors.consume_one_node = function () {
+
+    if (parser.descriptors.lines[parser.descriptors.line_count].startsWith('@type')) parser.descriptors.line_count++
+
     let descriptor = {}
     descriptor = parser.descriptors.consume_router(descriptor)
     descriptor = parser.descriptors.try_consume_identity_ed25519(descriptor)
@@ -28,8 +36,7 @@ parser.descriptors.consume_one_node = function () {
 
     while (!line.startsWith("router-signature")) {
         let index_sp = line.indexOf(" ")
-        let first_word = line.substring(0, index_sp)
-        console.log(first_word)
+        let first_word = (index_sp === -1) ? line : line.substring(0, index_sp)
         switch (first_word) {
             case "master-key-ed25519":
                 descriptor = parser.descriptors.consume_master_key_ed25519(descriptor)
@@ -48,11 +55,72 @@ parser.descriptors.consume_one_node = function () {
                 break
             case "hibernating":
                 descriptor = parser.descriptors.consume_hibernating(descriptor)
+                break
             case "uptime":
                 descriptor = parser.descriptors.consume_uptime(descriptor)
                 break
+            case "extra-info-digest":
+                descriptor = parser.descriptors.consume_extra_info_digest(descriptor)
+                break
+            case "caches-extra-info":
+                descriptor = parser.descriptors.consume_single_word_line("caches-extra-info", descriptor)
+                break
             case "onion-key":
                 descriptor = parser.descriptors.consume_onion_key(descriptor)
+                break
+            case "onion-key-crosscert":
+                descriptor = parser.descriptors.consume_onion_key_crosscert(descriptor)
+                break
+            case "ntor-onion-key":
+                descriptor = parser.descriptors.consume_base64_digest('ntor-onion-key', descriptor)
+                break
+            case "ntor-onion-key-crosscert":
+                descriptor = parser.descriptors.consume_ntor_onion_key_crosscert(descriptor)
+                break
+            case "accept":
+                descriptor = parser.descriptors.consume_exit_policy("accept", descriptor)
+                break
+            case "reject":
+                descriptor = parser.descriptors.consume_exit_policy("reject", descriptor)
+                break
+            case "signing-key":
+                descriptor = parser.descriptors.consume_signing_key(descriptor)
+                break
+            case "ipv6-policy":
+                descriptor = parser.consume_exit_policy('ipv6-policy', parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
+                break
+            case "router-sig-ed25519":
+                descriptor = parser.descriptors.consume_router_sig_ed25519(descriptor)
+                break
+            case "contact":
+                descriptor = parser.consume_contact(parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
+                break
+            case "bridge-distribution":
+                descriptor = parser.descriptors.consume_bridge_distribution(descriptor)
+                break
+            case "family":
+                descriptor = parser.descriptors.consume_family(descriptor)
+                break
+            case "read-history":
+                descriptor = parser.descriptors.consume_history("read", descriptor)
+                break
+            case "write-history":
+                descriptor = parser.descriptors.consume_history("write", descriptor)
+                break
+            case "eventdns":
+                descriptor = parser.descriptors.consume_eventdns(descriptor)
+                break
+            case "hidden-service-dir":
+                descriptor = parser.descriptors.consume_single_word_line("hidden-service-dir", descriptor)
+                break
+            case "allow-single-hop-exits":
+                descriptor = parser.descriptors.consume_single_word_line("allow-single-hop-exits", descriptor)
+                break
+            case "tunnelled-dir-server":
+                descriptor = parser.descriptors.consume_single_word_line("tunnelled-dir-server", descriptor)
+                break
+            case "proto":
+                descriptor = parser.consume_proto("proto", parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
                 break
             default:
                 ++parser.descriptors.line_count
@@ -62,8 +130,33 @@ parser.descriptors.consume_one_node = function () {
 
     }
 
-    //TODO: Check the exactly once!
+    descriptor = parser.descriptors.consume_router_signature(descriptor)
+    
+    if(descriptor['ipv6-policy'] === undefined) descriptor['ipv6-policy'] = {
+        "type": "reject",
+        "PortList":[[1,65535]]
+    }
+
+    if (!parser.descriptors.check_exactly_once(descriptor)) throw "Invalid descriptor: some mandatory fields are not present"
+
     return descriptor
+}
+
+/**
+ * Checks that all mandatory fields of the descriptor were parsed
+ */
+parser.descriptors.check_exactly_once = function (descriptor) {
+    
+    if(descriptor['ipv6-policy'] === undefined) descriptor
+    
+    let parsed = true
+    if(descriptor['identity-ed25519'] !== undefined){
+        parsed = descriptor["ntor-onion-key-crosscert"] !== undefined && descriptor["onion-key-crosscert"] !== undefined && descriptor["router-sig-ed25519"] !== undefined
+    }else{
+        parsed = descriptor["router-sig-ed25519"] === undefined
+    }
+
+    return parsed && parser.descriptors.exactly_once.every(field => descriptor[field] !== undefined)
 }
 
 /**
@@ -104,7 +197,7 @@ parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
         parser.check_format(1, 'identity-ed25519', words)
         ++parser.descriptors.line_count
 
-        let [offset, certificate] = parser.consume_pem(parser.descriptors.lines, parser.descriptors.line_count, parser.is_valid_base64)
+        let [offset, certificate] = parser.consume_pem(parser.descriptors.lines, parser.descriptors.line_count)
         parser.descriptors.line_count += offset + 1
         descriptor['identity'] = {
             "type": "ed25519",
@@ -113,6 +206,8 @@ parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
 
         return descriptor
     }
+
+    return descriptor
 }
 
 /**
@@ -125,10 +220,9 @@ parser.descriptors.consume_master_key_ed25519 = function (descriptor) {
     let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
     parser.check_format(2, 'master-key-ed25519', words)
     parser.check_reused('master-key-ed25519', descriptor)
-
-    //TODO: find out why oQmcJgMFqDbPKU4O7FXCbfAuvvP/CEJLiZhQPTXVYqE is not valid with the regex
-    //if(!parser.is_valid_base64(words[1])) throw `Invalid master key: the master key ${words[1]} must be in base64`
-    descriptor['identity']['master-key'] = words[1]
+    let key = words[1]
+    if (!parser.is_valid_base64(parser.add_ending(key))) throw `Invalid master key: the master key ${words[1]} must be in base64`
+    descriptor['identity']['master-key'] = key
     parser.descriptors.line_count++
 
     return descriptor
@@ -174,11 +268,11 @@ parser.descriptors.consume_bandwidth = function (descriptor) {
     let burst = Number(words[2])
     let obs = Number(words[3])
 
-    if(avg < 0 || burst < 0 || obs < 0) throw `Invalid bandwidth: must be non-negative`
+    if (avg < 0 || burst < 0 || obs < 0) throw `Invalid bandwidth: must be non-negative`
 
     descriptor['bandwidth'] = {
         "avg": avg,
-        "burst": burst ,
+        "burst": burst,
         "observed": obs
     }
 
@@ -212,13 +306,13 @@ parser.descriptors.consume_fingerprint = function (descriptor) {
  * @param {Object} descriptors the currently being built decriptors object
  * @returns {Object} descriptors the currently being built decriptors object
  */
-parser.descriptors.consume_hibernating = function(descriptor){
+parser.descriptors.consume_hibernating = function (descriptor) {
     parser.check_reused('hibernating', descriptor)
     let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
     parser.check_format(2, 'hibernating', words)
 
     let b = Number(words[1])
-    if(b !== 0 && b !== 1) throw `Invalid boolean`
+    if (b !== 0 && b !== 1) throw `Invalid boolean`
     descriptor['hibernating'] = b
     return descriptor
 }
@@ -228,14 +322,14 @@ parser.descriptors.consume_hibernating = function(descriptor){
  * @param {Object} descriptors the currently being built decriptors object
  * @returns {Object} descriptors the currently being built decriptors object
  */
-parser.descriptors.consume_uptime = function(descriptor){
+parser.descriptors.consume_uptime = function (descriptor) {
     parser.check_reused('uptime', descriptor)
     let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
     parser.check_format(2, 'uptime', words)
 
     let uptime = Number(words[1])
 
-    if(uptime < 0) throw `Invalid uptime: uptime must be non-negative`
+    if (uptime < 0) throw `Invalid uptime: uptime must be non-negative`
 
     descriptor['uptime'] = uptime
 
@@ -247,14 +341,282 @@ parser.descriptors.consume_uptime = function(descriptor){
  * @param {Object} descriptors the currently being built decriptors object
  * @returns {Object} descriptors the currently being built decriptors object
  */
-parser.descriptors.consume_onion_key = function(descriptor){
-    console.log("\n\n hey \n\n")
-    [offset, key] = parser.consume_pem(parser.descriptors.lines, ++parser.descriptors.line_count, is_valid_base64)
-    parser.descriptors.line_count += offset+1
-    descriptor['onion-key'] = key
+parser.descriptors.consume_onion_key = function (descriptor) {
+    parser.check_reused('onion-key', descriptor)
+    return parser.descriptors.consume_key('onion-key', descriptor)
+}
+
+/**
+ * Consume the extra info digest
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_extra_info_digest = function (descriptor) {
+    parser.check_reused('extra-info-digest', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    if (words.length != 2 && words.length != 3) throw `Invalid format: 1 or 2 fields are expected`
+
+    let sha1 = words[1]
+    if (!parser.is_valid_hex(sha1)) throw `Invalid encoding: the sha1 digest must be in hexadecimal`
+    descriptor["extra-info-digest"] = {
+        "sha1": sha1
+    }
+
+    if (words.length === 3) {
+        let sha256 = words[2]
+        if (!parser.is_valid_base64(parser.add_ending(sha256))) throw `Invalid encoding: the sha256 digest must base 64`
+        descriptor['extra-info-digest']['sha256'] = sha256
+    }
+
     return descriptor
 }
 
+/**
+ * Consume the single word line
+ * @param {string} type the field
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_single_word_line = function (type, descriptor) {
+    parser.check_reused(type, descriptor)
+    descriptor[type] = 'true'
+    ++parser.descriptors.line_count
+
+    return descriptor
+}
+
+/**
+ * Consume the RSA signature generated using the onion-key
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_onion_key_crosscert = function (descriptor) {
+    parser.check_reused('onion-key-crosscert', descriptor)
+    return parser.descriptors.consume_key('onion-key-crosscert', descriptor)
+}
+
+/**
+ * Consume the ntor onion key  of the descriptor
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_ntor_onion_key_crosscert = function (descriptor) {
+
+    parser.check_reused('ntor-onion-key-crosscert', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(" ")
+    parser.check_format(2, 'ntor-onion-key-crosscert', words)
+
+    let bit = Number(words[1])
+    if (bit != 0 && bit != 1) throw "Invalid bit for ntor-onion-key-crosscert"
+
+    let [offset, cert] = parser.consume_pem(parser.descriptors.lines, ++parser.descriptors.line_count)
+    parser.descriptors.line_count += offset + 1
+
+    descriptor['ntor-onion-key-crosscert'] = {
+        "bit": bit,
+        "cert": cert
+    }
+
+    return descriptor
+
+}
+
+/**
+ * Consume the ED25519 signature
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_router_sig_ed25519 = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, "router-sig-ed25519", words)
+    parser.check_reused("router-signatures", descriptor)
+
+    let signature = words[1]
+
+    if (!parser.is_valid_base64(parser.add_ending(signature))) throw "Invalid digest: must be a base 64 string"
+
+    descriptor["router-signatures"] = {
+        "ed25519": signature,
+    }
+
+    return descriptor
+}
+
+/**
+ * Consume the PKCS1 padded signature of the descriptor
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_router_signature = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
+    if (words[0] === 'router-signature') {
+        parser.check_format(1, 'router-signature', words)
+        ++parser.descriptors.line_count
+
+        let [offset, signature] = parser.consume_pem(parser.descriptors.lines, parser.descriptors.line_count)
+        parser.descriptors.line_count += offset + 1
+
+        if (descriptor["router-signatures"] === undefined) {
+            descriptor["router-signatures"] = {}
+        }
+
+        descriptor["router-signatures"]["rsa"] = signature
+
+        return descriptor
+    }
+}
+
+/**
+ * Consume the field bridge-distribution
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_bridge_distribution = function (descriptor) {
+    parser.check_reused('bridge-distribution', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, 'bridge-distribution', words)
+    let dist = words[1]
+    if (!parser.descriptors.valid_bridge_distribution.includes(dist)) dist = "none"
+
+    descriptor['bridge-distribution'] = dist
+
+    return descriptor
+
+}
+
+/**
+ * Consume the field family
+ * @param {Object} descriptor the currently being built decriptor object
+ * @returns {Object} descriptor the currently being built decriptor object
+ */
+parser.descriptors.consume_family = function (descriptor) {
+    parser.check_reused("family", descriptor)
+
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    let family = words.splice(1)
+
+    descriptor['family'] = family
+
+    return descriptor
+}
+/**
+ * Consume the history fields
+ * @param {string} type the type of history
+ * @param {Object} descriptor the currently being built decriptor object
+ * @returns {Object} descriptor the currently being built decriptor object
+ */
+parser.descriptors.consume_history = function (type, descriptor) {
+    let field = type + "-history"
+    parser.check_reused(field, descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(6, type + "-history", words)
+
+    let date = words[1]
+    if (!parser.is_valid_date(date)) throw "Invalid date"
+
+    let time = words[2]
+    if (!parser.is_valid_time(time)) throw "Invalid time"
+
+    let interval = Number(words[3].substring(1))
+    let bytes = words[5].split(",").map(x => Number(x))
+
+    descriptor[field] = {
+        "date": date,
+        "time": time,
+        "interval": interval,
+        "bytes": bytes
+    }
+
+    return descriptor
+}
+
+/**
+ * Consume the field eventdns
+ * @param {Object} descriptor the currently being built decriptor object
+ * @returns {Object} descriptor the currently being built decriptor object
+ */
+parser.descriptors.consume_eventdns = function (descriptor) {
+    parser.check_reused("eventdns", descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, "eventdns", words)
+
+    let bool = Number(words[1])
+
+    if (bool != 0 && bool != 1) throw "Invalid boolean"
+
+    decriptor["eventdns"] = bool
+    return descriptor
+}
+
+/**
+ * Consume field with a base 64 digest
+ * @param {String} field the field we want to parse
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_base64_digest = function (field, descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, field, words)
+    parser.check_reused(field, descriptor)
+
+    let key = words[1]
+
+    if (!parser.is_valid_base64(parser.add_ending(key))) throw "Invalid digest: must be a base 64 string"
+
+    descriptor[field] = key
+
+    return descriptor
+}
+
+/**
+ * Consume the signing keys
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_signing_key = function (descriptor) {
+    parser.check_reused('signing-key', descriptor)
+    return parser.descriptors.consume_key('signing-key', descriptor)
+}
+
+/**
+ * Parse the accept and reject exit policies and their exitpattern
+ * @param {string} type either reject or accept
+ * @param {Object} descriptors the currently being built decriptors object
+ * @returns {Object} descriptors the currently being built decriptors object
+ */
+parser.descriptors.consume_exit_policy = function (type, descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, type, words)
+
+    if (descriptor['policy'] === undefined) {
+        descriptor['policy'] = {
+            "type": "exitpattern",
+            "rules": []
+        }
+    }
+
+    let rule = {
+        "type": type,
+        "pattern": words[1]
+    }
+
+    descriptor['policy']["rules"].push(rule)
+
+    return descriptor
+}
+
+/**
+ * Consume the key of the given field and update the descriptor
+ * @param {string} field the field of the descriptor
+ * @param {object} descriptor the descriptor we want to update
+ * @return the updated descriptor
+ */
+parser.descriptors.consume_key = function (field, descriptor) {
+    [offset, key] = parser.consume_pem(parser.descriptors.lines, ++parser.descriptors.line_count)
+    parser.descriptors.line_count += offset + 1
+    descriptor[field] = key
+    return descriptor
+}
 
 /**
 * Checks if words has the expected size and that the first word of the line is equal to a given word
@@ -324,7 +686,7 @@ parser.is_valid_hex = function (str) {
  * @param {function} base_function optional function to verifiy the base
  * @returns {Array} tuple containing the parsed pem and the offset
  */
-parser.consume_pem = function (lines, start, base_function) {
+parser.consume_pem = function (lines, start) {
     let offset = 0;
     let content = ''
     if (!lines[start].startsWith('-----BEGIN')) throw `Invalid signature, certificate or key: must begin with "-----BEGIN"`
@@ -334,10 +696,96 @@ parser.consume_pem = function (lines, start, base_function) {
         offset++
     }
 
-    if (base_function !== undefined) base_function(content)
+    if (!parser.is_valid_base64(content)) throw "Invalid PEM: must be in base 64"
 
     return [offset, content]
 }
+
+/**
+ * Parse ranges
+ * @param {string} ranges format: Keyword=Values...
+ * @returns {object} the parsed ranges
+ */
+parser.parse_range = function (ranges) {
+    let content = {}
+    for (let pair of ranges) {
+        if (pair.includes("=")) {
+            let tmp = pair.split("=")
+            content[tmp[0]] = parser.parse_range_once(tmp[1])
+        }
+    }
+    return content
+}
+
+/**
+ * This function parses ranges with the format nbr,nbr,.. where nbr is either an integer or 2 integers separated by a comma
+ * @param {string} value the sting we want to parse
+ * @returns {Array} a list containing the ranges 
+ */
+parser.parse_range_once = function (value) {
+    value = value.split(',')
+    let subvalues = []
+
+    for (let subvalue of value) {
+        if (subvalue.includes('-')) {
+            let lowHigh = subvalue.split('-')
+            let low = Number(lowHigh[0])
+            let high = Number(lowHigh[1])
+
+            if (low === high - 1) {
+                subvalues.push([low, high])
+            } else {
+                subvalues.push([[low, high]])
+            }
+        } else {
+            subvalues.push([Number(subvalue)])
+        }
+    }
+    return subvalues
+}
+
+/**
+ * This function parses the exit policies formatted as: field (accept/reject) PortList
+ * @param {string} field the field we want to parse
+ * @param {Array} lines the raw file split by '\n'
+ * @param {Number} index the index of the line
+ * @param {object} node the node we want to update
+ * @returns the updated node
+ */
+parser.consume_exit_policy = function (field, lines, index, node) {
+    parser.check_reused(field, node)
+    let words = lines[index].split(" ")
+    parser.check_format(3, field, words)
+
+    let policy = words[1]
+    if (policy !== 'accept' && policy !== 'reject') throw "Invalid policy: policy must either be accept or reject"
+
+    let ranges = parser.parse_range_once(words[2])
+
+    node[field] = {
+        'type': policy,
+        'PortList': ranges
+    }
+
+    return node
+}
+
+/**
+ * This function parses the contacts
+ * @param {string} field the field we want to parse
+ * @param {Array} lines the raw file split by '\n'
+ * @param {Number} index the index of the line
+ * @param {object} node the node we want to update
+ * @returns the updated node
+ */
+parser.consume_contact = function (lines, index, descriptor) {
+    parser.check_reused("contact", descriptor)
+    let contact = lines[index].substring("contact".length + 1)
+    descriptor["contact"] = contact
+
+    return descriptor
+}
+
 
 /**
 * Check if the string in date has the format YYYY-MM-DD
@@ -376,13 +824,42 @@ parser.consume_date = function (field, line) {
         "time": words[2]
     }
 }
+
+/**
+* Consume the lines of protocols composed by ranges
+* @param {string} type either protocols or proto
+* @param {Array} lines the raw file split by '\n'
+* @param {Number} index the index of the line
+* @param {object} node the node we want to update
+* @returns the updated node
+*/
+parser.consume_proto = function (type, lines, index, node) {
+    parser.check_reused(type, node)
+    let ranges = lines[index].split(" ").splice(1)
+    node[type] = parser.parse_range(ranges)
+    return node
+}
+
 /**
  * Check if the field has already been parsed for the descriptor
  * @param {string} field the field we want to verify
  * @param {object} decriptors the descriptor we are building
  */
 parser.check_reused = function (field, descriptor) {
-    if (descriptor[field] != undefined) throw `The field ${field} appearts more than once`
+    if (descriptor[field] !== undefined) throw `The field ${field} appears more than once`
+}
+
+/**
+ * Add the ending = for a base64 string
+ * @param {string} str the string we want to modify
+ * @returns {string} base 64 string with correct ending = 
+ */
+parser.add_ending = function (str) {
+    if (str.length % 4 !== 0) {
+        let rem = str.length % 4
+        for (let i = 0; i < 4 - rem; i++) str += '='
+    }
+    return str
 }
 
 

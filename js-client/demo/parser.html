@@ -9,7 +9,7 @@
 <body>
     <div id = "descriptor">Loading</div>
     <script>
-        let rawText = readTextFile('chutney_des.txt')
+        let rawText = readTextFile('real_des.txt')
         //let rawText = readTextFile('test.consensus.txt')
         function readTextFile(file) {
             let rawFile = new XMLHttpRequest();
@@ -19,7 +19,8 @@
                     if (rawFile.status === 200 || rawFile.status == 0) {
                         let des = parser.descriptors.parse(rawFile.responseText)
                         let json = JSON.stringify(des, null, '\t')
-                        console.log(json)
+                        console.log(des)
+                        //console.log(json)
                         document.getElementById("descriptor").textContent = json
                     }
                 }else{
