@@ -3,7 +3,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA
 import Crypto
 import binascii
-from lightnion import keys
+from tools import keys
 
 
 def verify_key(actual, hex_digest):
@@ -27,7 +27,7 @@ def verify_key(actual, hex_digest):
 def get_signature_and_digests(remaining):
     """
     Function that get the signature and the hex digests from the remaining part of the consensus
-    :param remaining: remaining (without the part that must be hashed) part of the consensus split by authoritiy
+    :param remaining: remaining (without the part that must be hashed) part of the consensus split by authority
     :return: dictionary mapping the fingerprint of an authority and both its signature and the hex digest of its public
     key
     """
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     nbr_verified = 0
     # Get the consensus
-    with open('./verif/cons.txt', 'r') as file:
+    with open('./tools/consensus.txt', 'r') as file:
         raw_cons = file.read()
 
     # split the consensus and hash it
@@ -66,10 +66,10 @@ if __name__ == '__main__':
 
     for fingerprint in signatures_and_key_digest.keys():
         # get the RSA public key and verify it is valid
-        key = keys_dict[fingerprint]
+        key = keys_dict.get(fingerprint)
         signing_key_digest = signatures_and_key_digest[fingerprint]['signing-key-digest']
 
-        if not verify_key(key, signing_key_digest):
+        if key is None or not verify_key(key, signing_key_digest):
             continue
         else:
             public_key = RSA.importKey(key)
