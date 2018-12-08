@@ -1,29 +1,148 @@
 <html>
+
 <head>
     <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
     <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
-<body>
-    <p id="RSA"></p>
-    <script>
-        let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        let fingerprint = "14C131DFC5C6F93646BE72FA1401C02A8DF2E8B4"
-        let e = bigInt(65537)
-        let n = bigInt("5247808262750847539956779729950289898853421932815908545401532015282281382981777807851264832411975000018697005047750203895504198253593749706517758191292544569963386053993375573545749117764935244607990769053912904780472987456361669803168251111963300553113537162327273039988435975982367234321291046077731777976256743308986548075196009041612061252099582016785017745746859395670509511408543271530965628365870383307187939760651626727087025438306848763511151494867247827547147642107613437248551207317694857369033160629708782130357533746256928109947709214803803198883127341032333625708222443490158919617574810401411186543610393593632088156683797640729138594987003331050754483919424537243839478204265822752374392319284715951560204397935057166979515980942605198353638000257059353849900886111058368384088134748864907802954718613612270874850635175382624802758013239637861803579529822913926525524619664688240652515661605859934652121997921")
-        let signature = "EzVZLxD6DN2Xgn9nTwnMLTdbrOT0nqmtgV7Fpi9OSpTcgBhcEhHAzYEiFaSYdLdl+LFWOm+LKuF1YrX3HOLETMdftjADExavO58LHVeFBjPq3pyPv83XEBVguSi+vPtygYZnBdCqufOGZ4mAinkq3uOxtuMVrBdnuqUJiPdY+1e33UaWwCRF0CI/1Nfuj4UBG6CfN9e3s3MxSTpFu0xsd/8DOyK/I84vR49nwOJgSl8OrM/+u1sQ922sy4M2g/A88pfke2xqbWJFP3pv5L2jPOVYUJSWMAFxtrtiDhuNvYRjS4WugYIN26Z/ECljScolyQEGstA57GmFF+0//cB42DVzexWl/ibuTwscgFCHnJx51W0rriU0r3xatgebdPUqH4e1UDzpDyOplrEq5AxYzwp3ymrz2sI+yVMhpB4f9S5XjIq2NYnWhcNwex+FyfSbf5Co8P3LuT1x+0Ey1JEy0c1by64zFmjVy1frYfse7hlgA0SlEgno7ag9E4olw6YX"
-        
-        let int_sig = bigInt(signature, 64, alphabet)
 
-        let c = int_sig.modPow(e,n)
-        //----------------WIKIPEDIA EXAMPLE----------------
+<body>
+    <p id="result"></p>
+    <script>
         
-        let mod = bigInt(3233)
-        let exp = bigInt(17)
-        let m = bigInt(65)
-        let ci = m.modPow(exp, mod)
-        document.getElementById("RSA").textContent = c.toString(64, alphabet)
-    
+        //Demo of the signature verification of the consensus
+        read_text_file("consensus.txt", cons => {
+            read_text_file("authority_signing_keys.json", keys => {
+                let nbr_verified = 0
+                let total = 0
+
+                //get the hash of the consensus
+                let split_cons = cons.split('directory-signature ')
+                cons = split_cons[0] + "directory-signature "
+                let hash = sjcl.hash.sha1.hash(cons)
+                hash = sjcl.codec.hex.fromBits(hash)
+
+                // Get the signatures and the signing keys
+                keys = JSON.parse(keys)
+                let sig_and_keys_digests = get_sig_and_keys_digests(split_cons.splice(1))
+
+                for (let fingerprint in sig_and_keys_digests) {
+                    total++
+                    //get keys information
+                    let key = keys[fingerprint]
+                    let e = bigInt(key["exponent"])
+                    let n = bigInt(key["modulus"])
+                    let key_digest = sig_and_keys_digests[fingerprint]["signing-key-digest"]
+
+                    if (key === undefined || !verify_key(key["pem"], key_digest)) continue
+
+                    let signature = sig_and_keys_digests[fingerprint]["signature"]
+                    let sig_big_int = get_signature_big_int(signature)
+                    let padded_hash = sig_big_int.modPow(e, n).toString(16)
+                    let recovered_hash = get_hash_from_rsa_cipher(padded_hash)
+
+                    nbr_verified = (recovered_hash === undefined || recovered_hash !== hash) ? nbr_verified : nbr_verified + 1
+                }
+
+                if (nbr_verified > Math.floor(total / 2)) document.getElementById("result").textContent = `Consensus verified: ${nbr_verified} out of ${total} signatures were verified.`
+                else document.getElementById("result").textContent = `Consensus not verified: ${nbr_verified} out of ${total} signatures were verified.`
+            })
+        })
+
+        /**
+         * This function verifies that the key corresponds to one that signed the consensus
+         * @param {string} key the key with the format pem
+         * @param {string} key_digest the hex digest extracted from the consensus
+         **/
+        function verify_key(key, key_digest) {
+            let raw_key = key.split('\n')
+            let b_index = raw_key.indexOf("-----BEGIN RSA PUBLIC KEY-----")
+            let e_index = raw_key.indexOf("-----END RSA PUBLIC KEY-----")
+
+            raw_key = raw_key.splice(b_index + 1, e_index - b_index - 1).join("")
+            raw_key = sjcl.codec.base64.toBits(raw_key)
+            let hash = sjcl.hash.sha1.hash(raw_key)
+            hash = sjcl.codec.hex.fromBits(hash)
+            return hash.toUpperCase() === key_digest.toUpperCase()
+        }
+
+
+        /**
+         * This function gets the signatures and the signing key digests from the authority section of the consensus
+         * @param {Array} remaining the remaining part of the consensus after the split by "directory-signature "
+         * @returns {object} the following mapping:
+         *      fingerprint:{
+         *          signature-key-digest
+         *          signature
+         *      }
+         **/
+        function get_sig_and_keys_digests(remaining) {
+            let sign_and_digests = {}
+            for (let r of remaining) {
+                if (r !== '') {
+                    let split = r.split('\n')
+                    let b_index = split.indexOf("-----BEGIN SIGNATURE-----")
+                    let e_index = split.indexOf("-----END SIGNATURE-----")
+                    let sign = split.splice(b_index + 1, e_index - b_index - 1).join("")
+                    let digests = split[0].split(" ")
+
+                    let [fingerprint, key_hex_digest] = (digests.length == 2) ? digests : digests.splice(1)
+
+                    sign_and_digests[fingerprint] = {
+                        "signing-key-digest": key_hex_digest,
+                        "signature": sign
+                    }
+                }
+            }
+            return sign_and_digests
+        }
+        /**
+         * This function transforms a signature in base64 into a bigInteger
+         * @param {string} signature the signature encoded in base64
+         * returns {BigInteger} the integer corresponding to the signature
+         **/
+        function get_signature_big_int(signature) {
+            let sig_hex = sjcl.codec.hex.fromBits(sjcl.codec.base64.toBits(signature))
+            let sig = bigInt(sig_hex, 16)
+            return sig
+        }
+        
+        /**
+         * Verifies that the cipher has the required format and extract the substring corresponding to the hash of the consensus
+         * @param {string} cipher the padded hash of the consensus
+         * @returns {string} the hash of the consensus
+         * */
+        function get_hash_from_rsa_cipher(padded_hash) {
+            let sep_index = padded_hash.indexOf("00")
+            if (!padded_hash.startsWith("1")) return undefined
+            for (let i = 1; i < sep_index; i++) {
+                if (padded_hash.charAt(i) !== "f") return undefined
+            }
+            return padded_hash.substring(sep_index + 2)
+        }
+        
+        /**
+         * Get a text file from disk
+         * @param {string} path the path of the file
+         * @param {callback} success the callback called in case of a success
+         **/
+        function read_text_file(path, success) {
+            let rq = new XMLHttpRequest();
+            rq.open("GET", path, false);
+            rq.onreadystatechange = function () {
+                if (rq.readyState === XMLHttpRequest.DONE) {
+                    if (rq.status === 200 || rq.status == 0) {
+                        let text = rq.responseText
+                        success(text)
+
+                    }
+                }
+            }
+            rq.send(null);
+        }
+
+
     </script>
 </body>
+
 </html>

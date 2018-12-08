@@ -95,8 +95,8 @@ def get_signing_keys_info(path="authority_signing_keys.json"):
 
         sub_dict = {
             "pem": key_pem,
-            "modulus": modulus,
-            "exponent": exponent
+            "modulus": str(modulus),
+            "exponent": str(exponent)
         }
 
         info[fingerprint] = sub_dict
