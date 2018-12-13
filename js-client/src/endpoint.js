@@ -49,12 +49,12 @@ lnn.endpoint = function(host, port)
      * @interface endpoint_t
      * @see lnn.endpoint
      *
-     * @property {lnn.state} state         channel state
+     * @property {lnn.state} state              channel state
      * @property {io.io_t} io                   io adapter in use
      * @property {endpoint_t~urls_t} urls       static API urls in use
-     * @property {stream.backend_t} stream      stream backend in use
-     * @property {onion.backward_t} backward    backward cryptographic state
-     * @property {onion.forward_t} forward      forward cryptographic state
+     * @property {backend_t} stream             stream backend in use
+     * @property {backward_t} backward          backward cryptographic state
+     * @property {forward_t} forward            forward cryptographic state
      * @property {material_t|half_t} material   shared cryptographic material
      * @property {null|half_t} auth             stores {@link lnn.auth}
      *                                          material

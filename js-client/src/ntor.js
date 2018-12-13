@@ -23,7 +23,7 @@ lnn.ntor.keybytes = 92
 lnn.ntor.protoid = "ntor-curve25519-sha256-1"
 
 /**
- * Tweaks used in ntor handshakes various hashes and key derivation.
+ * Tweaks used in ntor handshakes for various hashes and key derivation.
  * @enum
  * @readonly
  *
@@ -207,9 +207,8 @@ lnn.ntor.hand = function(endpoint, descriptor, encode)
 }
 
 /**
- * Just as {@link lnn.ntor.hand} but without node information – used by
- * {@link lnn.fast}, writes a {@link half_t} in
- * {@link endpoint_t#material}.
+ * Just as {@link lnn.ntor.hand} but without node identity and onion key – used
+ * by {@link lnn.fast}, writes a {@link half_t} in {@link endpoint_t#material}.
  *
  * <pre>Note: always returns base64-encoded handshake.</pre>
  *
@@ -228,8 +227,9 @@ lnn.ntor.fast = function(endpoint)
 }
 
 /**
- * Compute the second part of a ntor handshake, returns derived bytes suitable
- * for {@link lnn.ntor.slice} use.
+ * Compute the second part of a ntor handshake read
+ * from {@link endpoint_t#material}, returns derived bytes suitable as
+ * {@link lnn.ntor.slice} input.
  *
  * <pre>Note: returns null if handshake is invalid.</pre>
  *
@@ -317,8 +317,7 @@ lnn.ntor.shake = function(endpoint, data, encoded)
 
 /**
  * Build a shared cryptographic {@link material_t} for
- * {@link endpoint_t#material}
- * from the output of {@link lnn.ntor.shake}.
+ * {@link endpoint_t#material} from the output of {@link lnn.ntor.shake}.
  *
  * <pre>
  * Note: assume KEY_LEN == 16 (aes256) and HASH_LEN == 20 (sha1) internally.
@@ -357,6 +356,19 @@ lnn.ntor.slice = function(material)
 }
 
 // (function only used for proxy auth, not a part of regular ntor handshake)
+
+/**
+ * <pre>
+ * Note: this function is used for proxy-server authentication and is not a
+ * part of regular ntor handshakes nor the Tor specification.
+ * </pre>
+ *
+ * Take an endpoint that uses the proxy-server authentication API (such as one
+ * configured through {@link lnn.auth}) and the base64-encoded fields "auth"
+ * and "data" as returned by the proxy-server, then returns the decoded data
+ * if and only if the authentication succeeded.
+ *
+ */
 lnn.ntor.auth = function(endpoint, client, data)
 {
     var pending_material = endpoint.material
