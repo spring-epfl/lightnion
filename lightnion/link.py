@@ -184,10 +184,15 @@ def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
 
     """
 
-    # Establish connection
+    # Setup context
     peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ctxt = ssl.SSLContext(ssl.PROTOCOL_TLS)
-    ctxt.options |= ssl.OP_NO_TLSv1_3
+
+    # https://trac.torproject.org/projects/tor/ticket/28616
+    if '1.1.1a' in ssl.OPENSSL_VERSION:
+        ctxt.options |= ssl.OP_NO_TLSv1_3
+
+    # Establish connection
     peer = ctxt.wrap_socket(peer)
     peer.connect((address, port))
 
