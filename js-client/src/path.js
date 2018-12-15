@@ -1,11 +1,4 @@
-lnn.get.path = {
-    "guard" : null,
-    "middle" : null,
-    "exit": null,
-    "descriptorsMap": null,
-    "consensus": null,
-    "isChutney" : null 
-}
+lnn.get.path = {}
 
 /**
  * This function selects a path from the parsed consensus and parsed descriptors
@@ -17,13 +10,13 @@ lnn.get.path = {
 lnn.get.path.selection = function (consensus, descriptors, isChutney) {
 
     if(isChutney === undefined){
-        lnn.get.path.isChutney = false
+        lnn.get.path["isChutney"] = false
     }else{
-        lnn.get.path.isChutney = isChutney
+        lnn.get.path["isChutney"] = isChutney
     }
 
     //build a hashmap of descriptor where the keys are the identity
-    lnn.get.path.descriptorsMap = {}
+    lnn.get.path["descriptorsMap"] = {}
 
     for (let descriptor of descriptors) {
         let identity = descriptor['router'].identity
@@ -32,12 +25,12 @@ lnn.get.path.selection = function (consensus, descriptors, isChutney) {
 
     //pre-process consensus by filering the routers that do not obey
     //the minimal constraints
-    lnn.get.path.consensus = consensus['routers'].filter(r => !lnn.get.path.obeyMinimalConstraints(r, descriptorsMap))
+    lnn.get.path["consensus"] = consensus['routers'].filter(r => !lnn.get.path.obeyMinimalConstraints(r, descriptorsMap))
 
     //path selection
-    lnn.get.path.exit = lnn.get.path.chooseGoodExit(consensus, descriptorsMap)
-    lnn.get.path.guard = lnn.get.path.chooseGoodGuard(consensus, exitDescriptor, descriptorsMap)
-    lnn.get.path.middle = lnn.get.path.chooseGoodMiddle(consensus, guardDecriptor, exitDescriptor, descriptorsMap)
+    lnn.get.path["exit"] = lnn.get.path.chooseGoodExit(consensus, descriptorsMap)
+    lnn.get.path["guard"] = lnn.get.path.chooseGoodGuard(consensus, exitDescriptor, descriptorsMap)
+    lnn.get.path["middle"] = lnn.get.path.chooseGoodMiddle(consensus, guardDecriptor, exitDescriptor, descriptorsMap)
 
     //TODO: it should create/return a new path and not the descriptors
     return [lnn.get.path.guard, lnn.get.path.middle, lnn.get.path.exit]
@@ -164,7 +157,7 @@ lnn.get.path.isGoodGuard = function (router) {
     if (!flags.includes('Guard')) return false
     if (!flags.includes('Stable')) return false
     if (!flags.includes('V2Dir')) return false
-    //if (lnn.get.path.inSame16Subnet(des, lnn.get.path.exit)) return false
+    if (lnn.get.path.inSame16Subnet(des, lnn.get.path.exit)) return false
     if (lnn.get.path.inSameFamily(des, lnn.get.path.exit)) return false
 
     return true
@@ -185,8 +178,8 @@ lnn.get.path.chooseGoodMiddle = function () {
  */
 lnn.get.path.isGoodMiddle = function (router) {
     let des = lnn.get.path.descriptorsMap[router.identity]
-    //if (lnn.get.path.inSame16Subnet(des, lnn.get.path.guard)) return false
-    //if (lnn.get.path.inSame16Subnet(des, lnn.get.path.exit)) return false
+    if (lnn.get.path.inSame16Subnet(des, lnn.get.path.guard)) return false
+    if (lnn.get.path.inSame16Subnet(des, lnn.get.path.exit)) return false
     if (lnn.get.path.inSameFamily(des, lnn.get.path.guard)) return false
     if (lnn.get.path.inSameFamily(des, lnn.get.path.exit)) return false
 
