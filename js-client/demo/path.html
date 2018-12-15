@@ -1,0 +1,40 @@
+<html>
+
+<head>
+  <script src="lightnion.bundle.js"></script>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+  <p id="status"></p>
+  <p id="guard">Guard: waiting...</p>
+  <p id="middle">Middle: waiting...</p>
+  <p id="exit">Exit: waiting...</p>
+  <script>
+    lnn.open('localhost', 4990,
+      end => {
+        if (end.state != lnn.state.success) return
+        document.getElementById('status').textContent = "Chanel opened"
+
+        lnn.get.consensus(end,
+          end => {
+            document.getElementById('status').textContent = "Consensus downloaded"
+
+            lnn.get.descriptors(end, end => {
+
+              let [guard, middle, exit] = lnn.get.path.selection(end.consensus, end.descriptors, true)
+              document.getElementById('exit').textContent = "Exit: " + exit['router'].nickname
+              document.getElementById('guard').textContent = "Guard: " + guard['router'].nickname
+              document.getElementById('middle').textContent = "Middle: " + middle['router'].nickname
+
+            }, error)
+          }, error)
+      }, error)
+
+    function error(endpoint) {
+      document.getElementById('status').textContent = "Something went wrong"
+    }
+  </script>
+</body>
+
+</html>
