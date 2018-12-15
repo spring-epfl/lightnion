@@ -3,6 +3,8 @@ import requests
 from Crypto.PublicKey import RSA
 import json as js
 
+# TODO: adapt this in order to use it with Chutney
+
 # Those are the IP's addresses of the 9 authorities
 ips = ['171.25.193.9:443', '86.59.21.38', '199.58.81.140', '194.109.206.212', '204.13.164.118',
        '131.188.40.189', '128.31.0.34:9131', '193.23.244.244', '154.35.175.225']
@@ -15,6 +17,7 @@ fingerprints = ['14C131DFC5C6F93646BE72FA1401C02A8DF2E8B4',
                 'ED03BB616EB2F60BEC80151114BB25CEF515B226',
                 'EFCBE720AB3A82B99F9E953CD5BF50F7EEFC7B97',
                 '0232AF901C31A04EE9848595AF9BB7620D4C5B2E']
+
 
 def download_signing_keys():
     """Download the signing keys from the one of the authorities, parse the file and returns a dictionary
@@ -68,7 +71,7 @@ def parse_signing_keys(raw):
     return keys
 
 
-def get_signing_keys_info(path="authority_signing_keys.json"):
+def get_signing_keys_info(path="tools/authority_signing_keys.json"):
     """
     Get the information of the authority router keys and save it to a json file.
     Each key is saved as:
