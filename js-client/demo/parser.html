@@ -1,0 +1,34 @@
+<html>
+
+<head>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div id = "descriptor">Loading</div>
+    <script>
+        let rawText = readTextFile('real_des.txt')
+        function readTextFile(file) {
+            let rawFile = new XMLHttpRequest();
+            rawFile.open("GET", file, false);
+            rawFile.onreadystatechange = function () {
+                if (rawFile.readyState === 4) {
+                    if (rawFile.status === 200 || rawFile.status == 0) {
+                        let des = lnn.parser.descriptors.parse(rawFile.responseText)
+                        let json = JSON.stringify(des, null, '\t')
+                        console.log(des)
+                        document.getElementById("descriptor").textContent = json
+                    }else if(rawFile.status === 404){
+                        document.getElementById("descriptor").textContent = "Consensus not found"
+                    }
+                }else{
+                    document.getElementById("descriptor").textContent = "Failed"
+                }
+            }
+            rawFile.send(null);
+        }
+    </script>
+</body>
+
+</html>
