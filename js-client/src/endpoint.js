@@ -41,7 +41,9 @@ lnn.endpoint = function(host, port)
         guard: http + "/guard",
         socket: ws + "/channels",
         channels: http + "/channels",
-        consensus: http + "/consensus"}
+        consensus: http + "/consensus",
+        descriptors: http + "/descriptors"
+    }
 
     /**
      * Captures the state of a channel, returned by {@link lnn.open}.
@@ -149,7 +151,16 @@ lnn.endpoint = function(host, port)
          * @readonly
          * @default null
          */
-        consensus: null}
+        consensus: null,
+        
+        /**
+         * Consensus obtained by {@link lnn.get.descriptors} upon request
+         * @name endpoint_t#descriptors
+         * @readonly
+         * @default null
+         */
+        descriptors: null
+    }
 
     return endpoint
 }

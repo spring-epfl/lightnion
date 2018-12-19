@@ -74,6 +74,7 @@ if ! [ -d "chutney" ]; then
 	cd /home/vagrant
 	git clone https://github.com/torproject/chutney.git
 	cp /vagrant/tools/chutney/small-chut chutney
+	sudo chown -R vagrant:vagrant chutney/
 	cd chutney
 	git apply /vagrant/tools/chutney/sandbox_patch
 else

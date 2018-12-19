@@ -1,0 +1,33 @@
+<html>
+<head>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='log'></pre>
+
+    <script>
+        lnn.open('localhost', 4990,
+        function success(endpoint)
+        {
+            lnn.get.consensus(endpoint, endpoint => {
+
+                if (endpoint.state != lnn.state.success)
+                    return
+                document.getElementById('loaded').innerHTML = '(channel opened)'
+
+                lnn.get.descriptors(endpoint, endpoint => {
+                    console.log(endpoint.consensus)
+                    console.log(endpoint.descriptors)
+                })
+            })
+        },
+        function error(endpoint)
+        {
+            document.getElementById('loaded').innerHTML = '(unable to open)'
+        })
+
+    </script>
+</body>
+</html>
