@@ -11,7 +11,11 @@ lnn.parser.descriptors = {
         let descriptors = []
         lnn.parser.descriptors.lines = raw_descriptors.split('\n')
         lnn.parser.descriptors.total_lines = lnn.parser.descriptors.lines.length
-        while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines && parser.descriptors.lines[parser.descriptors.line_count] !== "") {
+        while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines) {
+            if(lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count] === ""){
+                lnn.parser.descriptors.line_count++
+                continue
+            }
             let descriptor = lnn.parser.descriptors.consume_one_node()
             descriptors.push(descriptor)
         }
@@ -26,6 +30,9 @@ lnn.parser.descriptors = {
 lnn.parser.descriptors.consume_one_node = function () {
 
     if (lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].startsWith('@type')) lnn.parser.descriptors.line_count++
+    if (lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count] === ""){
+        lnn.parser.descriptors.line_count++
+    }
 
     let descriptor = {}
     descriptor = lnn.parser.descriptors.consume_router(descriptor)
