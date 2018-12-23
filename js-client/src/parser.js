@@ -295,14 +295,17 @@ lnn.parser.descriptors.consume_fingerprint = function (descriptor) {
     let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++]
     let index_sp = line.indexOf(" ")
     let fingerprint = line.substring(index_sp + 1)
-
+    
     let bytes = fingerprint.split(" ")
-
+    let join_bytes = bytes.join("")
     if (bytes.length != 10) throw `Invalid fingerprint: wrong size`
-    if (!lnn.parser.is_valid_hex(bytes.join(""))) throw `Invalid fingerprint: not a hex string`
+    if (!lnn.parser.is_valid_hex(join_bytes)) throw `Invalid fingerprint: not a hex string`
 
+    let identity = sjcl.codec.hex.toBits(join_bytes)
+    identity = sjcl.codec.base64.fromBits(identity).replace("=", "")
 
     descriptor['fingerprint'] = fingerprint
+    descriptor['router']['identity'] = identity
 
     return descriptor
 }
