@@ -11,7 +11,7 @@ lnn.parser.descriptors = {
         let descriptors = []
         lnn.parser.descriptors.lines = raw_descriptors.split('\n')
         lnn.parser.descriptors.total_lines = lnn.parser.descriptors.lines.length
-        while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines) {
+        while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines && parser.descriptors.lines[parser.descriptors.line_count] !== "") {
             let descriptor = lnn.parser.descriptors.consume_one_node()
             descriptors.push(descriptor)
         }
