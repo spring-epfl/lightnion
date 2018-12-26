@@ -1,5 +1,5 @@
 
-path_selection = {}
+path = {}
 
 /**
  * This function selects a path from the parsed consensus and parsed descriptors
@@ -8,33 +8,33 @@ path_selection = {}
  * @param {Object} descriptors parsed descriptors of the routers in the consensus
  * @param {Bool} isChutney boolean used to indicate if the path selection is done with routers from chutney
  */
-path_selection.select = function (consensus, descriptors, isChutney) {
+path.select = function (consensus, descriptors, isChutney) {
 
     if(isChutney === undefined){
-        path_selection["isChutney"] = false
+        path["isChutney"] = false
     }else{
-        path_selection["isChutney"] = isChutney
+        path["isChutney"] = isChutney
     }
 
     //build a hashmap of descriptor where the keys are the identity
-    path_selection["descriptorsMap"] = {}
+    path["descriptorsMap"] = {}
 
     for (let descriptor of descriptors) {
         let identity = descriptor['router'].identity
-        path_selection.descriptorsMap[identity] = descriptor
+        path.descriptorsMap[identity] = descriptor
     }
 
     //pre-process consensus by filering the routers that do not obey
     //the minimal constraints
-    path_selection["consensus"] = consensus['routers'].filter(r => !path_selection.obeyMinimalConstraints(r))
+    path["consensus"] = consensus['routers'].filter(r => !path.obeyMinimalConstraints(r))
 
     //path selection
-    path_selection["exit"] = path_selection.chooseGoodExit(consensus)
-    path_selection["guard"] = path_selection.chooseGoodGuard(consensus)
-    path_selection["middle"] = path_selection.chooseGoodMiddle(consensus)
+    path["exit"] = path.chooseGoodExit(consensus)
+    path["guard"] = path.chooseGoodGuard(consensus)
+    path["middle"] = path.chooseGoodMiddle(consensus)
 
     //TODO: it should create/return a new path and not the descriptors
-    return [path_selection.guard, path_selection.middle, path_selection.exit]
+    return [path.guard, path.middle, path.exit]
 }
 
 /**
@@ -42,8 +42,8 @@ path_selection.select = function (consensus, descriptors, isChutney) {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path_selection.obeyMinimalConstraints = function (router) {
-    let des = path_selection.descriptorsMap[router['identity']]
+path.obeyMinimalConstraints = function (router) {
+    let des = path.descriptorsMap[router['identity']]
     let flags = router['flags']
 
     if (!flags.includes("Valid")) return false
@@ -60,13 +60,14 @@ path_selection.obeyMinimalConstraints = function (router) {
  * 
  * @param {Array} candidates the list of candidates
  */
-path_selection.weightedRandomChoice = function (candidates) {    
-    let total = candidates.reduce((acc, r) => acc + path_selection.descriptorsMap[r['identity']]['bandwidth']['avg'], 0)
+
+path.weightedRandomChoice = function (candidates) {
+    let total = candidates.reduce((acc, r) => acc + path.descriptorsMap[r['identity']]['bandwidth']['avg'], 0)
     let r = Math.random() * total
     let upto = 0
 
     for (let router of candidates) {
-        let des = path_selection.descriptorsMap[router['identity']]
+        let des = path.descriptorsMap[router['identity']]
         let bandwidth = des['bandwidth']['avg']
 
         if (upto + bandwidth >= r) return des
@@ -81,12 +82,11 @@ path_selection.weightedRandomChoice = function (candidates) {
  * 
  * @param {Object} des1 the descriptor of the first router
  * @param {Object} des2 the descriptor of the second router
- * @param {Bool} isChutney  flag used when the path selection is run with chutney
- *                          (since all router have the same IP address)
+ * 
  */
-path_selection.inSame16Subnet = function (des1, des2, isChutney) {
+path.inSame16Subnet = function (des1, des2) {
 
-    if(path_selection.isChutney){
+    if(path.isChutney){
         return false
     }
 
@@ -102,7 +102,7 @@ path_selection.inSame16Subnet = function (des1, des2, isChutney) {
  * @param {Object} des1 the descriptor of the first router
  * @param {Object} des2 the descriptor of the second router
  */
-path_selection.inSameFamily = function (des1, des2) {
+path.inSameFamily = function (des1, des2) {
     if (des1['family'] != undefined && des2['family'] != undefined) {
         for (let fam of des1['family']) {
             if (des2['family'].includes(fam)) return true
@@ -115,9 +115,9 @@ path_selection.inSameFamily = function (des1, des2) {
 /**
  * This function choose a good exit given the TOR path selection rules
  */
-path_selection.chooseGoodExit = function () {
-    let candidates = path_selection.consensus.filter(path_selection.isGoodExit)
-    return path_selection.weightedRandomChoice(candidates)
+path.chooseGoodExit = function () {
+    let candidates = path.consensus.filter(path.isGoodExit)
+    return path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -125,7 +125,7 @@ path_selection.chooseGoodExit = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path_selection.isGoodExit = function (router) {
+path.isGoodExit = function (router) {
     let flags = router['flags']
     if (!flags.includes('Exit') || flags.includes('BadExit')) return false
     if (router['exit-policy']['type'] !== 'accept') return false
@@ -141,9 +141,9 @@ path_selection.isGoodExit = function (router) {
  *          sets is put aside
  * 
  */
-path_selection.chooseGoodGuard = function () {
-    let candidates = path_selection.consensus.filter(r => path_selection.isGoodGuard(r))
-    return path_selection.weightedRandomChoice(candidates)
+path.chooseGoodGuard = function () {
+    let candidates = path.consensus.filter(r => path.isGoodGuard(r))
+    return path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -151,15 +151,19 @@ path_selection.chooseGoodGuard = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path_selection.isGoodGuard = function (router) {
+path.isGoodGuard = function (router) {
     let flags = router['flags']
-    let des = path_selection.descriptorsMap[router.identity]
+    let des = path.descriptorsMap[router.identity]
+
+    if(des["router"]["identity"] === path.exit["router"]["identity"]){
+        return false
+    }
 
     if (!flags.includes('Guard')) return false
     if (!flags.includes('Stable')) return false
     if (!flags.includes('V2Dir')) return false
-    if (path_selection.inSame16Subnet(des, path_selection.exit)) return false
-    if (path_selection.inSameFamily(des, path_selection.exit)) return false
+    if (path.inSame16Subnet(des, path.exit)) return false
+    if (path.inSameFamily(des, path.exit)) return false
 
     return true
 }
@@ -167,9 +171,9 @@ path_selection.isGoodGuard = function (router) {
 /**
  * This function choose a good middle given the TOR path selection rules
  */
-path_selection.chooseGoodMiddle = function () {
-    let candidates = path_selection.consensus.filter(r => path_selection.isGoodMiddle(r))
-    return path_selection.weightedRandomChoice(candidates)
+path.chooseGoodMiddle = function () {
+    let candidates = path.consensus.filter(r => path.isGoodMiddle(r))
+    return path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -177,12 +181,17 @@ path_selection.chooseGoodMiddle = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path_selection.isGoodMiddle = function (router) {
-    let des = path_selection.descriptorsMap[router.identity]
-    if (path_selection.inSame16Subnet(des, path_selection.guard)) return false
-    if (path_selection.inSame16Subnet(des, path_selection.exit)) return false
-    if (path_selection.inSameFamily(des, path_selection.guard)) return false
-    if (path_selection.inSameFamily(des, path_selection.exit)) return false
+path.isGoodMiddle = function (router) {
+    let des = path.descriptorsMap[router.identity]
+
+    if(des["router"]["identity"] === path.exit["router"]["identity"] ||des["router"]["identity"] === path.guard["router"]["identity"]){
+        return false
+    }
+
+    if (path.inSame16Subnet(des, path.guard)) return false
+    if (path.inSame16Subnet(des, path.exit)) return false
+    if (path.inSameFamily(des, path.guard)) return false
+    if (path.inSameFamily(des, path.exit)) return false
 
     return true
 }
