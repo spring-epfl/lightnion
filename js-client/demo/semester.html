@@ -1,0 +1,127 @@
+<html>
+
+<head>
+    <script src="signature.js"></script>
+    <script src="path.js"></script>
+    <script src="parser.js"></script>
+    <script src="consensusParser.js"></script>
+    <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+
+<p id="loaded"></p>
+<button id="button" , type="button">Get Consensus</button>
+<pre id="log"></pre>
+
+<body>
+    <script>
+
+        let button = document.getElementById("button")
+        let cons_raw = ""
+        let des_raw = ""
+        let des = null
+        let cons = null
+        let end = null
+        button.addEventListener("click", get_consensus_listener)
+
+
+        function get_consensus_listener() {
+            lnn.open('localhost', 4990,
+                function success(endpoint) {
+                    if (endpoint.state != lnn.state.success)
+                        return
+                    
+                    end = endpoint
+                    document.getElementById('loaded').innerHTML = '(channel opened)'
+
+
+                    lnn.stream.dir(endpoint, "/tor/status-vote/current/consensus", handler_consensus)
+                },
+                function error(endpoint) {
+                    document.getElementById('loaded').innerHTML = '(unable to open)'
+                })
+        }
+
+        function verify_listener() {
+
+            if (signature.verify(cons_raw, keys, 0.5)) {
+                document.getElementById("log").textContent = "Consensus has been verified succesfully"
+                lnn.stream.dir(end, "/tor/server/all", handler_descriptor)
+            } else {
+                document.getElementById("log").textContent = "Consensus has not been verified"
+            }
+
+        }
+
+        function select_path_listener(){
+            let [guard, middle, exit] = path_selection.select(cons, des, true)
+            document.getElementById('log').textContent = "Exit: " + exit['router'].nickname+"\n"
+            document.getElementById('log').textContent += "Guard: " + guard['router'].nickname+"\n"
+            document.getElementById('log').textContent += "Middle: " + middle['router'].nickname
+        }
+
+        function parser_listener(){
+            let cons_parser = new ConsensusParser(cons_raw)
+            cons = cons_parser.parse()
+            des = parser.descriptors.parse(des_raw)
+    
+
+            document.getElementById("log").textContent = JSON.stringify(cons, undefined, '\t')
+
+            button.removeEventListener("click", parser_listener)
+            button.textContent = "Select a path"
+            button.addEventListener("click", select_path_listener)
+        }
+
+        function handler_consensus(request) {
+            if (request.state == lnn.state.success) {
+                document.getElementById('log').innerHTML += request.data
+                cons_raw += request.data
+                if (request.cell.cmd == "end") {
+
+                    let idx = cons_raw.indexOf("network-status-version")
+                    cons_raw = cons_raw.substring(idx)
+
+                    button.removeEventListener("click", get_consensus_listener)
+                    button.textContent = "Verify"
+                    button.addEventListener("click", verify_listener)
+                }
+            }
+        }
+
+        function handler_descriptor(request){
+            if (request.state == lnn.state.success) {
+                des_raw += request.data
+                if (request.cell.cmd == "end") {
+                    let idx = des_raw.indexOf("router")
+                    des_raw = des_raw.substring(idx)
+
+                    button.removeEventListener("click", verify_listener)
+                    button.textContent = "Parse"
+                    button.addEventListener("click", parser_listener)
+                }
+            }
+        }
+
+        function read_text_file(path, success) {
+            let rq = new XMLHttpRequest();
+            rq.open("GET", path, false);
+            rq.onreadystatechange = function () {
+                if (rq.readyState === XMLHttpRequest.DONE) {
+                    if (rq.status === 200 || rq.status == 0) {
+                        let text = rq.responseText
+                        success(text)
+                    } else {
+                        console.log(rq.status)
+                    }
+                }
+            }
+            rq.send(null);
+        }
+
+        var keys = {"2281335E733BF1110BD4C95B0E60E166CB71417A": {"pem": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEA65/FsSZna/WdNTRkaBskTscheO+7qNPRoFYbDwmu2yS6CD2cAW0c\nOVI+eEO049wQkEJpIg8boTODwgnyQCoEjc7KFhh17WcgAemFvoJBys/D3kH4zZ6J\nYC/uMZwaHkJ78/9672zmZIanYnAbonOuJJaW37Qse9wwmZbSfQRgA74DGt+j34gM\ncI8YmyrFbYpwQ7Ib9c7DfGqT7aIDNhaoln/fVRbdvBROJ6S37eyKLw5nEe8ywGQF\nG64+YbFgOFPCVCLmA/qr98p2cFKm/YAIUiwi3Ns4M8GfoLysasy+8W6zwltiMKHf\nOohwyoFqiE5dG4qH0kP0lUC5+b2APk47ZwIDAQAB\n-----END RSA PUBLIC KEY-----", "modulus": "29744788292196891028874663902884687921835097371971544192864999259596036470649679685128478948218859356431855936372438802240436844491595317975431133383333746693123344582680071557508835860786837656406743347864967582957670334698382019374635989668148887368088093524094534113716485627513782814990402619832099436378506783581169364864627287852008131339948958428575578233971700111468191914750734100730615255260116821741281873412801198042150660280376118012194038473499384170239542217974612335819766627124675247855440661979341820977823342244013495386002701548087846730562867512011588844535519405446130190953403356927781793315687", "exponent": "65537"}, "1A03A3347540539A0D6C54E1D525590BF54A3C0C": {"pem": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAqlCzTLesnftyhBoOUg6PJvxXRDtPM1uHv0MkbQgsin9/HIAvHqJl\nPYUZ1gKfYDMnF+2nhoioPP6NRwA6l3jwkIW++N7sFEvIpZ48u0AhyNYip9rkf10b\ntFDkLl+O32d8au0vtsP8uNHgouoHJO1F3rpXdRvDX7lFfQu3GENjCT2COyviAiB/\nBi+GPY0645uIp8gBB38EnUO+U6jQPPxUpsDRNrswklkKl7Vp4cWuP1OA4l1n6GDb\nad/GRM8SkWKxugA8uwVNm97ihbeNWvtSh7793I6aHWx2/ssGdAOPtGNvcDmaYdVN\neiiZCdKkUNTyejW2lGtL4SmaOSQLwRTnLwIDAQAB\n-----END RSA PUBLIC KEY-----", "modulus": "21500306689400437302854138571850455745570736214148044455567240506636383365808839258557977656564440149356922526146734304261192061146327463611899198944617177986783971770084183821904920376104846623112015630331564476855973131063614068958655711177752711009283062451213981260627699792162033928284055905496834728033311067531443900735100409854863600737652683613706800966223799027319586589599176067764989263106465523704156575784167638051472567189041608685929231108167580223279262561658419124491710501909327965520650746073511081857694454400560167887172165552621736972540079523478169631868129397741229188478894324696334254532399", "exponent": "65537"}, "C8EDE003037CB14539EB3A68F1920BD9239E60C1": {"pem": "-----BEGIN RSA PUBLIC KEY-----\nMIIBCgKCAQEAoU+RZUE2ind0zUZdtd0HOkrcxAbg1VHi+3Bd1rjPkcuq+dpkxL5/\nBqwQ3eWf0gKCrmIdiawerAOSoVKGwvVSmDheneQn+3k8e715lY8INzoighWVNn99\ndodk0riwtawvCu3egs8+ApTpIjQMKWueFzPNhQCt/D2rXgcNxs/FTCd6LyrZz086\nL9cqJkph3n7sgUQ9egz67gP9dDTsxBrsWu4LvRiIrUGlCglHnG/aItMHL+jDH4wB\nhkmJIkcr17X8JyHRJYKbRSBQeRB14jz7g7z6V0X2xEhCxqXGpwllP9C7DZKdsoHy\nESrQL3djqzpcs7L9jHUwq4GP6MzUoOG9iwIDAQAB\n-----END RSA PUBLIC KEY-----", "modulus": "20363603518670358373090398055503024526036497531838859747006451146526103701701321922137419642658551092044125646182589139791533501868364381578941941192174273076271475698809498900042623520890876746506604312578502932840136200778293487253764201093879742558604039947019065201343856818631606052381009301146300246479051461208069043623005227146110491717170879451531316364127545029574440238456813666033417767630352076639880919007820169256901153660898573329773206466291595357841984540105722182990004652750425452419814489891599602408665194385138575542543959135413844384280198504180870580691093113562767119016117609084841894198667", "exponent": "65537"}}
+    </script>
+</body>
+
+</html>

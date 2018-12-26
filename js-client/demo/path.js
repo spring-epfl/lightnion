@@ -60,7 +60,7 @@ path_selection.obeyMinimalConstraints = function (router) {
  * 
  * @param {Array} candidates the list of candidates
  */
-path_selection.weightedRandomChoice = function (candidates) {
+path_selection.weightedRandomChoice = function (candidates) {    
     let total = candidates.reduce((acc, r) => acc + path_selection.descriptorsMap[r['identity']]['bandwidth']['avg'], 0)
     let r = Math.random() * total
     let upto = 0

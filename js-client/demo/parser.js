@@ -1,6 +1,6 @@
-lnn.parser = {}
+parser = {}
 
-lnn.parser.descriptors = {
+parser.descriptors = {
     line_count: 0,
     total_lines: -1,
     lines: undefined,
@@ -9,10 +9,14 @@ lnn.parser.descriptors = {
 
     parse: function (raw_descriptors, endpoint) {
         let descriptors = []
-        lnn.parser.descriptors.lines = raw_descriptors.split('\n')
-        lnn.parser.descriptors.total_lines = lnn.parser.descriptors.lines.length
-        while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines) {
-            let descriptor = lnn.parser.descriptors.consume_one_node()
+        parser.descriptors.lines = raw_descriptors.split('\n')
+        parser.descriptors.total_lines = parser.descriptors.lines.length
+        while (parser.descriptors.line_count < parser.descriptors.total_lines) {
+            if (parser.descriptors.lines[parser.descriptors.line_count] === "") {
+                parser.descriptors.line_count++
+                continue
+            }
+            let descriptor = parser.descriptors.consume_one_node()
             descriptors.push(descriptor)
         }
         return descriptors
@@ -23,139 +27,141 @@ lnn.parser.descriptors = {
  * Parse one node in the raw data file
  * @returns {object} the descriptor of the parsed node
  */
-lnn.parser.descriptors.consume_one_node = function () {
+parser.descriptors.consume_one_node = function () {
 
-    if (lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].startsWith('@type')) lnn.parser.descriptors.line_count++
-
+    if (parser.descriptors.lines[parser.descriptors.line_count].startsWith('@type')) parser.descriptors.line_count++
+    if (parser.descriptors.lines[parser.descriptors.line_count] === "") {
+        parser.descriptors.line_count++
+    }
     let descriptor = {}
-    descriptor = lnn.parser.descriptors.consume_router(descriptor)
-    descriptor = lnn.parser.descriptors.try_consume_identity_ed25519(descriptor)
+    descriptor = parser.descriptors.consume_router(descriptor)
+    descriptor = parser.descriptors.try_consume_identity_ed25519(descriptor)
 
-    let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count]
+    let line = parser.descriptors.lines[parser.descriptors.line_count]
 
     while (!line.startsWith("router-signature")) {
         let index_sp = line.indexOf(" ")
         let first_word = (index_sp === -1) ? line : line.substring(0, index_sp)
         switch (first_word) {
             case "master-key-ed25519":
-                descriptor = lnn.parser.descriptors.consume_master_key_ed25519(descriptor)
+                descriptor = parser.descriptors.consume_master_key_ed25519(descriptor)
                 break
             case "platform":
-                descriptor = lnn.parser.descriptors.consume_platform(descriptor)
+                descriptor = parser.descriptors.consume_platform(descriptor)
                 break
             case "published":
-                descriptor = lnn.parser.descriptors.consume_published(descriptor)
+                descriptor = parser.descriptors.consume_published(descriptor)
                 break
             case "bandwidth":
-                descriptor = lnn.parser.descriptors.consume_bandwidth(descriptor)
+                descriptor = parser.descriptors.consume_bandwidth(descriptor)
                 break
             case "fingerprint":
-                descriptor = lnn.parser.descriptors.consume_fingerprint(descriptor)
+                descriptor = parser.descriptors.consume_fingerprint(descriptor)
                 break
             case "hibernating":
-                descriptor = lnn.parser.descriptors.consume_hibernating(descriptor)
+                descriptor = parser.descriptors.consume_hibernating(descriptor)
                 break
             case "uptime":
-                descriptor = lnn.parser.descriptors.consume_uptime(descriptor)
+                descriptor = parser.descriptors.consume_uptime(descriptor)
                 break
             case "extra-info-digest":
-                descriptor = lnn.parser.descriptors.consume_extra_info_digest(descriptor)
+                descriptor = parser.descriptors.consume_extra_info_digest(descriptor)
                 break
             case "caches-extra-info":
-                descriptor = lnn.parser.descriptors.consume_single_word_line("caches-extra-info", descriptor)
+                descriptor = parser.descriptors.consume_single_word_line("caches-extra-info", descriptor)
                 break
             case "onion-key":
-                descriptor = lnn.parser.descriptors.consume_onion_key(descriptor)
+                descriptor = parser.descriptors.consume_onion_key(descriptor)
                 break
             case "onion-key-crosscert":
-                descriptor = lnn.parser.descriptors.consume_onion_key_crosscert(descriptor)
+                descriptor = parser.descriptors.consume_onion_key_crosscert(descriptor)
                 break
             case "ntor-onion-key":
-                descriptor = lnn.parser.descriptors.consume_base64_digest('ntor-onion-key', descriptor)
+                descriptor = parser.descriptors.consume_base64_digest('ntor-onion-key', descriptor)
                 break
             case "ntor-onion-key-crosscert":
-                descriptor = lnn.parser.descriptors.consume_ntor_onion_key_crosscert(descriptor)
+                descriptor = parser.descriptors.consume_ntor_onion_key_crosscert(descriptor)
                 break
             case "accept":
-                descriptor = lnn.parser.descriptors.consume_exit_policy("accept", descriptor)
+                descriptor = parser.descriptors.consume_exit_policy("accept", descriptor)
                 break
             case "reject":
-                descriptor = lnn.parser.descriptors.consume_exit_policy("reject", descriptor)
+                descriptor = parser.descriptors.consume_exit_policy("reject", descriptor)
                 break
             case "signing-key":
-                descriptor = lnn.parser.descriptors.consume_signing_key(descriptor)
+                descriptor = parser.descriptors.consume_signing_key(descriptor)
                 break
             case "ipv6-policy":
-                descriptor = lnn.parser.consume_exit_policy('ipv6-policy', lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
+                descriptor = parser.consume_exit_policy('ipv6-policy', parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
                 break
             case "router-sig-ed25519":
-                descriptor = lnn.parser.descriptors.consume_router_sig_ed25519(descriptor)
+                descriptor = parser.descriptors.consume_router_sig_ed25519(descriptor)
                 break
             case "contact":
-                descriptor = lnn.parser.consume_contact(lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
+                descriptor = parser.consume_contact(parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
                 break
             case "bridge-distribution":
-                descriptor = lnn.parser.descriptors.consume_bridge_distribution(descriptor)
+                descriptor = parser.descriptors.consume_bridge_distribution(descriptor)
                 break
             case "family":
-                descriptor = lnn.parser.descriptors.consume_family(descriptor)
+                descriptor = parser.descriptors.consume_family(descriptor)
                 break
             case "read-history":
-                descriptor = lnn.parser.descriptors.consume_history("read", descriptor)
+                descriptor = parser.descriptors.consume_history("read", descriptor)
                 break
             case "write-history":
-                descriptor = lnn.parser.descriptors.consume_history("write", descriptor)
+                descriptor = parser.descriptors.consume_history("write", descriptor)
                 break
             case "eventdns":
-                descriptor = lnn.parser.descriptors.consume_eventdns(descriptor)
+                descriptor = parser.descriptors.consume_eventdns(descriptor)
                 break
             case "hidden-service-dir":
-                descriptor = lnn.parser.descriptors.consume_single_word_line("hidden-service-dir", descriptor)
+                descriptor = parser.descriptors.consume_single_word_line("hidden-service-dir", descriptor)
                 break
             case "allow-single-hop-exits":
-                descriptor = lnn.parser.descriptors.consume_single_word_line("allow-single-hop-exits", descriptor)
+                descriptor = parser.descriptors.consume_single_word_line("allow-single-hop-exits", descriptor)
                 break
             case "tunnelled-dir-server":
-                descriptor = lnn.parser.descriptors.consume_single_word_line("tunnelled-dir-server", descriptor)
+                descriptor = parser.descriptors.consume_single_word_line("tunnelled-dir-server", descriptor)
                 break
             case "proto":
-                descriptor = lnn.parser.consume_proto("proto", lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
+                descriptor = parser.consume_proto("proto", parser.descriptors.lines, parser.descriptors.line_count++, descriptor)
                 break
             default:
-                ++lnn.parser.descriptors.line_count
+                ++parser.descriptors.line_count
                 break
         }
-        line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count]
+        line = parser.descriptors.lines[parser.descriptors.line_count]
 
     }
 
-    descriptor = lnn.parser.descriptors.consume_router_signature(descriptor)
-    
-    if(descriptor['ipv6-policy'] === undefined) descriptor['ipv6-policy'] = {
+    descriptor = parser.descriptors.consume_router_signature(descriptor)
+
+    if (descriptor['ipv6-policy'] === undefined) descriptor['ipv6-policy'] = {
         "type": "reject",
-        "PortList":[[1,65535]]
+        "PortList": [[1, 65535]]
     }
 
-    if (!lnn.parser.descriptors.check_exactly_once(descriptor)) throw "Invalid descriptor: some mandatory fields are not present"
+    if (!parser.descriptors.check_exactly_once(descriptor)) throw "Invalid descriptor: some mandatory fields are not present"
 
     return descriptor
 }
- 
+
 /**
  * Checks that all mandatory fields of the descriptor were parsed
  */
-lnn.parser.descriptors.check_exactly_once = function (descriptor) {
-    
-    if(descriptor['ipv6-policy'] === undefined) descriptor
-    
+parser.descriptors.check_exactly_once = function (descriptor) {
+
+    if (descriptor['ipv6-policy'] === undefined) descriptor
+
     let parsed = true
-    if(descriptor['identity-ed25519'] !== undefined){
+    if (descriptor['identity-ed25519'] !== undefined) {
         parsed = descriptor["ntor-onion-key-crosscert"] !== undefined && descriptor["onion-key-crosscert"] !== undefined && descriptor["router-sig-ed25519"] !== undefined
-    }else{
+    } else {
         parsed = descriptor["router-sig-ed25519"] === undefined
     }
 
-    return parsed && lnn.parser.descriptors.exactly_once.every(field => descriptor[field] !== undefined)
+    return parsed && parser.descriptors.exactly_once.every(field => descriptor[field] !== undefined)
 }
 
 /**
@@ -163,15 +169,15 @@ lnn.parser.descriptors.check_exactly_once = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_router = function (descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(' ')
-    lnn.parser.check_format(6, 'router', words)
+parser.descriptors.consume_router = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
+    parser.check_format(6, 'router', words)
 
-    if (!lnn.parser.is_valid_nickname(words[1])) throw `Invalid nickname: ${words[1]} contains non-alphanumeric characters`
-    if (!lnn.parser.is_valid_ipv4(words[2])) throw `Invalid address: ${words[2]} is not a valid iPv4 address`
-    if (!lnn.parser.is_valid_port(words[3])) throw `Invalid port: ${words[3]} is not a valid port (0 to 65535)`
-    if (!lnn.parser.is_valid_port(words[4])) throw `Invalid port: ${words[4]} is not a valid port (0 to 65535)`
-    if (!lnn.parser.is_valid_port(words[5])) throw `Invalid port: ${words[5]} is not a valid port (0 to 65535)`
+    if (!parser.is_valid_nickname(words[1])) throw `Invalid nickname: ${words[1]} contains non-alphanumeric characters`
+    if (!parser.is_valid_ipv4(words[2])) throw `Invalid address: ${words[2]} is not a valid iPv4 address`
+    if (!parser.is_valid_port(words[3])) throw `Invalid port: ${words[3]} is not a valid port (0 to 65535)`
+    if (!parser.is_valid_port(words[4])) throw `Invalid port: ${words[4]} is not a valid port (0 to 65535)`
+    if (!parser.is_valid_port(words[5])) throw `Invalid port: ${words[5]} is not a valid port (0 to 65535)`
 
     descriptor['router'] = {
         "nickname": words[1],
@@ -181,7 +187,7 @@ lnn.parser.descriptors.consume_router = function (descriptor) {
         "dirport": Number(words[5])
     }
 
-    ++lnn.parser.descriptors.line_count
+    ++parser.descriptors.line_count
 
     return descriptor
 }
@@ -190,14 +196,14 @@ lnn.parser.descriptors.consume_router = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(' ')
+parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
     if (words[0] === 'identity-ed25519') {
-        lnn.parser.check_format(1, 'identity-ed25519', words)
-        ++lnn.parser.descriptors.line_count
+        parser.check_format(1, 'identity-ed25519', words)
+        ++parser.descriptors.line_count
 
-        let [offset, certificate] = lnn.parser.consume_pem(lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count)
-        lnn.parser.descriptors.line_count += offset + 1
+        let [offset, certificate] = parser.consume_pem(parser.descriptors.lines, parser.descriptors.line_count)
+        parser.descriptors.line_count += offset + 1
         descriptor['identity'] = {
             "type": "ed25519",
             "cert": certificate
@@ -214,15 +220,15 @@ lnn.parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_master_key_ed25519 = function (descriptor) {
+parser.descriptors.consume_master_key_ed25519 = function (descriptor) {
 
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(' ')
-    lnn.parser.check_format(2, 'master-key-ed25519', words)
-    lnn.parser.check_reused('master-key-ed25519', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
+    parser.check_format(2, 'master-key-ed25519', words)
+    parser.check_reused('master-key-ed25519', descriptor)
     let key = words[1]
-    if (!lnn.parser.is_valid_base64(lnn.parser.add_ending(key))) throw `Invalid master key: the master key ${words[1]} must be in base64`
+    if (!parser.is_valid_base64(parser.add_ending(key))) throw `Invalid master key: the master key ${words[1]} must be in base64`
     descriptor['identity']['master-key'] = key
-    lnn.parser.descriptors.line_count++
+    parser.descriptors.line_count++
 
     return descriptor
 }
@@ -232,12 +238,12 @@ lnn.parser.descriptors.consume_master_key_ed25519 = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_platform = function (descriptor) {
-    lnn.parser.check_reused("platform", descriptor)
-    let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count]
+parser.descriptors.consume_platform = function (descriptor) {
+    parser.check_reused("platform", descriptor)
+    let line = parser.descriptors.lines[parser.descriptors.line_count]
     let platform = line.substring("platform".length + 1)
     descriptor['platform'] = platform
-    lnn.parser.descriptors.line_count++
+    parser.descriptors.line_count++
     return descriptor
 }
 
@@ -246,10 +252,10 @@ lnn.parser.descriptors.consume_platform = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_published = function (descriptor) {
-    lnn.parser.check_reused('published', descriptor)
-    descriptor['published'] = lnn.parser.consume_date('published', lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count])
-    ++lnn.parser.descriptors.line_count
+parser.descriptors.consume_published = function (descriptor) {
+    parser.check_reused('published', descriptor)
+    descriptor['published'] = parser.consume_date('published', parser.descriptors.lines[parser.descriptors.line_count])
+    ++parser.descriptors.line_count
     return descriptor
 }
 
@@ -258,10 +264,10 @@ lnn.parser.descriptors.consume_published = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_bandwidth = function (descriptor) {
-    lnn.parser.check_reused('bandwidth', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(4, 'bandwidth', words)
+parser.descriptors.consume_bandwidth = function (descriptor) {
+    parser.check_reused('bandwidth', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(4, 'bandwidth', words)
 
     let avg = Number(words[1])
     let burst = Number(words[2])
@@ -283,19 +289,22 @@ lnn.parser.descriptors.consume_bandwidth = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_fingerprint = function (descriptor) {
-    lnn.parser.check_reused('fingerprint', descriptor)
-    let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++]
+parser.descriptors.consume_fingerprint = function (descriptor) {
+    parser.check_reused('fingerprint', descriptor)
+    let line = parser.descriptors.lines[parser.descriptors.line_count++]
     let index_sp = line.indexOf(" ")
     let fingerprint = line.substring(index_sp + 1)
 
     let bytes = fingerprint.split(" ")
-
+    let join_bytes = bytes.join("")
     if (bytes.length != 10) throw `Invalid fingerprint: wrong size`
-    if (!lnn.parser.is_valid_hex(bytes.join(""))) throw `Invalid fingerprint: not a hex string`
+    if (!parser.is_valid_hex(join_bytes)) throw `Invalid fingerprint: not a hex string`
 
+    let identity = sjcl.codec.hex.toBits(join_bytes)
+    identity = sjcl.codec.base64.fromBits(identity).replace("=", "")
 
     descriptor['fingerprint'] = fingerprint
+    descriptor['router']['identity'] = identity
 
     return descriptor
 }
@@ -305,10 +314,10 @@ lnn.parser.descriptors.consume_fingerprint = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_hibernating = function (descriptor) {
-    lnn.parser.check_reused('hibernating', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, 'hibernating', words)
+parser.descriptors.consume_hibernating = function (descriptor) {
+    parser.check_reused('hibernating', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, 'hibernating', words)
 
     let b = Number(words[1])
     if (b !== 0 && b !== 1) throw `Invalid boolean`
@@ -321,10 +330,10 @@ lnn.parser.descriptors.consume_hibernating = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_uptime = function (descriptor) {
-    lnn.parser.check_reused('uptime', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, 'uptime', words)
+parser.descriptors.consume_uptime = function (descriptor) {
+    parser.check_reused('uptime', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, 'uptime', words)
 
     let uptime = Number(words[1])
 
@@ -340,9 +349,9 @@ lnn.parser.descriptors.consume_uptime = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_onion_key = function (descriptor) {
-    lnn.parser.check_reused('onion-key', descriptor)
-    return lnn.parser.descriptors.consume_key('onion-key', descriptor)
+parser.descriptors.consume_onion_key = function (descriptor) {
+    parser.check_reused('onion-key', descriptor)
+    return parser.descriptors.consume_key('onion-key', descriptor)
 }
 
 /**
@@ -350,20 +359,20 @@ lnn.parser.descriptors.consume_onion_key = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_extra_info_digest = function (descriptor) {
-    lnn.parser.check_reused('extra-info-digest', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
+parser.descriptors.consume_extra_info_digest = function (descriptor) {
+    parser.check_reused('extra-info-digest', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
     if (words.length != 2 && words.length != 3) throw `Invalid format: 1 or 2 fields are expected`
 
     let sha1 = words[1]
-    if (!lnn.parser.is_valid_hex(sha1)) throw `Invalid encoding: the sha1 digest must be in hexadecimal`
+    if (!parser.is_valid_hex(sha1)) throw `Invalid encoding: the sha1 digest must be in hexadecimal`
     descriptor["extra-info-digest"] = {
         "sha1": sha1
     }
 
     if (words.length === 3) {
         let sha256 = words[2]
-        if (!lnn.parser.is_valid_base64(lnn.parser.add_ending(sha256))) throw `Invalid encoding: the sha256 digest must base 64`
+        if (!parser.is_valid_base64(parser.add_ending(sha256))) throw `Invalid encoding: the sha256 digest must base 64`
         descriptor['extra-info-digest']['sha256'] = sha256
     }
 
@@ -376,10 +385,10 @@ lnn.parser.descriptors.consume_extra_info_digest = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_single_word_line = function (type, descriptor) {
-    lnn.parser.check_reused(type, descriptor)
+parser.descriptors.consume_single_word_line = function (type, descriptor) {
+    parser.check_reused(type, descriptor)
     descriptor[type] = 'true'
-    ++lnn.parser.descriptors.line_count
+    ++parser.descriptors.line_count
 
     return descriptor
 }
@@ -389,9 +398,9 @@ lnn.parser.descriptors.consume_single_word_line = function (type, descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_onion_key_crosscert = function (descriptor) {
-    lnn.parser.check_reused('onion-key-crosscert', descriptor)
-    return lnn.parser.descriptors.consume_key('onion-key-crosscert', descriptor)
+parser.descriptors.consume_onion_key_crosscert = function (descriptor) {
+    parser.check_reused('onion-key-crosscert', descriptor)
+    return parser.descriptors.consume_key('onion-key-crosscert', descriptor)
 }
 
 /**
@@ -399,17 +408,17 @@ lnn.parser.descriptors.consume_onion_key_crosscert = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_ntor_onion_key_crosscert = function (descriptor) {
+parser.descriptors.consume_ntor_onion_key_crosscert = function (descriptor) {
 
-    lnn.parser.check_reused('ntor-onion-key-crosscert', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(" ")
-    lnn.parser.check_format(2, 'ntor-onion-key-crosscert', words)
+    parser.check_reused('ntor-onion-key-crosscert', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(" ")
+    parser.check_format(2, 'ntor-onion-key-crosscert', words)
 
     let bit = Number(words[1])
     if (bit != 0 && bit != 1) throw "Invalid bit for ntor-onion-key-crosscert"
 
-    let [offset, cert] = lnn.parser.consume_pem(lnn.parser.descriptors.lines, ++lnn.parser.descriptors.line_count)
-    lnn.parser.descriptors.line_count += offset + 1
+    let [offset, cert] = parser.consume_pem(parser.descriptors.lines, ++parser.descriptors.line_count)
+    parser.descriptors.line_count += offset + 1
 
     descriptor['ntor-onion-key-crosscert'] = {
         "bit": bit,
@@ -425,14 +434,14 @@ lnn.parser.descriptors.consume_ntor_onion_key_crosscert = function (descriptor) 
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_router_sig_ed25519 = function (descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, "router-sig-ed25519", words)
-    lnn.parser.check_reused("router-signatures", descriptor)
+parser.descriptors.consume_router_sig_ed25519 = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, "router-sig-ed25519", words)
+    parser.check_reused("router-signatures", descriptor)
 
     let signature = words[1]
 
-    if (!lnn.parser.is_valid_base64(lnn.parser.add_ending(signature))) throw "Invalid digest: must be a base 64 string"
+    if (!parser.is_valid_base64(parser.add_ending(signature))) throw "Invalid digest: must be a base 64 string"
 
     descriptor["router-signatures"] = {
         "ed25519": signature,
@@ -446,14 +455,14 @@ lnn.parser.descriptors.consume_router_sig_ed25519 = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_router_signature = function (descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(' ')
+parser.descriptors.consume_router_signature = function (descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count].split(' ')
     if (words[0] === 'router-signature') {
-        lnn.parser.check_format(1, 'router-signature', words)
-        ++lnn.parser.descriptors.line_count
+        parser.check_format(1, 'router-signature', words)
+        ++parser.descriptors.line_count
 
-        let [offset, signature] = lnn.parser.consume_pem(lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count)
-        lnn.parser.descriptors.line_count += offset + 1
+        let [offset, signature] = parser.consume_pem(parser.descriptors.lines, parser.descriptors.line_count)
+        parser.descriptors.line_count += offset + 1
 
         if (descriptor["router-signatures"] === undefined) {
             descriptor["router-signatures"] = {}
@@ -470,12 +479,12 @@ lnn.parser.descriptors.consume_router_signature = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_bridge_distribution = function (descriptor) {
-    lnn.parser.check_reused('bridge-distribution', descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, 'bridge-distribution', words)
+parser.descriptors.consume_bridge_distribution = function (descriptor) {
+    parser.check_reused('bridge-distribution', descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, 'bridge-distribution', words)
     let dist = words[1]
-    if (!lnn.parser.descriptors.valid_bridge_distribution.includes(dist)) dist = "none"
+    if (!parser.descriptors.valid_bridge_distribution.includes(dist)) dist = "none"
 
     descriptor['bridge-distribution'] = dist
 
@@ -488,10 +497,10 @@ lnn.parser.descriptors.consume_bridge_distribution = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_family = function (descriptor) {
-    lnn.parser.check_reused("family", descriptor)
+parser.descriptors.consume_family = function (descriptor) {
+    parser.check_reused("family", descriptor)
 
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
     let family = words.splice(1)
 
     descriptor['family'] = family
@@ -504,17 +513,17 @@ lnn.parser.descriptors.consume_family = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_history = function (type, descriptor) {
+parser.descriptors.consume_history = function (type, descriptor) {
     let field = type + "-history"
-    lnn.parser.check_reused(field, descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(6, type + "-history", words)
+    parser.check_reused(field, descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(6, type + "-history", words)
 
     let date = words[1]
-    if (!lnn.parser.is_valid_date(date)) throw "Invalid date"
+    if (!parser.is_valid_date(date)) throw "Invalid date"
 
     let time = words[2]
-    if (!lnn.parser.is_valid_time(time)) throw "Invalid time"
+    if (!parser.is_valid_time(time)) throw "Invalid time"
 
     let interval = Number(words[3].substring(1))
     let bytes = words[5].split(",").map(x => Number(x))
@@ -534,10 +543,10 @@ lnn.parser.descriptors.consume_history = function (type, descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_eventdns = function (descriptor) {
-    lnn.parser.check_reused("eventdns", descriptor)
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, "eventdns", words)
+parser.descriptors.consume_eventdns = function (descriptor) {
+    parser.check_reused("eventdns", descriptor)
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, "eventdns", words)
 
     let bool = Number(words[1])
 
@@ -553,14 +562,14 @@ lnn.parser.descriptors.consume_eventdns = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_base64_digest = function (field, descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, field, words)
-    lnn.parser.check_reused(field, descriptor)
+parser.descriptors.consume_base64_digest = function (field, descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, field, words)
+    parser.check_reused(field, descriptor)
 
     let key = words[1]
 
-    if (!lnn.parser.is_valid_base64(lnn.parser.add_ending(key))) throw "Invalid digest: must be a base 64 string"
+    if (!parser.is_valid_base64(parser.add_ending(key))) throw "Invalid digest: must be a base 64 string"
 
     descriptor[field] = key
 
@@ -572,9 +581,9 @@ lnn.parser.descriptors.consume_base64_digest = function (field, descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_signing_key = function (descriptor) {
-    lnn.parser.check_reused('signing-key', descriptor)
-    return lnn.parser.descriptors.consume_key('signing-key', descriptor)
+parser.descriptors.consume_signing_key = function (descriptor) {
+    parser.check_reused('signing-key', descriptor)
+    return parser.descriptors.consume_key('signing-key', descriptor)
 }
 
 /**
@@ -583,9 +592,9 @@ lnn.parser.descriptors.consume_signing_key = function (descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_exit_policy = function (type, descriptor) {
-    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count++].split(" ")
-    lnn.parser.check_format(2, type, words)
+parser.descriptors.consume_exit_policy = function (type, descriptor) {
+    let words = parser.descriptors.lines[parser.descriptors.line_count++].split(" ")
+    parser.check_format(2, type, words)
 
     if (descriptor['policy'] === undefined) {
         descriptor['policy'] = {
@@ -610,9 +619,9 @@ lnn.parser.descriptors.consume_exit_policy = function (type, descriptor) {
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
-lnn.parser.descriptors.consume_key = function (field, descriptor) {
-    [offset, key] = lnn.parser.consume_pem(lnn.parser.descriptors.lines, ++lnn.parser.descriptors.line_count)
-    lnn.parser.descriptors.line_count += offset + 1
+parser.descriptors.consume_key = function (field, descriptor) {
+    [offset, key] = parser.consume_pem(parser.descriptors.lines, ++parser.descriptors.line_count)
+    parser.descriptors.line_count += offset + 1
     descriptor[field] = key
     return descriptor
 }
@@ -623,7 +632,7 @@ lnn.parser.descriptors.consume_key = function (field, descriptor) {
 * @param {string} expected_word the expected word
 * @param {Array} words the line splitted into words
 */
-lnn.parser.check_format = function (expected_length, expected_word, words) {
+parser.check_format = function (expected_length, expected_word, words) {
     if (words.length != expected_length) {
         console.log(words)
         throw `wrong_format_exception: ${expected_length} fields are expected`
@@ -637,7 +646,7 @@ lnn.parser.check_format = function (expected_length, expected_word, words) {
 * Check if the IP is an IPv4 address
 * @param {string} IP 
 */
-lnn.parser.is_valid_ipv4 = function (IP) {
+parser.is_valid_ipv4 = function (IP) {
     let regex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
     return regex.test(IP)
 }
@@ -646,7 +655,7 @@ lnn.parser.is_valid_ipv4 = function (IP) {
  * Check if the given port is valid
  * @param {number} port
  */
-lnn.parser.is_valid_port = function (port) {
+parser.is_valid_port = function (port) {
     if (isNaN(port)) return false
     return port >= 0 && port <= 65535
 }
@@ -656,7 +665,7 @@ lnn.parser.is_valid_port = function (port) {
  * @param {string} nickname the nickname we want to verify
  * @returns {boolean} the validity of the nickname 
  */
-lnn.parser.is_valid_nickname = function (nickname) {
+parser.is_valid_nickname = function (nickname) {
     let regex = /^[a-z0-9]+$/i
     return regex.test(nickname)
 }
@@ -665,7 +674,7 @@ lnn.parser.is_valid_nickname = function (nickname) {
 * Check if the given string is in base 64
 * @param {string} str 
 */
-lnn.parser.is_valid_base64 = function (str) {
+parser.is_valid_base64 = function (str) {
     let regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
     return regex.test(str)
 }
@@ -673,7 +682,7 @@ lnn.parser.is_valid_base64 = function (str) {
  * Check if the given string is in hexadecimal
  * @param {string} str 
  */
-lnn.parser.is_valid_hex = function (str) {
+parser.is_valid_hex = function (str) {
     let regex = /^[a-fA-F0-9]+$/
     return regex.test(str)
 }
@@ -685,7 +694,7 @@ lnn.parser.is_valid_hex = function (str) {
  * @param {function} base_function optional function to verifiy the base
  * @returns {Array} tuple containing the parsed pem and the offset
  */
-lnn.parser.consume_pem = function (lines, start) {
+parser.consume_pem = function (lines, start) {
     let offset = 0;
     let content = ''
     if (!lines[start].startsWith('-----BEGIN')) throw `Invalid signature, certificate or key: must begin with "-----BEGIN"`
@@ -695,7 +704,7 @@ lnn.parser.consume_pem = function (lines, start) {
         offset++
     }
 
-    if (!lnn.parser.is_valid_base64(content)) throw "Invalid PEM: must be in base 64"
+    if (!parser.is_valid_base64(content)) throw "Invalid PEM: must be in base 64"
 
     return [offset, content]
 }
@@ -705,12 +714,12 @@ lnn.parser.consume_pem = function (lines, start) {
  * @param {string} ranges format: Keyword=Values...
  * @returns {object} the parsed ranges
  */
-lnn.parser.parse_range = function (ranges) {
+parser.parse_range = function (ranges) {
     let content = {}
     for (let pair of ranges) {
         if (pair.includes("=")) {
             let tmp = pair.split("=")
-            content[tmp[0]] = lnn.parser.parse_range_once(tmp[1])
+            content[tmp[0]] = parser.parse_range_once(tmp[1])
         }
     }
     return content
@@ -721,7 +730,7 @@ lnn.parser.parse_range = function (ranges) {
  * @param {string} value the sting we want to parse
  * @returns {Array} a list containing the ranges 
  */
-lnn.parser.parse_range_once = function (value) {
+parser.parse_range_once = function (value) {
     value = value.split(',')
     let subvalues = []
 
@@ -751,15 +760,15 @@ lnn.parser.parse_range_once = function (value) {
  * @param {object} node the node we want to update
  * @returns the updated node
  */
-lnn.parser.consume_exit_policy = function (field, lines, index, node) {
-    lnn.parser.check_reused(field, node)
+parser.consume_exit_policy = function (field, lines, index, node) {
+    parser.check_reused(field, node)
     let words = lines[index].split(" ")
-    lnn.parser.check_format(3, field, words)
+    parser.check_format(3, field, words)
 
     let policy = words[1]
     if (policy !== 'accept' && policy !== 'reject') throw "Invalid policy: policy must either be accept or reject"
 
-    let ranges = lnn.parser.parse_range_once(words[2])
+    let ranges = parser.parse_range_once(words[2])
 
     node[field] = {
         'type': policy,
@@ -777,8 +786,8 @@ lnn.parser.consume_exit_policy = function (field, lines, index, node) {
  * @param {object} node the node we want to update
  * @returns the updated node
  */
-lnn.parser.consume_contact = function (lines, index, node) {
-    lnn.parser.check_reused("contact", node)
+parser.consume_contact = function (lines, index, node) {
+    parser.check_reused("contact", node)
     let contact = lines[index].substring("contact".length + 1)
     node["contact"] = contact
 
@@ -790,7 +799,7 @@ lnn.parser.consume_contact = function (lines, index, node) {
 * Check if the string in date has the format YYYY-MM-DD
 * @param {string} time String representing the date
 */
-lnn.parser.is_valid_date = function (date) {
+parser.is_valid_date = function (date) {
     if (typeof date !== 'string') return false
     let regex = /^\d{4}[-](0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$/
     return regex.test(date)
@@ -799,7 +808,7 @@ lnn.parser.is_valid_date = function (date) {
 /**Check if the string time has the format HH:MM:SS
  * @param {string} time String representing the time
  */
-lnn.parser.is_valid_time = function (time) {
+parser.is_valid_time = function (time) {
     if (typeof time !== 'string') return false
     let regex = /^(0[0-9]|1[0-9]|2[0-3])[:][0-5][0-9][:][0-5][0-9]$/
     return regex.test(time)
@@ -811,12 +820,12 @@ lnn.parser.is_valid_time = function (time) {
  * @param {string} line the line we are consuming
  * @returns {object} object containing both the date and the time 
  */
-lnn.parser.consume_date = function (field, line) {
+parser.consume_date = function (field, line) {
     let words = line.split(" ")
-    lnn.parser.check_format(3, field, words)
+    parser.check_format(3, field, words)
 
-    if (!lnn.parser.is_valid_date(words[1])) throw `Invalid date: ${words[1]} is not a valid date`
-    if (!lnn.parser.is_valid_time(words[2])) throw `Invalid time: ${words[2]} is not a valid time`
+    if (!parser.is_valid_date(words[1])) throw `Invalid date: ${words[1]} is not a valid date`
+    if (!parser.is_valid_time(words[2])) throw `Invalid time: ${words[2]} is not a valid time`
 
     return {
         "date": words[1],
@@ -832,10 +841,10 @@ lnn.parser.consume_date = function (field, line) {
 * @param {object} node the node we want to update
 * @returns the updated node
 */
-lnn.parser.consume_proto = function (type, lines, index, node) {
-    lnn.parser.check_reused(type, node)
+parser.consume_proto = function (type, lines, index, node) {
+    parser.check_reused(type, node)
     let ranges = lines[index].split(" ").splice(1)
-    node[type] = lnn.parser.parse_range(ranges)
+    node[type] = parser.parse_range(ranges)
     return node
 }
 
@@ -844,7 +853,7 @@ lnn.parser.consume_proto = function (type, lines, index, node) {
  * @param {string} field the field we want to verify
  * @param {object} node the node for which we don't want a repetition of field
  */
-lnn.parser.check_reused = function (field, node) {
+parser.check_reused = function (field, node) {
     if (node[field] !== undefined) throw `The field ${field} appears more than once`
 }
 
@@ -853,7 +862,7 @@ lnn.parser.check_reused = function (field, node) {
  * @param {string} str the string we want to modify
  * @returns {string} base 64 string with correct ending = 
  */
-lnn.parser.add_ending = function (str) {
+parser.add_ending = function (str) {
     if (str.length % 4 !== 0) {
         let rem = str.length % 4
         for (let i = 0; i < 4 - rem; i++) str += '='
