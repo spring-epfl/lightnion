@@ -23,7 +23,7 @@
 
             lnn.get.descriptors(end, end => {
 
-              let [guard, middle, exit] = path_selection.select(end.consensus, end.descriptors, true)
+              let [guard, middle, exit] = path.select(end.consensus, end.descriptors, true)
               document.getElementById('exit').textContent = "Exit: " + exit['router'].nickname
               document.getElementById('guard').textContent = "Guard: " + guard['router'].nickname
               document.getElementById('middle').textContent = "Middle: " + middle['router'].nickname
