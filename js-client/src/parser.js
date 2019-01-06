@@ -10,6 +10,7 @@ lnn.parser.descriptors = {
     parse: function (raw_descriptors, endpoint) {
         let descriptors = []
         lnn.parser.descriptors.lines = raw_descriptors.split('\n')
+        lnn.parser.descriptors.line_count = 0
         lnn.parser.descriptors.total_lines = lnn.parser.descriptors.lines.length
         while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines) {
             if(lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count] === ""){
