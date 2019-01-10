@@ -11,6 +11,7 @@ parser.descriptors = {
         let descriptors = []
         parser.descriptors.lines = raw_descriptors.split('\n')
         parser.descriptors.total_lines = parser.descriptors.lines.length
+        parser.descriptors.line_count = 0
         while (parser.descriptors.line_count < parser.descriptors.total_lines) {
             if (parser.descriptors.lines[parser.descriptors.line_count] === "") {
                 parser.descriptors.line_count++

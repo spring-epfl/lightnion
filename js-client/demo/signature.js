@@ -53,7 +53,6 @@ signature.verify = function (raw_cons, keys, minimal) {
         let sig_big_int = signature.get_signature_big_int(sig)
         let padded_hash = signature.get_hash(sig_big_int, e, n)
         let recovered_hash = signature.get_hash_from_rsa_cipher(padded_hash)
-
         nbr_verified = (recovered_hash === undefined || recovered_hash !== hash) ? nbr_verified : nbr_verified + 1
     }
 

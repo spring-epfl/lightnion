@@ -1,0 +1,153 @@
+<html>
+
+<head>
+    <script src="signature.js"></script>
+    <script src="path.js"></script>
+    <script src="parser.js"></script>
+    <script src="consensusParser.js"></script>
+    <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+
+<p id="loaded"></p>
+<button id="button" , type="button">Get Consensus</button>
+<pre id="log"></pre>
+
+<body>
+    <script>
+        let from_disk = true
+        let button = document.getElementById("button")
+        let cons_raw = ""
+        let des_raw = ""
+        let des = null
+        let cons = null
+        let end = null
+        button.addEventListener("click", get_consensus_listener)
+
+
+        function get_consensus_listener() {
+
+
+            if (!from_disk) {
+                lnn.open('localhost', 4990,
+                    function success(endpoint) {
+                        if (endpoint.state != lnn.state.success)
+                            return
+
+                        end = endpoint
+                        document.getElementById('loaded').innerHTML = '(channel opened)'
+
+
+                        lnn.stream.dir(endpoint, "/tor/status-vote/current/consensus", handler_consensus)
+                    },
+                    function error(endpoint) {
+                        document.getElementById('loaded').innerHTML = '(unable to open)'
+                    })
+            } else {
+                read_text_file("consensus_2019-01-10", cons => {
+                    cons_raw = cons
+                    document.getElementById('log').innerHTML = cons_raw
+                    button.removeEventListener("click", get_consensus_listener)
+                    button.textContent = "Verify"
+                    button.addEventListener("click", verify_listener)
+                })
+            }
+
+        }
+
+        function verify_listener() {
+            read_text_file("keys.json", k => {
+                let keys = JSON.parse(k)
+
+                if (signature.verify(cons_raw, keys, 0.5)) {
+                    document.getElementById("log").textContent = "Consensus has been verified succesfully"
+                    if (from_disk) {
+                        read_text_file("descriptors_2019-01-10", des => {
+                            des_raw = des
+                            button.removeEventListener("click", verify_listener)
+                            button.textContent = "Parse"
+                            button.addEventListener("click", parser_listener)
+                        })
+                    } else {
+                        lnn.stream.dir(end, "/tor/server/all", handler_descriptor)
+                    }
+
+                } else {
+                    document.getElementById("log").textContent = "Consensus has not been verified"
+                }
+            })
+
+
+        }
+
+        function select_path_listener() {
+
+            let [guard, middle, exit] = path.select(cons, des, true)
+
+            document.getElementById('log').textContent = "Exit: " + exit['router'].nickname + "\n"
+            document.getElementById('log').textContent += "Guard: " + guard['router'].nickname + "\n"
+            document.getElementById('log').textContent += "Middle: " + middle['router'].nickname
+        }
+
+        function parser_listener() {
+            let cons_parser = new ConsensusParser(cons_raw)
+            cons = cons_parser.parse()
+            des = parser.descriptors.parse(des_raw)
+
+            //document.getElementById("log").textContent = JSON.stringify(cons, undefined, '\t')
+
+            button.removeEventListener("click", parser_listener)
+            button.textContent = "Select a path"
+            button.addEventListener("click", select_path_listener)
+        }
+
+        function handler_consensus(request) {
+            if (request.state == lnn.state.success) {
+                document.getElementById('log').innerHTML += request.data
+                cons_raw += request.data
+                if (request.cell.cmd == "end") {
+
+                    let idx = cons_raw.indexOf("network-status-version")
+                    cons_raw = cons_raw.substring(idx)
+
+                    button.removeEventListener("click", get_consensus_listener)
+                    button.textContent = "Verify"
+                    button.addEventListener("click", verify_listener)
+                }
+            }
+        }
+
+        function handler_descriptor(request) {
+            if (request.state == lnn.state.success) {
+                des_raw += request.data
+                if (request.cell.cmd == "end") {
+                    let idx = des_raw.indexOf("router")
+                    des_raw = des_raw.substring(idx)
+
+                    button.removeEventListener("click", verify_listener)
+                    button.textContent = "Parse"
+                    button.addEventListener("click", parser_listener)
+                }
+            }
+        }
+
+        function read_text_file(path, success) {
+            let rq = new XMLHttpRequest();
+            rq.open("GET", path, false);
+            rq.onreadystatechange = function () {
+                if (rq.readyState === XMLHttpRequest.DONE) {
+                    if (rq.status === 200 || rq.status == 0) {
+                        let text = rq.responseText
+                        success(text)
+                    } else {
+                        console.log(rq.status)
+                    }
+                }
+            }
+            rq.send(null);
+        }
+    </script>
+</body>
+
+</html>

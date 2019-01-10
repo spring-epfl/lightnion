@@ -13,7 +13,7 @@ class ConsensusParser {
         this.lines = rawText.split('\n')
         this.words = this.lines[0].split(' ')
         this.consensus = {}
-        this.validFlags = ['Authority', 'BadExit', 'Exit', 'Fast', 'Guard', 'HSDir', 'Named', 'Stable', 'Running', 'Unnamed', 'Valid', 'V2Dir', 'NoEdConsensus']
+        this.validFlags = ['Authority', 'BadExit', 'Exit', 'Fast', 'Guard', 'HSDir', 'NoEdConsensus', 'Stable', 'StaleDesc', 'Running', 'Valid', 'V2Dir']
         this.index = 0
         this.totalLines = this.lines.length
     }
@@ -437,7 +437,7 @@ class ConsensusParser {
         if (this.words[0] !== 'directory-signature') throw `WrongFieldException: there must be at least one signature`
         this.consensus['footer']['directory-signatures'] = []
 
-        while(this.words[0] === 'directory-signature'){
+        while (this.words[0] === 'directory-signature') {
             this.consensus['footer']['directory-signatures'].push(this.consumeSignature());
         }
 
@@ -461,13 +461,13 @@ class ConsensusParser {
     consumeSignature() {
         if (this.words[0] !== 'directory-signature') throw `WrongFieldException: next field must be directory-signature`
         let length = this.words.length
-        
+
         let algo
         let remaining
         if (length === 4) {
             algo = this.words[1]
             remaining = this.words.splice(2, length)
-        } else if(length === 3){
+        } else if (length === 3) {
             algo = 'sha1'
             remaining = this.words.splice(1, length)
         }
@@ -475,14 +475,14 @@ class ConsensusParser {
 
         let identity = remaining[0]
         if (!this.isHex(identity)) throw `InvalidParameterException: the identity ${identity} must be in hexadecimal`
-    
+
         let digest = remaining[1]
         if (!this.isHex(digest)) throw `InvalidParameterException: the signing-key-digest ${digest} must be in hexadecimal`
 
         this.nextLine()
 
         let signature = this.parseSignature()
-        if(this.index < this.totalLines - 1) this.nextLine()
+        if (this.index < this.totalLines - 1) this.nextLine()
 
         return {
             'Algorithm': algo,
@@ -608,11 +608,11 @@ class ConsensusParser {
      * Parse signature 
      * @throws WrongFormatException if the line does not start with ----BEGIN
      */
-    parseSignature(){
-        if(this.words[0] !== '-----BEGIN') throw `WrongFormatException`
+    parseSignature() {
+        if (this.words[0] !== '-----BEGIN') throw `WrongFormatException`
         this.nextLine()
         let signature = ''
-        while(this.lines[this.index] !== "-----END SIGNATURE-----"){
+        while (this.lines[this.index] !== "-----END SIGNATURE-----") {
             signature += this.lines[this.index]
             this.nextLine()
         }
@@ -702,7 +702,7 @@ class ConsensusParser {
      * @throws EndOfFileException if the end of the file has already been reached
      */
     nextLine() {
-        if(this.index >= this.totalLines)throw `EndOfFileException: there are no lines to parse`
+        if (this.index >= this.totalLines) throw `EndOfFileException: there are no lines to parse`
         this.words = this.lines[++this.index].split(" ")
     }
 
