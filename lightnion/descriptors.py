@@ -370,7 +370,9 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
 def download(state,
         cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
     if cons is None:
-        state, cons = consensus.download(state, flavor=flavor, cache=cache)
+        # TODO: Proper handling of consensus.
+        cons = consensus.download_direct('localhost', 7000, flavor=flavor, cache=cache)
+        logging.warning('===== Use Q&D hack to get consensus! ====')
         if cons is None:
             return state, None
     elif isinstance(cons, list):

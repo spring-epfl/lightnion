@@ -17,7 +17,7 @@ tick_rate = 0.01 # (sleeps when nothing to do)
 async_rate = 0.01 # (async.sleep while websocket-ing)
 
 class clerk(threading.Thread):
-    def __init__(self, slave_node, control_port, auth_dir=None):
+    def __init__(self, slave_node, control_port, dir_port, auth_dir=None):
         super().__init__()
         logging.info('Bootstrapping clerk.')
         self.crypto = lnn.proxy.parts.crypto()
@@ -34,12 +34,14 @@ class clerk(threading.Thread):
             logging.debug('Note: authentication suffix is {}'.format(
                 self.auth.suffix))
 
+        self.consensus = None
         self.control_port = control_port
+        self.dir_port = dir_port
         self.slave_node = slave_node
 
         self.producer           = lnn.proxy.jobs.producer(self)
         self.slave              = lnn.proxy.jobs.slave(self)
-        self.consensus_getter   = lnn.proxy.jobs.consensus(self)
+        #self.consensus_getter   = lnn.proxy.jobs.consensus(self)
         self.guard              = lnn.proxy.jobs.guard(self)
         self.create             = lnn.proxy.jobs.create(self)
         self.delete             = lnn.proxy.jobs.delete(self)
@@ -47,12 +49,19 @@ class clerk(threading.Thread):
         self.jobs = [
             self.slave,
             self.producer,
-            self.consensus_getter,
+            #self.consensus_getter,
             self.guard,
             self.create,
             self.delete]
 
         self.channels = dict()
+
+        self.timer_consensus = threading.Timer(30.0, clerk.get_consensus, [self])
+
+
+    def get_consensus(self):
+        self.consensus = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+
 
     def die(self, e):
         if isinstance(e, str):
@@ -201,7 +210,9 @@ def get_descriptors():
 @app.route(url + '/consensus')
 def get_consensus():
     try:
-        return flask.jsonify(app.clerk.consensus_getter.perform()), 200
+        while app.clerk.consensus is None:
+            app.clerk.get_consensus()
+        return flask.jsonify(app.clerk.consensus), 200
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
@@ -268,7 +279,7 @@ def delete_channel(uid):
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
-def main(port, slave_node, control_port, purge_cache,
+def main(port, slave_node, control_port, dir_port, purge_cache,
     static_files=None, auth_dir=None):
     if purge_cache:
         lnn.cache.purge()
@@ -277,7 +288,7 @@ def main(port, slave_node, control_port, purge_cache,
         from werkzeug import SharedDataMiddleware
         app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
-    with clerk(slave_node, control_port, auth_dir) as app.clerk:
+    with clerk(slave_node, control_port, dir_port, auth_dir) as app.clerk:
         logging.info('Bootstrapping HTTP server.')
         sockets(app.clerk).start()
         app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=False)

@@ -4,6 +4,8 @@ import binascii
 import time
 import os
 
+import urllib.request
+
 import lightnion as lnn
 
 
@@ -768,6 +770,35 @@ def download(state, flavor='microdesc', cache=True):
         lnn.cache.consensus.put(consensus)
 
     return state, consensus
+
+
+def download_direct(ip, port, flavor='microdesc', cache=True):
+    """Retrieve consensus via a direct HTTP connection.
+    :param ip: IP address of the node from which to retrieve the consensus.
+    :param port: port of the node from which to retrieve the consensus.
+    :param flavor: flavour of the consensus to retrieve.
+    :param cache: if the retrieved consensus should put in the cache.
+    """
+
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    endpoint = 'consensus-microdesc' if flavor == 'microdesc' else 'consensus'
+    uri = 'http://%s:%d/tor/status-vote/current/%s' % (ip, port, endpoint)
+
+    res = urllib.request.urlopen(uri)
+
+    consensus, remaining = parse(res.read(), flavor=flavor)
+
+    if consensus is None or remaining is None or not len(remaining) == 0:
+        raise RuntimeError('Unable to parse downloaded consensus!')
+
+    if cache:
+        lnn.cache.consensus.put(consensus)
+
+    return consensus
+
 
 
 def load(file_name, cache=True):
