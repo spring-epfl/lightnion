@@ -296,58 +296,6 @@ class slave(basic):
     def close(self):
         self.link.close()
 
-class consensus(basic):
-    'DEPRECATED'
-
-    def __init__(self, clerk, qsize=default_qsize):
-        logging.warning('Use DEPRECATED class consensus.')
-        clerk.consensus = dict(headers=None)
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def reset(self):
-        logging.warning('Called method on DEPRECATED class consensus.')
-        if not self.clerk.slave.isalive():
-            self.clerk.slave.reset()
-
-        census = self.clerk.slave.consensus()
-
-        if census['headers']['valid-until']['stamp'] < time.time():
-            raise RuntimeError('Unable to get a fresh consensus, abort!')
-        if not census['headers'] == self.clerk.consensus['headers']:
-            super().reset()
-            logging.info('Consensus successfully refreshed.')
-
-        self.clerk.consensus = census
-
-        # (cache descriptors for later use)
-        self.clerk.slave.descriptors(census, fail_on_missing=False)
-
-    def isalive(self):
-        logging.warning('Called method on DEPRECATED class consensus.')
-        valid_until = self.clerk.consensus['headers']['valid-until']['stamp']
-        return not (valid_until < time.time())
-
-    def isfresh(self):
-        logging.warning('Called method on DEPRECATED class consensus.')
-        return not (self._out.qsize() < self.qsize)
-
-    def refresh(self):
-        logging.warning('Called method on DEPRECATED class consensus.')
-        try:
-            #self.put_job(self.clerk.consensus)
-            return True
-        except expired:
-            return False
-
-    def perform(self, timeout=1):
-        logging.warning('Called method on DEPRECATED class consensus.')
-        return self.get(timeout=timeout)
 
 class guard(basic):
     def __init__(self, clerk, qsize=default_qsize):
@@ -365,10 +313,7 @@ class guard(basic):
         raise NotImplementedError
 
     def router(self, check_alive=True):
-        #if check_alive and not self.clerk.consensus_getter.isalive():
-        #    self.clerk.consensus_getter.reset()
-        while self.clerk.consensus is None:
-            self.clerk.get_consensus()
+        self.clerk.wait_for_consensus()
 
         try:
             guard = lnn.proxy.path.convert(
@@ -628,10 +573,7 @@ class create(ordered):
         if not self.clerk.producer.isalive():
             self.clerk.producer.reset()
 
-        #if not self.clerk.consensus_getter.isalive():
-        #    self.clerk.consensus_getter.reset()
-        while self.clerk.consensus is None:
-            self.clerk.get_consensus()
+        self.clerk.wait_for_consensus()
 
         try:
             middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(),

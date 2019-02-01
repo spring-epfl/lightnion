@@ -6,6 +6,8 @@ import flask
 import queue
 import time
 
+from datetime import datetime, timedelta
+
 import websockets
 import asyncio
 
@@ -35,13 +37,14 @@ class clerk(threading.Thread):
                 self.auth.suffix))
 
         self.consensus = None
+        self.timer_consensus = None
+
         self.control_port = control_port
         self.dir_port = dir_port
         self.slave_node = slave_node
 
         self.producer           = lnn.proxy.jobs.producer(self)
         self.slave              = lnn.proxy.jobs.slave(self)
-        #self.consensus_getter   = lnn.proxy.jobs.consensus(self)
         self.guard              = lnn.proxy.jobs.guard(self)
         self.create             = lnn.proxy.jobs.create(self)
         self.delete             = lnn.proxy.jobs.delete(self)
@@ -49,18 +52,38 @@ class clerk(threading.Thread):
         self.jobs = [
             self.slave,
             self.producer,
-            #self.consensus_getter,
             self.guard,
             self.create,
             self.delete]
 
         self.channels = dict()
 
-        self.timer_consensus = threading.Timer(30.0, clerk.get_consensus, [self])
-
 
     def get_consensus(self):
+        # retrieve consensus
         self.consensus = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+
+        try:
+            # Compute delay until retrival of the next consensus.
+            fresh_until = datetime.utcfromtimestamp(self.consensus['headers']['fresh-until']['stamp'])
+            now = datetime.utcnow()
+            delay = (fresh_until - now).total_seconds()
+
+            self.timer_consensus = threading.Timer(delay, clerk.get_consensus, [self])
+
+        except Exception as e:
+            logging.error(e)
+
+        self.timer_consensus.start()
+
+
+    def wait_for_consensus(self):
+        if self.consensus is None:
+            if self.timer_consensus is None:
+                self.get_consensus()
+        while self.consensus is None:
+            logging.info('Wait for consensus...')
+            time.sleep(1)
 
 
     def die(self, e):
@@ -210,8 +233,7 @@ def get_descriptors():
 @app.route(url + '/consensus')
 def get_consensus():
     try:
-        while app.clerk.consensus is None:
-            app.clerk.get_consensus()
+        app.clerk.wait_for_consensus()
         return flask.jsonify(app.clerk.consensus), 200
     except lnn.proxy.jobs.expired:
         flask.abort(503)
