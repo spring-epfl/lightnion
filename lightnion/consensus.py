@@ -772,9 +772,9 @@ def download(state, flavor='microdesc', cache=True):
     return state, consensus
 
 
-def download_direct(ip, port, flavor='microdesc', cache=True):
+def download_direct(hostname, port, flavor='microdesc', cache=True):
     """Retrieve consensus via a direct HTTP connection.
-    :param ip: IP address of the node from which to retrieve the consensus.
+    :param hostname: host name of the node from which to retrieve the consensus.
     :param port: port of the node from which to retrieve the consensus.
     :param flavor: flavour of the consensus to retrieve.
     :param cache: if the retrieved consensus should put in the cache.
@@ -785,7 +785,7 @@ def download_direct(ip, port, flavor='microdesc', cache=True):
             'Consensus flavor "{}" not supported.'.format(flavor))
 
     endpoint = 'consensus-microdesc' if flavor == 'microdesc' else 'consensus'
-    uri = 'http://%s:%d/tor/status-vote/current/%s' % (ip, port, endpoint)
+    uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
 
     res = urllib.request.urlopen(uri)
 
