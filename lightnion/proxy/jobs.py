@@ -266,10 +266,6 @@ class slave(basic):
             flavor='unflavored', fail_on_missing=fail_on_missing)
         return descs
 
-    def consensus(self, check_alive=True):
-        'DEPRECATED'
-        logging.warning('Called DEPRECATED method slave.consensus()')
-
     def isalive(self, force_check=False):
         if self.link is None:
             return False
