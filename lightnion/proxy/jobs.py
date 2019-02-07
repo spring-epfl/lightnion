@@ -207,94 +207,6 @@ class producer(basic):
     def close(self):
         self.child.close()
 
-class slave(basic):
-    def __init__(self, clerk, qsize=default_qsize):
-        self.link = None
-        self.circ = None
-        self.desc = None
-        self.identity = None
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def get(self):
-        raise NotImplementedError
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def put_job(self, job):
-        raise NotImplementedError
-
-    def reset(self):
-        super().reset()
-
-        logging.info('Resetting slave node link.')
-        if self.link is not None:
-            self.link.close()
-
-            for _ in range(refresh_timeout):
-                if self.link.io.dead:
-                    break
-                time.sleep(1)
-
-            if not self.link.io.dead:
-                raise RuntimeError('Unable to close slave link, abort!')
-
-            logging.debug('Previous slave link successfully terminated.')
-
-        addr, port = self.clerk.slave_node
-        self.link = lnn.link.initiate(addr, port)
-        self.circ = lnn.create.fast(self.link)
-        self.last = time.time()
-
-        if not self.isalive(force_check=True):
-            raise RuntimeError('Unable to interact with slave node, abort!')
-
-    def authority(self, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-        self.circ, self.desc = lnn.descriptors.download_authority(self.circ)
-        return self.desc
-
-    def descriptors(self, query, fail_on_missing=True, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-
-        host = self.clerk.slave_node[0]
-        port = self.clerk.dir_port
-
-        descs = lnn.descriptors.download_direct(host, port, query, flavor='unflavored', fail_on_missing=fail_on_missing)
-        return descs
-
-    def isalive(self, force_check=False):
-        if self.link is None:
-            return False
-
-        if self.link.io.dead:
-            logging.warning('Slave node link seems dead.')
-            return False
-
-        if self.circ.circuit.destroyed:
-            logging.warning('Bootstrap node circuit got destroyed.')
-            return False
-
-        if force_check or (time.time() - self.last) > isalive_period:
-            logging.debug('Update slave node descriptor (heath check).')
-
-            desc = self.authority(check_alive=False)
-            if self.identity not in (None, desc['identity']):
-                raise RuntimeError('Slave node changed identity, abort!')
-
-            self.last = time.time()
-            self.identity = desc['identity']
-        return True
-
-    def close(self):
-        self.link.close()
-
-
 class guard(basic):
     def __init__(self, clerk, qsize=default_qsize):
         self.link = None
@@ -353,7 +265,7 @@ class guard(basic):
         addr, port = router['address'], router['orport']
         self.link = lnn.link.initiate(address=addr, port=port)
 
-        self.desc = self.clerk.slave.descriptors(router)[0]
+        self.desc = self.clerk.get_descriptor_unflavoured(router)
         self.circ = lnn.create.ntor(self.link, self.desc)
 
         self.last = time.time()
@@ -574,14 +486,13 @@ class create(ordered):
         self.clerk.wait_for_consensus()
 
         try:
-            middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(),
-                consensus=self.clerk.consensus, expect='list')
+            middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(), consensus=self.clerk.consensus, expect='list')
         except expired:
             logging.debug('Unable to get a path from producer.')
             return False
 
-        middle = self.clerk.slave.descriptors(middle)[0]
-        exit = self.clerk.slave.descriptors(exit)[0]
+        middle = self.clerk.get_descriptor_unflavoured(middle)
+        exit = self.clerk.get_descriptor_unflavoured(exit)
 
         token = self.clerk.crypto.compute_token(circid, self.clerk.maintoken)
 

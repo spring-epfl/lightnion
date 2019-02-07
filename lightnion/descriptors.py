@@ -369,28 +369,41 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     if len(query) != 0:
         yield query
 
-def download_direct(host, port, cons, flavor='microdesc', cache=True, fail_on_missing=False):
+
+def validate_descriptors(descriptors, digests, flavor='unflavored', fail_on_missing=False):
+    """Check that the descriptors are valid.
+    :param descriptors: Descriptors to check.
+    :param digests: Digests of the descriptors.
+    :param flavor: Flavor of the descriptor.
+    :param fail_on_missing: If an exception should be raised if a descriptor is missing.
+    """
+    
+    if flavor == 'microdesc':
+        obtained = [d['micro-digest'] for d in descriptors]
+    else:
+        obtained = [base64.b64decode(d['digest'] + '====').hex() for d in descriptors]
+
+    invalid = []
+    for digest in digests:
+        if digest in obtained:
+            obtained.remove(digest)
+        else:
+            invalid.append(digest)
+
+    if not len(obtained) == 0:
+        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format( sorted(invalid), sorted(obtained)))
+
+    if fail_on_missing and len(invalid) > 0:
+        raise RuntimeError('Missing {} digests in answer: {}'.format( len(invalid), invalid))
+
+
+def download_direct(host, port, cons, flavor='unflavored'):
     """Retrieve  descriptor via a direct HTTP connection.
     :param host: host from which to retrieve the descriptors.
     :param port: port from which to retrieve the descriptors.
-    :param consensus: consensus for which nodes a descriptor need to be retrieved.
-    :param flavor: flavour of the descriptor to retrieve.
-    :param cache: if the retrieved descriptor should put in the cache.
+    :param cons: consensus for which nodes a descriptor need to be retrieved.
     """
 
-    if cons is None:
-        cons = consensus.download_direct(host, port, flavor=flavor, cache=cache)
-        if cons is None:
-            return state, None
-    elif isinstance(cons, list):
-        cons = dict(routers=cons)
-    elif isinstance(cons, str):
-        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
-        cons = dict(routers={digest_name: cons})
-    elif 'routers' not in cons and 'identity' in cons:
-        cons = dict(routers=[cons])
-
-    digests = []
     if flavor == 'microdesc':
         endpoint = '/tor/micro/d/'
         separator = '-'
@@ -403,62 +416,30 @@ def download_direct(host, port, cons, flavor='microdesc', cache=True, fail_on_mi
 
     descriptors = []
 
-    partial_digests = digests
-
-    if cache:
-        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
-        cached_digests = []
-        for digest in digests:
-            try:
-                descriptor = lnn.cache.descriptors.get(flavor, digest)
-                descriptors.append(descriptor)
-                cached_digests.append(digest)
-            except BaseException as e:
-                pass
-        partial_digests = [d for d in digests if d not in cached_digests]
-
-    for query in batch_query(partial_digests, endpoint, separator):
+    # Retrieve descriptors not in the cache
+    for query in batch_query(digests, endpoint, separator):
         uri = 'http://%s:%d%s' % (host, port, query)
         res = urllib.request.urlopen(uri)
 
-        new_batch, remaining = parse(res.read(), flavor=flavor)
+        if res is None or res.getcode() != 200:
+            raise RuntimeError('Unable to fetch descriptors.')
+
+        new_batch, remaining = parse(res.read(), flavor='unflavored')
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
 
-        if (len(new_batch['descriptors']) == 0
-            and not new_batch['http']['code'] == '404'):
-            raise RuntimeError(
-                'No descriptor listed. http={}.'.format(new_batch['http']))
+        if (len(new_batch['descriptors']) == 0):
+            raise RuntimeError('No descriptor listed. http={}.'.format(new_batch['http']))
 
         if new_batch is not None:
             descriptors += new_batch['descriptors']
 
+        validate_descriptors(descriptors, digests)
+
     if flavor == 'microdesc':
-        obtained = [d['micro-digest'] for d in descriptors]
+        return {d['micro-digest']: d for d in descriptors}
     else:
-        obtained = [d['digest'] for d in descriptors]
-        obtained = [base64.b64decode(d + '====').hex() for d in obtained]
-
-    invalid = []
-    for digest in digests:
-        if digest in obtained:
-            obtained.remove(digest)
-        else:
-            invalid.append(digest)
-
-    if not len(obtained) == 0:
-        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format(
-            sorted(invalid), sorted(obtained)))
-
-    if fail_on_missing and len(invalid) > 0:
-        raise RuntimeError('Missing {} digests in answer: {}'.format(
-            len(invalid), invalid))
-
-    if cache:
-        for descriptor in descriptors:
-            lnn.cache.descriptors.put(descriptor)
-
-    return descriptors
+        return {d['digest']: d for d in descriptors}
 
 
 def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
@@ -505,7 +486,6 @@ def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=F
                 pass
         partial_digests = [d for d in digests if d not in cached_digests]
 
-    # retrieve descriptors via digests
     for query in batch_query(partial_digests, endpoint, separator):
         state, answer = lnn.hop.directory_query(state, query)
 

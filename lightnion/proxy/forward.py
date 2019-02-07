@@ -37,6 +37,7 @@ class clerk(threading.Thread):
                 self.auth.suffix))
 
         self.consensus = None
+        self.descriptors = None
         self.timer_consensus = None
 
         self.control_port = control_port
@@ -44,13 +45,11 @@ class clerk(threading.Thread):
         self.slave_node = slave_node
 
         self.producer           = lnn.proxy.jobs.producer(self)
-        self.slave              = lnn.proxy.jobs.slave(self)
         self.guard              = lnn.proxy.jobs.guard(self)
         self.create             = lnn.proxy.jobs.create(self)
         self.delete             = lnn.proxy.jobs.delete(self)
 
         self.jobs = [
-            self.slave,
             self.producer,
             self.guard,
             self.create,
@@ -61,7 +60,11 @@ class clerk(threading.Thread):
 
     def get_consensus(self):
         # retrieve consensus
-        self.consensus = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+        cons = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+        desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
+
+        self.descriptors = desc
+        self.consensus = cons
 
         try:
             # Compute delay until retrival of the next consensus.
@@ -84,6 +87,17 @@ class clerk(threading.Thread):
         while self.consensus is None:
             logging.info('Wait for consensus...')
             time.sleep(1)
+
+
+    def get_descriptor_unflavoured(self, router):
+        """Retrieve a descriptor.
+        :param router: Router from which we want the descriptor.
+        :return: the descriptor of the given router.
+        """
+
+        descriptor = self.descriptors[router['digest']]
+
+        return descriptor
 
 
     def die(self, e):
