@@ -772,7 +772,7 @@ def download(state, flavor='microdesc', cache=True):
     return state, consensus
 
 
-def download_direct(hostname, port, flavor='microdesc', cache=True):
+def download_direct(hostname, port, flavor='microdesc'):
     """Retrieve consensus via a direct HTTP connection.
     :param hostname: host name of the node from which to retrieve the consensus.
     :param port: port of the node from which to retrieve the consensus.
@@ -793,9 +793,6 @@ def download_direct(hostname, port, flavor='microdesc', cache=True):
 
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
-
-    if cache:
-        lnn.cache.consensus.put(consensus)
 
     return consensus
 
