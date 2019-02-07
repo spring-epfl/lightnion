@@ -1,6 +1,8 @@
 import base64
 import hashlib
 
+import urllib.request
+
 import lightnion as lnn
 from lightnion import consensus
 
@@ -367,12 +369,103 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     if len(query) != 0:
         yield query
 
-def download(state,
-        cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
+def download_direct(host, port, cons, flavor='microdesc', cache=True, fail_on_missing=False):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param consensus: consensus for which nodes a descriptor need to be retrieved.
+    :param flavor: flavour of the descriptor to retrieve.
+    :param cache: if the retrieved descriptor should put in the cache.
+    """
+
     if cons is None:
-        # TODO: Proper handling of consensus.
-        cons = consensus.download_direct('localhost', 7000, flavor=flavor, cache=cache)
-        logging.warning('===== Use Q&D hack to get consensus! ====')
+        cons = consensus.download_direct(host, port, flavor=flavor, cache=cache)
+        if cons is None:
+            return state, None
+    elif isinstance(cons, list):
+        cons = dict(routers=cons)
+    elif isinstance(cons, str):
+        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
+        cons = dict(routers={digest_name: cons})
+    elif 'routers' not in cons and 'identity' in cons:
+        cons = dict(routers=[cons])
+
+    digests = []
+    if flavor == 'microdesc':
+        endpoint = '/tor/micro/d/'
+        separator = '-'
+        digests = [router['micro-digest'] for router in cons['routers']]
+
+    else:
+        endpoint = '/tor/server/d/'
+        separator = '+'
+        digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
+
+    descriptors = []
+
+    partial_digests = digests
+
+    if cache:
+        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
+        cached_digests = []
+        for digest in digests:
+            try:
+                descriptor = lnn.cache.descriptors.get(flavor, digest)
+                descriptors.append(descriptor)
+                cached_digests.append(digest)
+            except BaseException as e:
+                pass
+        partial_digests = [d for d in digests if d not in cached_digests]
+
+    for query in batch_query(partial_digests, endpoint, separator):
+        uri = 'http://%s:%d%s' % (host, port, query)
+        res = urllib.request.urlopen(uri)
+
+        new_batch, remaining = parse(res.read(), flavor=flavor)
+        if new_batch is None or remaining is None or len(remaining) > 0:
+            raise RuntimeError('Unable to parse descriptors.')
+
+        if (len(new_batch['descriptors']) == 0
+            and not new_batch['http']['code'] == '404'):
+            raise RuntimeError(
+                'No descriptor listed. http={}.'.format(new_batch['http']))
+
+        if new_batch is not None:
+            descriptors += new_batch['descriptors']
+
+    if flavor == 'microdesc':
+        obtained = [d['micro-digest'] for d in descriptors]
+    else:
+        obtained = [d['digest'] for d in descriptors]
+        obtained = [base64.b64decode(d + '====').hex() for d in obtained]
+
+    invalid = []
+    for digest in digests:
+        if digest in obtained:
+            obtained.remove(digest)
+        else:
+            invalid.append(digest)
+
+    if not len(obtained) == 0:
+        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format(
+            sorted(invalid), sorted(obtained)))
+
+    if fail_on_missing and len(invalid) > 0:
+        raise RuntimeError('Missing {} digests in answer: {}'.format(
+            len(invalid), invalid))
+
+    if cache:
+        for descriptor in descriptors:
+            lnn.cache.descriptors.put(descriptor)
+
+    return descriptors
+
+
+def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
+    logging.warning('Use DEPRECATED method descriptor.download()!')
+
+    if cons is None:
+        state, cons = consensus.download(state, flavor=flavor, cache=cache)
         if cons is None:
             return state, None
     elif isinstance(cons, list):
@@ -457,6 +550,7 @@ def download(state,
             lnn.cache.descriptors.put(descriptor)
 
     return state, descriptors
+
 
 def download_authority(state):
     state, answer = lnn.hop.directory_query(state, '/tor/server/authority')

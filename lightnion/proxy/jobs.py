@@ -262,8 +262,10 @@ class slave(basic):
         if check_alive and not self.isalive():
             self.reset()
 
-        self.circ, descs = lnn.descriptors.download(self.circ, query,
-            flavor='unflavored', fail_on_missing=fail_on_missing)
+        host = self.clerk.slave_node[0]
+        port = self.clerk.dir_port
+
+        descs = lnn.descriptors.download_direct(host, port, query, flavor='unflavored', fail_on_missing=fail_on_missing)
         return descs
 
     def isalive(self, force_check=False):
