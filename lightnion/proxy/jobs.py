@@ -368,6 +368,8 @@ class guard(basic):
                     and self.clerk.delete.refresh()):
                     pass
                 return True
+            elif 'Got circuit' in str(e):
+                return (redo or False)
             else:
                 raise e
 
