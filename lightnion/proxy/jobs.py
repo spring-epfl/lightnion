@@ -297,19 +297,20 @@ class guard(basic):
         if force_check or (time.time() - self.last) > isalive_period:
             logging.debug('Update guard descriptor (health check).')
 
-            desc = self.authority(check_alive=False)
-            if self.identity != desc['router']['identity']:
-                logging.warning('Guard changed its identity, need reset!')
+            # Disable this check as the guard node will not change.
+            #desc = self.authority(check_alive=False)
+            #if self.identity != desc['router']['identity']:
+            #    logging.warning('Guard changed its identity, need reset!')
 
-                self.clerk.producer.reset()
-                return False
+            #    self.clerk.producer.reset()
+            #    return False
 
-            for key in ['ntor-onion-key', 'identity', 'router']:
-                if not (self.desc[key] == desc[key]):
-                    logging.info('Guard changed {}, need reset!.'.format(key))
+            #for key in ['ntor-onion-key', 'identity', 'router']:
+            #    if not (self.desc[key] == desc[key]):
+            #        logging.info('Guard changed {}, need reset!.'.format(key))
 
-                    self.clerk.producer.reset()
-                    return False
+            #        self.clerk.producer.reset()
+            #        return False
             self.last = time.time()
 
             olds = []
