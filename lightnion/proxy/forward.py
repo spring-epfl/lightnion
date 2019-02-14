@@ -13,6 +13,7 @@ import asyncio
 
 import lightnion as lnn
 import lightnion.proxy
+import lightnion.path_selection
 
 debug = True
 tick_rate = 0.01 # (sleeps when nothing to do)
@@ -40,17 +41,17 @@ class clerk(threading.Thread):
         self.descriptors = None
         self.timer_consensus = None
 
+        self.guard_node = None
+
         self.control_port = control_port
         self.dir_port = dir_port
         self.slave_node = slave_node
 
-        self.producer           = lnn.proxy.jobs.producer(self)
-        self.guard              = lnn.proxy.jobs.guard(self)
-        self.create             = lnn.proxy.jobs.create(self)
-        self.delete             = lnn.proxy.jobs.delete(self)
+        self.guard    = lnn.proxy.jobs.guard(self)
+        self.create   = lnn.proxy.jobs.create(self)
+        self.delete   = lnn.proxy.jobs.delete(self)
 
         self.jobs = [
-            self.producer,
             self.guard,
             self.create,
             self.delete]
@@ -59,7 +60,12 @@ class clerk(threading.Thread):
 
 
     def get_consensus(self):
-        # retrieve consensus
+        """Retrieve relays data with direct HTTP connection and schedule its future retrival."""
+
+        # We tolerate that the system clock can be up to a few seconds too early.
+        refresh_tolerance_delay = 2.0
+
+        # retrieve consensus and descriptors
         cons = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
         desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
 
@@ -70,14 +76,14 @@ class clerk(threading.Thread):
             # Compute delay until retrival of the next consensus.
             fresh_until = datetime.utcfromtimestamp(self.consensus['headers']['fresh-until']['stamp'])
             now = datetime.utcnow()
-            delay = (fresh_until - now).total_seconds()
+            delay = (fresh_until - now).total_seconds() + refresh_tolerance_delay
 
             self.timer_consensus = threading.Timer(delay, clerk.get_consensus, [self])
+            self.timer_consensus.start()
 
         except Exception as e:
             logging.error(e)
-
-        self.timer_consensus.start()
+            raise e
 
 
     def wait_for_consensus(self):
@@ -98,6 +104,34 @@ class clerk(threading.Thread):
         descriptor = self.descriptors[router['digest']]
 
         return descriptor
+
+
+    def get_guard(self):
+        """Generate a guard
+        :return: guard node
+        """
+
+        self.wait_for_consensus()
+
+        if self.guard_node is None:
+            guard = lnn.path_selection.select_guard_from_consensus(self.consensus, self.descriptors)
+            self.guard_node = guard
+
+        return self.guard_node
+
+
+    def get_end_path(self):
+        """Generate a path
+        :return: middle and exit nodes
+        """
+
+        self.wait_for_consensus()
+
+        if self.guard_node is None:
+            self.get_guard()
+
+        (middle, exit) = lnn.path_selection.select_end_path_from_consensus(self.consensus, self.descriptors, self.guard_node)
+        return (middle, exit)
 
 
     def die(self, e):

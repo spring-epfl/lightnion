@@ -1,4 +1,6 @@
 import random
+import sys
+import logging
 
 import lightnion.descriptors as descriptors
 
@@ -8,6 +10,8 @@ def select_path(routers, state, testing=False):
     :params routers: list of the routers given by the consensus
     :state:
     :returns: updated state tuple (guard, middle, exit)"""
+
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
 
     routers = [r for r in routers if obey_minimal_constraint(r)]
 
@@ -20,6 +24,33 @@ def select_path(routers, state, testing=False):
     return state, guard, middle, exit_node
 
 
+def select_guard_from_consensus(cons, descr, testing=False):
+    """Handle the selection of the guard node
+    :params routers: list of the routers given by the consensus
+    :params descr: list of descriptors
+    :returns: tuple (guard, middle, exit)"""
+
+    routers = [r for r in cons['routers'] if obey_minimal_constraint(r)]
+
+    guard = pick_good_entry_from_routers(descr, routers, testing)
+
+    return guard
+
+
+def select_end_path_from_consensus(cons, descr, guard, testing=False):
+    """Handle the selection of the middle and exit nodes
+    :params routers: list of the routers given by the consensus
+    :params descr: list of descriptors
+    :returns: tuple (guard, middle, exit)"""
+
+    routers = [r for r in cons['routers'] if obey_minimal_constraint(r)]
+
+    exit_node = pick_good_exit_from_routers(descr, routers, guard)
+    middle    = pick_good_middle_from_routers(descr, routers, exit_node, guard, testing)
+
+    return middle, exit_node
+
+
 def obey_minimal_constraint(router, exit_node=None, guard=None, testing=False):
     """Checks if the given router respects the minimal constraints
     :param testing:
@@ -27,6 +58,9 @@ def obey_minimal_constraint(router, exit_node=None, guard=None, testing=False):
     :param exit_node: the chosen exit node
     :param guard: the chosen guard node
     :return: boolean"""
+
+    # All are OK for testing purposes.
+    return True
 
     flags = router['flags']
     router_address = router['address'].split(".")
@@ -95,6 +129,8 @@ def keep_exit(router, state):
     :state:
     :return: tuple (boolean that indicates if we keep it, new state, descriptor)"""
 
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
+
     if not obey_minimal_constraint(router):
         return False, state, None
 
@@ -118,6 +154,42 @@ def keep_exit(router, state):
         return False, state, None
 
     return True, state, nhop
+
+
+def keep_exit_with_descr(descr, router, guard):
+    """Checks that the router is not a bad exit, is not down, is stable,
+    is valid, does not run an old TOR's version, has an available ed25519
+    identity key and has an 'accept' exit policy
+    :param descr: descriptor of the exit candidate.
+    :params router: the router we want to check
+    :param guard: the guard in the path
+    :return: tuple (boolean that indicates if we keep it, new state, descriptor)"""
+
+    if not obey_minimal_constraint(router, guard=guard):
+        return False, None
+
+    if 'Exit' not in router['flags']:
+        return False, None
+
+    if 'BadExit' in router['flags']:
+        return False, None
+
+    nhop = descr[router['digest']]
+
+    if router['digest'] != nhop['digest']:
+        return False, None
+
+    if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
+        return False, None
+
+    if 'policy' not in nhop or nhop['policy']['rules'][0]['type'] != 'accept':
+        return False, None
+
+    if in_same_family(nhop, guard):
+        return False, state, None
+
+    return True, nhop
+
 
 
 def weighted_random_choice(list_of_possible):
@@ -146,6 +218,8 @@ def pick_good_exit(routers, state):
     :param state: the state
     :return: the descriptor of the exit node"""
 
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
+
     # Go through all routers and check if they meet the conditions of an exit node
     candidates = []
     for router in routers:
@@ -161,12 +235,36 @@ def pick_good_exit(routers, state):
         raise ValueError('No exit is suitable')
 
 
+def pick_good_exit_from_routers(descr, routers, guard):
+    """Choose the exit node
+    :param routers: the routers given by the consensus
+    :param guard: the guard in the path
+    :return: the descriptor of the exit node"""
+
+    # Go through all routers and check if they meet the conditions of an exit node
+    candidates = []
+    for router in routers:
+        keep, descriptor = keep_exit_with_descr(descr, router, guard)
+        if keep:
+            candidates.append(descriptor)
+
+    if candidates:
+        return weighted_random_choice(candidates)
+
+    else:
+        # TODO: see if we select another policy here
+        raise ValueError('No exit is suitable')
+
+
+
 def keep_guard(router, state, exit_node, testing):
     """Checks that the given router has the properties to be a guard
     :param router: the router that must be inspected
     :param state: state
     :param exit_node: the previously chosen node
     :return: if the router can be kept, the updated state and the descriptor"""
+
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
 
     flags = router['flags']
 
@@ -201,12 +299,49 @@ def keep_guard(router, state, exit_node, testing):
     return True, state, nhop
 
 
+
+def keep_guard_with_descr(descr, router, testing):
+    """Checks that the given router has the properties to be a guard
+    :param descr: descriptor of the exit candidate.
+    :param router: the router that must be inspected
+    :return: if the router can be kept, the updated state and the descriptor"""
+
+    flags = router['flags']
+
+    if not obey_minimal_constraint(router, testing=testing):
+        return False, None
+
+    if 'Guard' not in flags:
+        return False, None
+
+    if 'Stable' not in flags:
+        return False, None
+
+    if 'Fast' not in flags:
+        return False, None
+
+    if 'V2Dir' not in flags:
+        return False, None
+
+    nhop = descr[router['digest']]
+
+    if router['digest'] != nhop['digest']:
+        return False, None
+
+    if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
+        return False, None
+
+    return True, nhop
+
+
+
 def pick_good_entry(routers, state, exit_node, testing):
     """Simplified version of the Guard selection algorithm
     :param routers: the routers of the consensus
     :param state: the state
-    :param exit_node: the previously chosen exit node
     :return: updated state and the descriptor of the guard node"""
+
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
 
     candidates = []
     for router in routers:
@@ -222,6 +357,26 @@ def pick_good_entry(routers, state, exit_node, testing):
         raise ValueError('No guard is suitable')
 
 
+def pick_good_entry_from_routers(descr, routers, testing):
+    """Simplified version of the Guard selection algorithm
+    :param routers: the routers of the consensus
+    :param state: the state
+    :return: updated state and the descriptor of the guard node"""
+
+    candidates = []
+    for router in routers:
+        keep, descriptor = keep_guard_with_descr(descr, router, testing)
+        if keep:
+            candidates.append(descriptor)
+
+    if candidates:
+        return weighted_random_choice(candidates)
+
+    else:
+        # TODO: see if we select another policy here
+        raise ValueError('No guard is suitable')
+
+
 def keep_middle(router, state, exit_node, guard, testing):
     """Checks that the given router has the properties to be a middle node
        :param router: the router that must be inspected
@@ -229,6 +384,9 @@ def keep_middle(router, state, exit_node, guard, testing):
        :param exit_node: the previously chosen exit node
        :param guard: the previously chosen guard
        :return: if the router can be kept, the updated state and the descriptor"""
+
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
+
     if not obey_minimal_constraint(router, exit_node, guard, testing=testing):
         return False, state, None
 
@@ -248,6 +406,30 @@ def keep_middle(router, state, exit_node, guard, testing):
     return True, state, nhop
 
 
+def keep_middle_with_descr(descr, router, exit_node, guard, testing):
+    """Checks that the given router has the properties to be a middle node
+       :param descr: descriptor of the exit candidate.
+       :param router: the router that must be inspected
+       :param exit_node: the previously chosen exit node
+       :param guard: the previously chosen guard
+       :return: if the router can be kept, the updated state and the descriptor"""
+    if not obey_minimal_constraint(router, exit_node, guard, testing=testing):
+        return False, None
+
+    nhop = descr[router['digest']]
+
+    if router['digest'] != nhop['digest']:
+        return False, None
+
+    if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
+        return False, None
+
+    if in_same_family(nhop, guard, exit_node):
+        return False, None
+
+    return True, nhop
+
+
 def pick_good_middle(routers, state, exit_node, guard, testing):
     """Choose the middle node given the exit and the guard node
     :param routers: the routers of the consensus
@@ -256,6 +438,8 @@ def pick_good_middle(routers, state, exit_node, guard, testing):
     :param guard: the previously chosen guard node
     :return: updated state and the descriptor of the guard node"""
 
+    logging.warning('Use of DEPRECATED method %s()' % sys._getframe().f_code.co_name)
+
     candidates = []
     for router in routers:
         keep, state, descriptor = keep_middle(router, state, exit_node, guard, testing)
@@ -263,6 +447,27 @@ def pick_good_middle(routers, state, exit_node, guard, testing):
             candidates.append(descriptor)
     if candidates:
         return state, weighted_random_choice(candidates)
+
+    else:
+        # TODO: see if we select another policy here
+        raise ValueError('No middle node is suitable')
+
+
+def pick_good_middle_from_routers(descr, routers, exit_node, guard, testing):
+    """Choose the middle node given the exit and the guard node
+    :param routers: the routers of the consensus
+    :param exit_node: the previously chosen exit node
+    :param guard: the previously chosen guard node
+    :return: updated state and the descriptor of the guard node"""
+
+    candidates = []
+    for router in routers:
+        keep, descriptor = keep_middle_with_descr(descr, router, exit_node, guard, testing)
+        if keep:
+            candidates.append(descriptor)
+
+    if candidates:
+        return weighted_random_choice(candidates)
 
     else:
         # TODO: see if we select another policy here

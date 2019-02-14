@@ -6,6 +6,7 @@ import time
 
 import lightnion as lnn
 import lightnion.http
+import lightnion.path_selection
 
 # TODO: rewrite everything? (with less complexity? using asyncio only?)
 
@@ -132,80 +133,6 @@ class ordered(basic):
         date = time.time()
         super().put_job((job_id, job, date))
 
-class producer(basic):
-    def __init__(self, clerk, qsize=default_qsize):
-        self.guard = None
-        self.child = None
-        self._path = None
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def reset(self):
-        super().reset()
-
-        logging.info('Resetting path emitter.')
-        if self.child is not None:
-            self.child.close()
-
-            for _ in range(refresh_timeout):
-                if self.child.dead:
-                    break
-                time.sleep(1)
-
-            if not self.child.dead:
-                logging.warning('Enforcing path emitter death.')
-                self.child.process.terminate()
-
-                for _ in range(refresh_timeout):
-                    if self.child.dead:
-                        break
-                    self.child.process.terminate()
-                    time.sleep(1)
-
-            if not self.child.dead:
-                raise RuntimeError('Unable to kill path emitter, abort!')
-
-            logging.debug('Previous path emitter successfully terminated.')
-
-        addr, port = self.clerk.slave_node[0], self.clerk.control_port
-        self.child = lnn.proxy.path.fetch(tor_process=False,
-            control_host=addr, control_port=port)
-        self.guard = self.child.guard
-
-        logging.debug('Path emitter successfully started.')
-
-    def isalive(self):
-        return (not self.child.dead
-            and self.guard == self.child.guard)
-
-    def isfresh(self):
-        return not (self._out.qsize() < self.qsize - 1)
-
-    def refresh(self):
-        try:
-            if self._path is not None:
-                self.put_job(self._path)
-                self._path = None
-                return True
-        except expired:
-            pass
-
-        try:
-            if self._path is None:
-                self._path = self.child.path_queue.get_nowait()
-                return True
-        except queue.Empty:
-            return False
-
-        return False
-
-    def close(self):
-        self.child.close()
 
 class guard(basic):
     def __init__(self, clerk, qsize=default_qsize):
@@ -223,15 +150,13 @@ class guard(basic):
         raise NotImplementedError
 
     def router(self, check_alive=True):
-        self.clerk.wait_for_consensus()
+        #self.clerk.wait_for_consensus()
 
-        try:
-            guard = lnn.proxy.path.convert(
-                self.clerk.producer.guard,
-                consensus=self.clerk.consensus,
-                expect='list')[0]
-        except BaseException:
-            self.clerk.producer.reset()
+        guard = self.clerk.get_guard()
+        nickname = guard['router']['nickname']
+        fingerprint = guard['fingerprint']
+        entry = [fingerprint, nickname]
+        guard = lnn.proxy.path.convert(entry, consensus=self.clerk.consensus, expect='list')[0]
 
         return guard
 
@@ -358,8 +283,7 @@ class guard(basic):
 
         except RuntimeError as e:
             if 'queues are full' in str(e): # TODO: do better than this hack
-                sizes = [(c, c.queue.qsize())
-                     for _, c in self.link.circuits.items()]
+                sizes = [(c, c.queue.qsize()) for _, c in self.link.circuits.items()]
                 sizes.sort(key=lambda sz: -sz[1])
 
                 # Delete the most overfilled circuit
@@ -369,12 +293,14 @@ class guard(basic):
                     pass
                 return True
             elif 'Got circuit' in str(e):
+                logging.warning(str(e))
                 return (redo or False)
             else:
                 raise e
 
     def perform(self, timeout=1):
         return self.get(timeout=timeout)
+
 
 class create(ordered):
     def __init__(self, clerk, max_fails=5, qsize=default_qsize):
@@ -393,8 +319,7 @@ class create(ordered):
         if self.alive_job_id is None:
             logging.info('Handshaking with guard to check liveness...')
             try:
-                data, self.alive_material = lnn.http.ntor.hand(
-                    self.clerk.guard.desc, encode=False)
+                data, self.alive_material = lnn.http.ntor.hand(self.clerk.guard.desc, encode=False)
                 self.alive_job_id = self.put(data)
             except expired:
                 logging.info('Unable to trigger handshaking.')
@@ -468,30 +393,32 @@ class create(ordered):
         fast = False
         if len(data) == 32:
             fast = True
-            identity = base64.b64decode(
-                self.clerk.guard.desc['router']['identity'] + '====')
-            onion_key = base64.b64decode(
-                self.clerk.guard.desc['ntor-onion-key'] + '====')
+            identity = base64.b64decode(self.clerk.guard.desc['router']['identity'] + '====')
+            onion_key = base64.b64decode(self.clerk.guard.desc['ntor-onion-key'] + '====')
             data = identity + onion_key + data
 
         try:
-            circid, data = lnn.create.ntor_raw(
-                self.clerk.guard.link, data, timeout=1)
+            circid, data = lnn.create.ntor_raw(self.clerk.guard.link, data, timeout=1)
             circuit = lnn.create.circuit(circid, None)
             data = str(base64.b64encode(data), 'utf8')
         except BaseException as e:
             logging.debug('Got an invalid create ntor handshake: {}'.format(e))
             return True
 
-        if not self.clerk.producer.isalive():
-            self.clerk.producer.reset()
-
         self.clerk.wait_for_consensus()
 
         try:
-            middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(), consensus=self.clerk.consensus, expect='list')
+            path = self.clerk.get_end_path()
+            nick1 = path[0]['router']['nickname']
+            finger1 = path[0]['fingerprint']
+            nick2 = path[1]['router']['nickname']
+            finger2 = path[1]['fingerprint']
+
+            path = [[finger1, nick1], [finger2, nick2]]
+
+            middle, exit = lnn.proxy.path.convert(*path, consensus=self.clerk.consensus, expect='list')
         except expired:
-            logging.debug('Unable to get a path from producer.')
+            logging.debug('Unable to get a path.')
             return False
 
         middle = self.clerk.get_descriptor_unflavoured(middle)
@@ -499,10 +426,8 @@ class create(ordered):
 
         token = self.clerk.crypto.compute_token(circid, self.clerk.maintoken)
 
-        logging.debug('Circuit created with circuit_id: {}'.format(
-            circid))
-        logging.debug('Path picked: {} -> {}'.format(
-            middle['router']['nickname'], exit['router']['nickname']))
+        logging.debug('Circuit created with circuit_id: {}'.format(circid))
+        logging.debug('Path picked: {} -> {}'.format(middle['router']['nickname'], exit['router']['nickname']))
         logging.debug('Token emitted: {}'.format(token))
 
         try:
@@ -514,8 +439,7 @@ class create(ordered):
             logging.warning('Too many create channel requests, dropping.')
             return False
 
-        self.clerk.channels[circuit.id] = channel(
-                self.clerk, circuit, self.clerk.guard.link)
+        self.clerk.channels[circuit.id] = channel(self.clerk, circuit, self.clerk.guard.link)
         return True
 
     def get(self, job_id, timeout=1):
@@ -530,6 +454,7 @@ class create(ordered):
         data = base64.b64decode(data)
         job_id = self.put(data, timeout=timeout/2)
         return self.get(job_id, timeout=timeout/2)
+
 
 class delete(basic):
     def isfresh(self):
@@ -561,6 +486,7 @@ class delete(basic):
     def perform(self, circuit, timeout=1):
         self.put(circuit)
         return {}
+
 
 class channel(basic):
     def __init__(self, clerk, circuit, link,
