@@ -43,13 +43,10 @@ lnn.open = function(host, port, success, error, io, fast, auth)
             endpoint.state = lnn.state.guarded
             success(endpoint)
 
-            lnn.post.create(endpoint, cb.create, error)
+            lnn.post.create2(endpoint, cb.startWebSocket, error)
         },
-        create: function(endpoint)
-        {
-            endpoint.state = lnn.state.created
-            success(endpoint)
-
+	startWebSocket: function(endpoint, info) {
+	    console.log('called startWebSocket cb')
             endpoint.stream = lnn.stream.backend(error)
             io(endpoint, lnn.stream.handler, function(endpoint)
             {
@@ -59,12 +56,21 @@ lnn.open = function(host, port, success, error, io, fast, auth)
                 success(endpoint)
                 endpoint.state = state
             }, error)
+            endpoint.io.start()
+
+            lnn.post.handshake(endpoint, info, cb.create, error)
+	},
+        create: function(endpoint)
+        {
+	    console.log('called create cb')
+            endpoint.state = lnn.state.created
+            success(endpoint)
 
             lnn.post.extend(endpoint, endpoint.path[0], cb.extend, error)
-            endpoint.io.start()
         },
         extend: function(endpoint)
         {
+	    console.log('called extend cb')
             endpoint.state = lnn.state.extpath
             success(endpoint)
 
@@ -72,6 +78,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
         },
         success: function(endpoint)
         {
+	    console.log('called success cb')
             endpoint.state = lnn.state.success
             success(endpoint)
             endpoint.io.success = function() { }
@@ -83,7 +90,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
 
     // fast channel: one-request channel creation (no guard pinning)
     if (endpoint.fast)
-        lnn.post.create(endpoint, cb.create, error)
+        lnn.post.create2(endpoint, cb.startWebSocket, error)
     else
         lnn.get.guard(endpoint, cb.guard, error)
 

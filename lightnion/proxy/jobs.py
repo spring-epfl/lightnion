@@ -252,7 +252,8 @@ class guard(basic):
 
             for circuit in olds:
                 try:
-                    self.clerk.delete.perform(circuit)
+                    #self.clerk.delete.perform(circuit)
+                    self.clerk.delete_circuit(circuit)
                 except expired:
                     pass
 
@@ -287,10 +288,7 @@ class guard(basic):
                 sizes.sort(key=lambda sz: -sz[1])
 
                 # Delete the most overfilled circuit
-                self.clerk.delete.perform(sizes[0][0])
-                while (not self.clerk.delete.isfresh()
-                    and self.clerk.delete.refresh()):
-                    pass
+                self.clerk.delete_circuit(sizes[0][0])
                 return True
             elif 'Got circuit' in str(e):
                 logging.warning(str(e))
@@ -300,192 +298,6 @@ class guard(basic):
 
     def perform(self, timeout=1):
         return self.get(timeout=timeout)
-
-
-class create(ordered):
-    def __init__(self, clerk, max_fails=5, qsize=default_qsize):
-        self.last = time.time()
-        self.fails = 0
-        self.max_fails = max_fails
-        self.alive_job_id = None
-        self.alive_material = None
-        super().__init__(clerk, qsize=qsize)
-
-    def isalive(self):
-        delta = time.time() - self.last
-        if not delta > isalive_period:
-            return True
-
-        if self.alive_job_id is None:
-            logging.info('Handshaking with guard to check liveness...')
-            try:
-                data, self.alive_material = lnn.http.ntor.hand(self.clerk.guard.desc, encode=False)
-                self.alive_job_id = self.put(data)
-            except expired:
-                logging.info('Unable to trigger handshaking.')
-                return True
-
-        if not delta > isalive_period + default_expiracy / 2:
-            return True
-
-        logging.info('Finishing handshake with guard to check liveness...')
-        if self.alive_job_id is None:
-            logging.info('Ignored handshake.')
-            self.last = time.time()
-            return True
-
-        try:
-            data = self.get(self.alive_job_id)
-            some = lnn.http.ntor.shake(data['ntor'], self.alive_material)
-            if some is None:
-                logging.info('Handshake failed.')
-                return False
-
-            channel = self.clerk.channel_from_uid(data['id'])
-            channel.delete()
-        except expired:
-            logging.info('Handshake expired.')
-            return False
-        except BaseException as e:
-            logging.debug('Failed: {}'.format(e))
-            logging.info('Handshake failed: guard link died?')
-            return False
-
-        self.clerk.guard.used = None
-        self.alive_job_id = None
-        self.fails = 0
-        self.last = time.time()
-
-        logging.info('Handshake success.')
-        return True
-
-    def reset(self):
-        super().reset()
-        if self.alive_job_id is not None:
-            logging.info('Handshake failed, increasing failure.')
-            self.fails += 1
-            if self.fails > self.max_fails:
-                logging.error('Unable to create circuits, resetting guard.')
-                self.clerk.guard.reset()
-                self.fails = 0
-
-            self.alive_job_id = None
-            self.last = time.time()
-
-    def isfresh(self):
-        return not (self._in.qsize() > 0)
-
-    def refresh(self):
-        try:
-            job_id, data = self.get_job()
-            logging.info('Got an incoming create channel request.')
-        except expired:
-            return False
-
-        if not self.clerk.guard.isalive():
-            self.clerk.guard.reset()
-
-        # fast channel:
-        #   if no identity/onion-key is given within the ntor handshake, the
-        #   client doesn't know the guard identity/onion-key and we default to
-        #   any guard we want!
-        #
-        fast = False
-        if len(data) == 32:
-            fast = True
-            identity = base64.b64decode(self.clerk.guard.desc['router']['identity'] + '====')
-            onion_key = base64.b64decode(self.clerk.guard.desc['ntor-onion-key'] + '====')
-            data = identity + onion_key + data
-
-        try:
-            circid, data = lnn.create.ntor_raw(self.clerk.guard.link, data, timeout=1)
-            circuit = lnn.create.circuit(circid, None)
-            data = str(base64.b64encode(data), 'utf8')
-        except BaseException as e:
-            logging.debug('Got an invalid create ntor handshake: {}'.format(e))
-            return True
-
-        self.clerk.wait_for_consensus()
-
-        try:
-            path = self.clerk.get_end_path()
-            nick1 = path[0]['router']['nickname']
-            finger1 = path[0]['fingerprint']
-            nick2 = path[1]['router']['nickname']
-            finger2 = path[1]['fingerprint']
-
-            path = [[finger1, nick1], [finger2, nick2]]
-
-            middle, exit = lnn.proxy.path.convert(*path, consensus=self.clerk.consensus, expect='list')
-        except expired:
-            logging.debug('Unable to get a path.')
-            return False
-
-        middle = self.clerk.get_descriptor_unflavoured(middle)
-        exit = self.clerk.get_descriptor_unflavoured(exit)
-
-        token = self.clerk.crypto.compute_token(circid, self.clerk.maintoken)
-
-        logging.debug('Circuit created with circuit_id: {}'.format(circid))
-        logging.debug('Path picked: {} -> {}'.format(middle['router']['nickname'], exit['router']['nickname']))
-        logging.debug('Token emitted: {}'.format(token))
-
-        try:
-            answer = {'id': token, 'path': [middle, exit], 'ntor': data}
-            if fast:
-                answer['guard'] = self.clerk.guard.desc
-            self.put_job((circuit, answer), job_id)
-        except expired:
-            logging.warning('Too many create channel requests, dropping.')
-            return False
-
-        self.clerk.channels[circuit.id] = channel(self.clerk, circuit, self.clerk.guard.link)
-        return True
-
-    def get(self, job_id, timeout=1):
-        circuit, data = super().get(job_id, timeout=timeout)
-        self.clerk.guard.used = time.time()
-        circuit.used = time.time()
-        return data
-
-    def perform(self, data, timeout=(1+2*default_expiracy)):
-        timeout = timeout / 2
-
-        data = base64.b64decode(data)
-        job_id = self.put(data, timeout=timeout/2)
-        return self.get(job_id, timeout=timeout/2)
-
-
-class delete(basic):
-    def isfresh(self):
-        return not (self._in.qsize() > 0)
-
-    def refresh(self):
-        try:
-            circuit = self.get_job()
-            logging.info('Got an incoming delete channel request.')
-        except expired:
-            return False
-
-        if not self.clerk.guard.isalive():
-            self.clerk.guard.reset()
-            return False
-
-        self.clerk.guard.link.unregister(circuit)
-        logging.debug('Deleting circuit: {}'.format(circuit.id))
-
-        reason = lnn.cell.destroy.reason.REQUESTED
-        self.clerk.guard.link.send(lnn.cell.destroy.pack(circuit.id, reason))
-        logging.debug('Remaining circuits: {}'.format(list(
-            self.clerk.guard.link.circuits)))
-
-        circuit.destroyed = True
-        circuit.reason = reason
-        return True
-
-    def perform(self, circuit, timeout=1):
-        self.put(circuit)
-        return {}
 
 
 class channel(basic):

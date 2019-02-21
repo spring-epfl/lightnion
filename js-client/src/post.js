@@ -60,6 +60,94 @@ lnn.post.create = function(endpoint, success, error)
     rq.send(payload)
 }
 
+
+lnn.post.create2 = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 201)
+        {
+            var info = JSON.parse(rq.responseText)
+            if (endpoint.auth != null)
+            {
+                console.log("FUNNY CODE PATH, USES auth buth not set")
+                info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
+            }
+
+            endpoint.id = info["id"]
+            endpoint.url = endpoint.urls.channels + "/" + info["id"]
+            endpoint.path = info["path"]
+
+            if (endpoint.fast)
+            {
+                endpoint.guard = info["guard"]
+                endpoint.material.identity = lnn.dec.base64(
+                    info["guard"].router.identity + "=")
+                endpoint.material.onionkey = lnn.dec.base64(
+                    info["guard"]["ntor-onion-key"])
+            }
+            if (success !== undefined)
+                success(endpoint, info)
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error(endpoint, rq.status)
+        }
+    }
+
+    var payload = null
+    if (endpoint.fast)
+        payload = lnn.ntor.fast(endpoint)
+    else
+        payload = lnn.ntor.hand(endpoint)
+
+    payload = {ntor: payload}
+    if (endpoint.auth != null)
+    {
+        payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)
+    }
+    payload = JSON.stringify(payload)
+
+    rq.open("POST", endpoint.urls.channels, true)
+    rq.setRequestHeader("Content-type", "application/json")
+    rq.send(payload)
+}
+
+lnn.post.handshake = function(endpoint, info, success, error)
+{
+    var handshake = info['handshake']
+    var normal_handler = endpoint.io.handler
+
+    var handler = function(endpoint)
+    {
+        endpoint.io.handler = normal_handler
+        var material = endpoint.io.recv()
+        console.log('==============')
+        console.log(material)
+        console.log('===========')
+
+        material = lnn.ntor.shake(endpoint, material.slice(7, 7+64), false)
+        console.log(material)
+
+        if (material == null)
+            throw "Invalid guard handshake."
+
+
+        material = lnn.ntor.slice(material)
+        endpoint.material = material
+
+        endpoint.forward = lnn.onion.forward(endpoint)
+        endpoint.backward = lnn.onion.backward(endpoint)
+
+        if (success !== undefined)
+            success(endpoint)
+    }
+
+    endpoint.io.handler = handler
+    endpoint.io.send(lnn.dec.base64(handshake))
+}
+
 lnn.post.channel = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()

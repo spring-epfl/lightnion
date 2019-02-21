@@ -48,13 +48,8 @@ class clerk(threading.Thread):
         self.slave_node = slave_node
 
         self.guard    = lnn.proxy.jobs.guard(self)
-        self.create   = lnn.proxy.jobs.create(self)
-        self.delete   = lnn.proxy.jobs.delete(self)
 
-        self.jobs = [
-            self.guard,
-            self.create,
-            self.delete]
+        self.jobs = [ self.guard ]
 
         self.channels = dict()
 
@@ -134,6 +129,86 @@ class clerk(threading.Thread):
         return (middle, exit)
 
 
+    def create_channel(self, data):
+        """Create a new channel.
+        :param data: Public key of the connecting client encoded in base64.
+        """
+        # TODO: guard dependance to be removed
+        data = base64.b64decode(data)
+
+        if self.guard.isalive():
+            self.guard.reset()
+        if self.guard.isfresh():
+            self.guard.refresh()
+
+        # fast channel:
+        #   if no identity/onion-key is given within the ntor handshake, the
+        #   client doesn't know the guard identity/onion-key and we default to
+        #   any guard we want!
+        #
+        fast = False
+        if len(data) == 32:
+            fast = True
+            identity = base64.b64decode(self.guard.desc['router']['identity'] + '====')
+            onion_key = base64.b64decode(self.guard.desc['ntor-onion-key'] + '====')
+            data = identity + onion_key + data
+
+        circid, data = lnn.create.ntor_raw(self.guard.link, data, timeout=1)
+        circuit = lnn.create.circuit(circid, None)
+        data = str(base64.b64encode(data), 'utf8')
+
+        self.wait_for_consensus()
+
+        path_raw = self.get_end_path()
+        path = [[p['fingerprint'], p['router']['nickname']] for p in path_raw]
+
+        middle, exit = lnn.proxy.path.convert(*path, consensus=self.consensus, expect='list')
+
+        middle = self.get_descriptor_unflavoured(middle)
+        exit = self.get_descriptor_unflavoured(exit)
+
+        token = self.crypto.compute_token(circid, self.maintoken)
+
+        logging.debug('Circuit created with circuit_id: {}'.format(circid))
+        logging.debug('Path picked: {} -> {}'.format(middle['router']['nickname'], exit['router']['nickname']))
+        logging.debug('Token emitted: {}'.format(token))
+
+        answer = {'id': token, 'path': [middle, exit], 'handshake': data}
+        if fast:
+            answer['guard'] = self.guard.desc
+
+        self.channels[circuit.id] = lnn.proxy.jobs.channel(self, circuit, self.guard.link)
+
+        now = time.time()
+        self.guard.used = now
+        circuit.used = now
+
+        return answer
+
+
+    def delete_channel(self, circuit):
+        """Delete an existing channel.
+        :param circuit: Circuit associated with the channel.
+        """
+        # TODO: guard dependance to be removed
+        guard = self.get_guard()
+
+        if not self.guard.isalive():
+            self.guard.reset()
+            logging.warning('Guard was found dead when attempting to destroy a circuit.')
+            return
+
+        self.guard.link.unregister(circuit)
+        logging.debug('Deleting circuit: {}'.format(circuit.id))
+
+        reason = lnn.cell.destroy.reason.REQUESTED
+        self.guard.link.send(lnn.cell.destroy.pack(circuit.id, reason))
+        logging.debug('Remaining circuits: {}'.format(list(self.guard.link.circuits)))
+
+        circuit.destroyed = True
+        circuit.reason = reason
+
+
     def die(self, e):
         if isinstance(e, str):
             logging.error(e)
@@ -182,7 +257,7 @@ class clerk(threading.Thread):
             try:
                 self.main()
             except BaseException as e:
-                logging.warning('Exception:', e)
+                logging.warning(e)
                 if debug:
                     traceback.print_exc()
 
@@ -244,11 +319,9 @@ def channel_handler(clerk):
         channel = clerk.channel_from_uid(path)
 
         for task in [channel_input, channel_output]:
-            channel.tasks.append(
-                asyncio.ensure_future(task(websocket, channel)))
+            channel.tasks.append(asyncio.ensure_future(task(websocket, channel)))
 
-        done, pending = await asyncio.wait(channel.tasks,
-            return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(channel.tasks, return_when=asyncio.FIRST_COMPLETED)
 
         for task in pending:
             task.cancel()
@@ -263,8 +336,7 @@ class sockets(threading.Thread):
         logging.getLogger(websockets.__name__).setLevel(logging.ERROR)
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-        server = websockets.serve(self.handler, '0.0.0.0', 8765,
-            compression=None)
+        server = websockets.serve(self.handler, '0.0.0.0', 8765, compression=None)
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
 
@@ -282,14 +354,20 @@ def get_descriptors():
 def get_consensus():
     try:
         app.clerk.wait_for_consensus()
-        return flask.jsonify(app.clerk.consensus), 200
+        cons = flask.jsonify(app.clerk.consensus)
+        logging.debug('GET /consensus')
+        logging.debug('consensus:\n%s' % cons.data.decode('utf-8'))
+        return cons, 200
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
 @app.route(url + '/guard')
 def get_guard():
     try:
-        return flask.jsonify(app.clerk.guard.perform()), 200
+        guard = flask.jsonify(app.clerk.guard.perform())
+        logging.debug('GET /guard')
+        logging.debug('guard:\n%s' % guard.data.decode('utf-8'))
+        return guard, 200
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
@@ -298,19 +376,25 @@ def create_channel():
     if not flask.request.json or not 'ntor' in flask.request.json:
         flask.abort(400)
     data = flask.request.json['ntor']
+    logging.debug('POST /channel (ntor, auth) -> data')
+    logging.debug('ntor:\n%s' % data)
 
     auth = None
     if 'auth' in flask.request.json:
         auth = flask.request.json['auth']
+        logging.debug('auth:\n%s' % auth)
         if app.clerk.auth is None:
             flask.abort(400)
 
     try:
-        data = app.clerk.create.perform(data)
+        #data = app.clerk.create.perform(data)
+        data = app.clerk.create_channel(data)
         if auth is not None:
             data = app.clerk.auth.perform(auth, data)
 
-        return flask.jsonify(data), 201 # Created
+        data = flask.jsonify(data)
+        logging.debug('data send:\%s' % data.data.decode('utf-8'))
+        return data, 201 # Created
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
@@ -328,6 +412,7 @@ def write_channel(uid):
         flask.abort(400)
 
     cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
+
     if any([len(cell) > lnn.constants.full_cell_len for cell in cells]):
         flask.abort(400)
 
@@ -345,12 +430,13 @@ def delete_channel(uid):
 
     circuit = channel.circuit
     try:
-        return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
+        clerk.delete_channel(circuit)
+        return flask.jsonify({}), 202 # Deleted
+        #return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
     except lnn.proxy.jobs.expired:
         flask.abort(503)
 
-def main(port, slave_node, control_port, dir_port, purge_cache,
-    static_files=None, auth_dir=None):
+def main(port, slave_node, control_port, dir_port, purge_cache, static_files=None, auth_dir=None):
     if purge_cache:
         lnn.cache.purge()
 
