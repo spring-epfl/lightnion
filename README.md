@@ -31,10 +31,6 @@ within `./tools/chutney`.
 License
 -------
 
-This software is licensed under
-[some license](LICENSE.txt_REPLACE_BEFORE_FIRST_RELEASE).
-© 2018 Spring Lab (EPFL) and contributors.
-
-Note that the aforementioned `some license` mention should have been replaced
-before the distribution of the project. If you are able to read this, please
-contact us to report the issue or to obtain a copy of the license.
+This software is licensed under the
+[BSD3 clause license](LICENSE).
+© 2018-2019 Spring Lab (EPFL) and contributors.
