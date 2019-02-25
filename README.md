@@ -1,6 +1,6 @@
-Lightnion provides a JavaScript library that you can load on your webpage to make anonymous requests from any modern browser. To interact with the Tor network, it uses an untrusted proxy that converts between protocols (Websockets to pure TCP). Lightnion also contains an internal Python Tor client that we have been using for testing.
+Lightnion is a JavaScript library that you can include on your webpage to let any modern browser make anonymous requests. Lightnion uses an *untrusted* proxy to interact with the Tor network. This proxy converts between protocols (Websockets to pure TCP). This repository also contains a Python Lightnion Tor client that we have been using for testing.
 
-**WARNING:** At the moment Lightnion is alpha-level research software. Do *not* use it in production, or for anything that really requires anonymity. You are, however, more than welcome to experiment with Lightnion.
+**WARNING:** At the moment Lightnion is alpha-level research software. Do *not* use it in production, or for anything that really requires anonymity. You are, however, more than welcome to experiment with Lightnion. Please provide feedback opening issues or writing to the authors.
 
 Quick setup
 -----------
