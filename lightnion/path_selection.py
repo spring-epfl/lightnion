@@ -4,6 +4,9 @@ import logging
 
 import lightnion.descriptors as descriptors
 
+# Chutney launches all relays in the same subnet.
+# So to test the proxy with Chutney, these checks needs to be disabled.
+check_different_subnets = True
 
 def select_path(routers, state, testing=False):
     """Handle the path selection
@@ -44,7 +47,6 @@ def select_end_path_from_consensus(cons, descr, guard, testing=False):
     :returns: tuple (guard, middle, exit)"""
 
     routers = [r for r in cons['routers'] if obey_minimal_constraint(r)]
-
     exit_node = pick_good_exit_from_routers(descr, routers, guard)
     middle    = pick_good_middle_from_routers(descr, routers, exit_node, guard, testing)
 
@@ -58,9 +60,6 @@ def obey_minimal_constraint(router, exit_node=None, guard=None, testing=False):
     :param exit_node: the chosen exit node
     :param guard: the chosen guard node
     :return: boolean"""
-
-    # All are OK for testing purposes.
-    return True
 
     flags = router['flags']
     router_address = router['address'].split(".")
@@ -79,11 +78,11 @@ def obey_minimal_constraint(router, exit_node=None, guard=None, testing=False):
         if router['digest'] == exit_node['digest']:
             return False
 
-        exit_addr = exit_node['router']['address'].split(".")
-
         # check if they are in the same 16 subnet
-        if not testing and router_address[0] == exit_addr[0] and router_address[1] == exit_addr[1]:
-            return False
+        if check_different_subnets:
+            exit_addr = exit_node['router']['address'].split(".")
+            if not testing and router_address[0] == exit_addr[0] and router_address[1] == exit_addr[1]:
+                return False
 
     if guard is not None:
 
@@ -91,11 +90,11 @@ def obey_minimal_constraint(router, exit_node=None, guard=None, testing=False):
         if router['digest'] == guard['digest']:
             return False
 
-        guard_addr = guard['router']['address'].split(".")
-
         # check if they are in the same 16 subnet
-        if not testing and router_address[0] == guard_addr[0] and router_address[1] == guard_addr[1]:
-            return False
+        if check_different_subnets:
+            guard_addr = guard['router']['address'].split(".")
+            if not testing and router_address[0] == guard_addr[0] and router_address[1] == guard_addr[1]:
+                return False
 
     return True
 
@@ -186,7 +185,7 @@ def keep_exit_with_descr(descr, router, guard):
         return False, None
 
     if in_same_family(nhop, guard):
-        return False, state, None
+        return False, None
 
     return True, nhop
 
