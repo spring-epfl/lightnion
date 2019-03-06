@@ -5,7 +5,6 @@ import base64
 import time
 
 import lightnion as lnn
-import lightnion.http
 import lightnion.path_selection
 
 # TODO: rewrite everything? (with less complexity? using asyncio only?)
