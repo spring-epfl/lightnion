@@ -6,7 +6,7 @@ import lightnion.descriptors as descriptors
 
 # Chutney launches all relays in the same subnet.
 # So to test the proxy with Chutney, these checks needs to be disabled.
-check_different_subnets = True
+check_different_subnets = False
 
 def select_path(routers, state, testing=False):
     """Handle the path selection

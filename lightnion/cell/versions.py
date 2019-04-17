@@ -35,34 +35,3 @@ def pack(versions):
         length=len(versions))
     vercell.set(versions=versions)
     return vercell
-
-def recv(peer):
-    answer = peer.recv(_cell.header_legacy_view.width())
-
-    header = _cell.header_legacy(answer)
-    if not header.valid:
-        raise RuntimeError('Invalid v2 cell header: {}'.format(header.raw))
-    if not header.cmd == _cell.cmd.VERSIONS:
-        raise RuntimeError('Expecting VERSIONS, got: {}'.format(header.cmd))
-
-    length = header.length
-    if length > constants.max_payload_len:
-        raise RuntimeError('VERSIONS cell too long: {}'.format(header.length))
-
-    answer += peer.recv(length)
-    if not view.valid(answer):
-        raise RuntimeError('Invalid VERSIONS cell: {}'.format(answer))
-
-    return cell(answer)
-
-def send(peer, payload):
-    try:
-        payload = payload.raw
-    except AttributeError:
-        pass
-
-    vercell = cell(payload)
-    if not vercell.valid:
-        raise RuntimeError('VERSIONS cell invalid: {}'.format(payload))
-
-    return peer.sendall(payload)

@@ -1,221 +1,405 @@
 import logging
 import socket
-import queue
 import ssl
+import asyncio
 
 import lightnion as lnn
+import lightnion.cell
+import lightnion.utils
+from lightnion.proxy import fake_circuit_id
 
-class link:
-    """An established Tor link, send and receive messages in separate threads.
 
-    :param io: socket.io instance that wraps the TLS/SSLv3 connection
-    :param int version: link version
+class InvalidCellHeaderException(Exception):
+    pass
 
-    Usage::
+class InvalidAuthCellException(Exception):
+    pass
 
-      >>> import lightnion as lnn
-      >>> link = lnn.link.initiate('127.0.0.1', 5000)
-      >>> link.version
-      5
-      >>> link.send(lnn.cell.create_fast.pack(2**31))
-      >>> lnn.cell.created_fast.cell(link.get(circuit_id=2**31)).valid
-      True
-      >>> link.close()
-    """
-    def __init__(self, io, version, circuits=[0], max_queue=2048):
-        self.max_queue = 2048
-        self.version = version
-        self.last_id = 0
-        self.io = io
+class InvalidCertsCellException(Exception):
+    pass
 
-        self.circuits = dict()
-        self.register(lnn.create.circuit(0, None))
+class InvalidDestroyCellException(Exception):
+    pass
 
-    def pull(self, block=True):
-        try:
-            payload = self.io.recv(block=block)
-        except queue.Empty:
-            return False
+class InvalidNetInfoCellException(Exception):
+    pass
 
-        # We know that receiver.get() will give you a cell with a well-formed
-        # header, thus we do not validate it one more time.
-        #
-        # We doesn't handle VERSIONS cells with shorter circuit_id.
-        #
-        header = lnn.cell.header(payload)
-        if not header.circuit_id in self.circuits:
-            raise RuntimeError('Got circuit {} outside {}, cell: {}'.format(
-                header.circuit_id, list(self.circuits), payload))
+class InvalidVersionCellException(Exception):
+    pass
 
-        # TODO: property handle DESTROY cells
-        circuit = self.circuits[header.circuit_id]
-        if header.cmd is lnn.cell.cmd.DESTROY:
-            cell = lnn.cell.destroy.cell(payload)
-            if not cell.valid:
-                raise RuntimeError('Got invalid DESTROY cell: {}'.format(
-                    cell.truncated))
+class NoSupportedVersionException(Exception):
+    pass
 
-            self.put(circuit, payload)
-            circuit.destroyed = True
-            circuit.reason = cell.reason
-            self.unregister(circuit)
-            logging.debug('Circuit {} got destroyed, reason: {}'.format(
-                circuit.id, circuit.reason))
-            return False
+class Link:
+    def __init__(self, guard, versions=(4,5)):
+        """
+        Handler for communications between the proxy and a guard relay.
+        :param guard: guard tor relay with with to establish a link.
+        :param versions: versions supported by the proxy
+        """
 
-        self.put(circuit, payload)
-        return True
+        host = guard['router']['address']
+        port = guard['router']['orport']
 
-    def put(self, circuit, payload):
-        circuits_size = sum([c.queue.qsize() for _, c in self.circuits.items()])
-        if circuits_size > self.max_queue:
-            raise RuntimeError(
-                'Link circuit queues are full: {}'.format(circuits_size))
+        # Queue containing cells to be send to the tor relay.
+        self.to_send = asyncio.Queue(16384)
 
-        if circuit.id not in self.circuits:
-            raise RuntimeError('Got circuit_id {} outside {}, cell: {}'.format(
-                circuit.id, list(self.circuits), payload))
+        # Buffer containing beginning of potential imcomplete cell.
+        self.buffer = b''
 
-        try:
-            payload = payload.raw
-        except AttributeError:
-            pass
+        # The link is bound to a specific guard node.
+        self.guard = guard
 
-        self.circuits[circuit.id].put(payload)
+        # The first bit of the circuit id must be 1.
+        self.circuit_id = 0x80000000
 
-    def get(self, circuit, block=True):
-        while block and not self.io.dead:
-            try:
-                return self.circuits[circuit.id].get(block=False)
-            except queue.Empty:
-                pass
+        ctxt = ssl.SSLContext(ssl.PROTOCOL_TLS)
 
-            self.pull()
-            while self.pull(block=False):
-                pass
-        else:
-            if not self.io.dead:
-                while self.pull(block=False):
-                    pass
-                return self.circuits[circuit.id].get(block=False)
-            raise RuntimeError('Seems that link.io is dead!')
-
-    def register(self, circuit):
-        if circuit.id in self.circuits:
-            raise RuntimeError('Circuit {} already registered.'.format(
-                circuit.id))
-
-        circuit.queue = queue.Queue(maxsize=self.max_queue)
-        self.circuits[circuit.id] = circuit
-
-    def unregister(self, circuit):
-        del self.circuits[circuit.id]
-
-    def recv(self, block=True):
-        return self.io.recv(block=block)
-
-    def send(self, cell, block=True):
-        self.io.send(cell, block=block)
-
-    def close(self):
-        self.io.close()
-
-def negotiate_version(peer, versions, *, as_initiator):
-    """Performs a VERSIONS negotiation
-
-    :param peer: ssl.socket instance.
-    :param list versions: target link versions.
-    :param bool as_initiator: send VERSIONS cell first.
-    """
-    if as_initiator:
-        lnn.cell.versions.send(peer, lnn.cell.versions.pack(versions))
-    vercell = lnn.cell.versions.recv(peer)
-
-    common_versions = list(set(vercell.versions).intersection(versions))
-    if len(common_versions) < 1:
-        raise RuntimeError('No common supported versions: {} and {}'.format(
-            list(vercell.versions), versions))
-
-    version = max(common_versions)
-    if version < 4:
-        raise RuntimeError('No support for version 3 or lower, got {}').format(
-            version)
-
-    if not as_initiator:
-        lnn.cell.versions.send(peer, lnn.cell.versions.pack(versions))
-    return version
-
-def initiate(address='127.0.0.1', port=9050, versions=[4, 5]):
-    """Establish a link with the "in-protocol" (v3) handshake as initiator
-
-    The expected transcript is:
-
-           Onion Proxy (client)              Onion Router (server)
-
-               /   [1] :-------- VERSIONS ---------> [2]
-               |   [4] <-------- VERSIONS ---------: [3]
-               |
-               |           Negotiated Version
-               |
-               |   [4] <--------- CERTS -----------: [3]
-               |       <----- AUTH_CHALLENGE ------:
-               |       <-------- NETINFO ----------:
-               |
-               |             OP don't need to
-        Link   |               authenticate
-      Protocol |
-        >= 3   |   [5] :-------- NETINFO ----------> [6]
-               |
-               | Alternative:
-               | (          We (OR) authenticate         )
-               | (                                       )
-               | ( [5] :--------- CERTS -----------> [6] )
-               | (     :------ AUTHENTICATE ------->     )
-               | (             ^                         )
-               | (            (answers AUTH_CHALLENGE)   )
-               | (                                       )
-               \
-
-    :param str address: remote relay address (default: 127.0.0.1).
-    :param int port: remote relay ORPort (default: 9050).
-    :param list versions: target link versions (default: [4, 5]).
-
-    :returns: a link.link object
-
-    """
-
-    # Setup context
-    peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    ctxt = ssl.SSLContext(ssl.PROTOCOL_TLS)
-
-    # https://trac.torproject.org/projects/tor/ticket/28616
-    if '1.1.1a' in ssl.OPENSSL_VERSION:
+        # TLS 1.3 disabled for compatibility issues.
+        # https://trac.torproject.org/projects/tor/ticket/28616
         ctxt.options |= ssl.OP_NO_TLSv1_3
 
-    # Establish connection
-    peer = ctxt.wrap_socket(peer)
-    peer.connect((address, port))
+        # channel manager set later.
+        self.channel_manager = None
 
-    # VERSIONS handshake
-    version = negotiate_version(peer, versions, as_initiator=True)
+        # The connection to the tor relay.
+        self.connection = self._handler(host, port, ctxt, versions)
 
-    # Wraps with socket.io
-    peer = lnn.socket.io(peer)
+        logging.debug('Link: Link prepared ({} : {})'.format(host, port))
 
-    # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
-    certs_cell = lnn.cell.certs.cell(peer.recv())
-    auth_cell = lnn.cell.challenge.cell(peer.recv())
-    netinfo_cell = lnn.cell.netinfo.cell(peer.recv())
 
-    # Sanity checks
-    if not certs_cell.valid:
-        raise RuntimeError('Invalid CERTS cell: {}'.format(certs_cell.raw))
-    if not auth_cell.valid:
-        raise RuntimeError('Invalid AUTH_CHALLENGE cell:{}'.format(
-            auth_cell.raw))
-    if not netinfo_cell.valid:
-        raise RuntimeError('Invalid NETINFO cell: {}'.format(netinfo_cell.raw))
+    def set_channel_manager(self, channel_manager):
+        """
+        Set the channel manager to which the traffic should be send.
+        :param channel_manager: channel manager to use.
+        """
 
-    # Send our NETINFO to say "we don't want to authenticate"
-    peer.send(lnn.cell.netinfo.pack(address))
-    return link(peer, version)
+        self.channel_manager = channel_manager
+
+        logging.debug('Link: Channel manager set.')
+
+
+    def gen_cid(self):
+        """
+        Generate a new circuit id.
+        :return: new circuit id
+        """
+        self.circuit_id += 1
+
+        logging.debug('Link: New circuit id generated {}'.format(self.circuit_id))
+
+        return self.circuit_id
+
+
+    async def schedule_to_send(self, cell, channel):
+        """
+        Coroutine
+        Order some data to be sent to the tor relay.
+        :param cell: cell to be sent.
+        :param channel: channel from which the cell is sent.
+        """
+
+        logging.debug('Link: Begin adding data to sending queue from channel {}.'.format(channel.cid))
+
+        # Set correct circuit id.
+        cell = lnn.cell.header_view.write(cell, circuit_id=channel.cid)
+
+        header = lnn.cell.header(cell)
+        if header.cmd is lnn.cell.cmd.DESTROY:
+            cell = lnn.cell.destroy.cell(cell)
+            if not cell.valid:
+                logging.debug('Link: Cancelled adding data to sending queue from channel {}, invalid cell.'.format(channel.cid))
+                #raise InvalidDestroyCellException()
+                raise Exception()
+
+            # Mark the channel as destroyed and remove it from the manager.
+            channel.destroyed = True
+            self.channel_manager.delete_channel(channel)
+
+        cell_padded = lnn.cell.pad(cell)
+
+        await self.to_send.put(cell_padded)
+        logging.debug('Link: Finish adding data to sending queue from channel {}.'.format(channel.cid))
+
+
+    async def _handle_tor_mgmt_cell(self, cell):
+        logging.debug('Link: Handle management cell from tor relay.')
+        pass
+
+
+    async def _recv(self, reader):
+        """
+        Recieve data from the tor relay and give it to the channel manager.
+        :param reader: asyncio StreamReader
+        """
+        data = await reader.read(65536)
+
+        data = self.buffer + data
+        # Let the channel manager do the multiplexing.
+        logging.debug('Link: Received data\n{}'.format(data))
+
+        (cell, data) = lnn.utils.cell_slice(data)
+
+        while cell is not None:
+            logging.debug('Link: Spliced a cell.\n{}'.format(cell))
+            # Analyse header to select correct channel.
+            header = lnn.cell.header(cell)
+            cid = header.circuit_id
+
+            if cid == 0:
+                await self._handle_tor_mgmt_cell(cell)
+            else:
+                # Replace the real circuit id by a dummy one.
+                logging.debug('Link: Prepare replacement of circuit id.')
+                cell = lnn.cell.header_view.write(cell, circuit_id=fake_circuit_id)
+                logging.debug('Link: Replaced circuit id.')
+                await self.channel_manager.schedule_to_send(cell, cid)
+
+            (cell, data) = lnn.utils.cell_slice(data)
+
+        # At the end we keep the beginning of the next cell.
+        self.buffer = data
+
+
+    async def _send(self, writer):
+        """
+        Send data to the tor relay.
+        :param reader: asyncio StreamWriter
+        """
+        data = await self.to_send.get()
+        writer.write(data)
+        await writer.drain()
+        logging.debug('Link: Sent data:\n{}'.format(data))
+
+
+    async def _negociate_version(self, reader, writer, versions):
+        """
+        Negociate tor version with the relay.
+        :param reader: asyncio.StreamReader
+        :param writer: asyncio.StreamWriter
+        :param versions: collection of versions supported by the proxy
+        :return: negociated version
+        """
+
+        logging.debug('Link: Begin version negociation.')
+
+        # Ask the relay which versions it supports.
+        payload = lnn.cell.versions.pack(versions)
+
+        #await lnn.cell.versions.send_async(writer, payload)
+        # Code from this method inlined here:
+
+        payload = payload.raw
+
+        vercell = lnn.cell.versions.cell(payload)
+        if not vercell.valid:
+            raise InvalidVersionCellException()
+
+        writer.write(payload)
+        await writer.drain()
+
+        logging.debug('Link: Sent version cell:\n{}'.format(payload))
+
+        #vercell = await lnn.cell.versions.recv_async(reader)
+        # Code from this method inlined here:
+        
+        answer = await reader.read(lnn.cell.header_legacy_view.width())
+
+        logging.debug('Link: Received version cell:\n{}'.format(answer))
+
+        header = lnn.cell.header_legacy(answer)
+        if not header.valid:
+            raise InvalidCellHeaderException()
+        if not header.cmd == lnn.cell.cmd.VERSIONS:
+            raise InvalidVersionCellException()
+
+        length = header.length
+        if length > lnn.constants.max_payload_len:
+            raise InvalidVersionCellException()
+
+        answer += await reader.read(length)
+        if not lnn.cell.versions.view.valid(answer):
+            raise InvalidVersionCellException()
+
+        vercell = lnn.cell.versions.cell(answer)
+
+        # Versions validation
+        common_versions = set(vercell.versions).intersection(versions)
+        if len(common_versions) < 1:
+            raise NoSupportedVersionException()
+
+        max_version = max(common_versions)
+        if max_version < 4:
+            raise NoSupportedVersionException()
+
+        # The latest version is selected.
+
+        logging.debug('Link: Select version {}.'.format(max_version))
+        logging.debug('Link: End version negociation.')
+
+        return max_version
+
+
+    async def _handler(self, host, port, ctxt, versions):
+        """
+        Establish a connection with the tor relay and handle all
+        communications between it and the proxy.
+        :param host: ip address of the relay
+        :param port: port of the relay
+        :param ctxt: TLS context
+        :param versions: collection of versions supported by the proxy
+        """
+
+        # The expected transcript is:
+        #
+        #    Onion Proxy (client)                Onion Router (server)
+        #
+        #            /   [1] :-------- VERSIONS ---------> [2]
+        #            |   [4] <-------- VERSIONS ---------: [3]
+        #            |
+        #            |           Negotiated Version
+        #            |
+        #            |   [4] <--------- CERTS -----------: [3]
+        #            |       <----- AUTH_CHALLENGE ------:
+        #            |       <-------- NETINFO ----------:
+        #            |
+        #            |             OP don't need to
+        #     Link   |               authenticate
+        #   Protocol |
+        #     >= 3   |   [5] :-------- NETINFO ----------> [6]
+        #            |
+        #            | Alternative:
+        #            | (          We (OR) authenticate         )
+        #            | (                                       )
+        #            | ( [5] :--------- CERTS -----------> [6] )
+        #            | (     :------ AUTHENTICATE ------->     )
+        #            | (             ^                         )
+        #            | (            (answers AUTH_CHALLENGE)   )
+        #            | (                                       )
+        #            \
+
+        logging.debug('Link: Opening connection.')
+
+        reader, writer = await asyncio.open_connection(host, port, ssl=ctxt)
+
+        logging.debug('Link: Connection open.')
+
+        self.version = await self._negociate_version(reader, writer, versions)
+
+        # Tor handshake
+        cells_raw = await reader.read(65536)
+
+        #logging.debug('Link: Received handshake cells:\n{}'.format(cells_raw))
+
+        (cell, cells_raw) = lnn.utils.cell_slice(cells_raw)
+        certs_cell = lnn.cell.certs.cell(cell)
+        logging.debug('Link: Certs cell:\n{}'.format(certs_cell.raw))
+
+        (cell, cells_raw) = lnn.utils.cell_slice(cells_raw)
+        auth_cell = lnn.cell.challenge.cell(cell)
+        logging.debug('Link: Auth cell:\n{}'.format(auth_cell.raw))
+
+        (cell, cells_raw) = lnn.utils.cell_slice(cells_raw)
+        netinfo_cell = lnn.cell.netinfo.cell(cell)
+        logging.debug('Link: Netinfo cell:\n{}'.format(netinfo_cell.raw))
+
+        # Validation of handshake cells given by the relay.
+        if not certs_cell.valid:
+            raise InvalidCertsCellException()
+
+        if not auth_cell.valid:
+            raise InvalidAuthCellException()
+
+        if not netinfo_cell.valid:
+            raise InvalidNetInfoCellException()
+
+        # Send the NETINFO without doing any further authentication.
+        netinfo_cell = lnn.cell.pad(lnn.cell.netinfo.pack(host))
+        writer.write(netinfo_cell)
+        await writer.drain()
+
+        logging.debug('Link: Sent netinfo cell:\n{}'.format(netinfo_cell))
+
+        # Handle all communication from now on.
+        tasks = [
+            asyncio.create_task(self._recv(reader)),
+            asyncio.create_task(self._send(writer))
+        ]
+
+        while not reader.at_eof():
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+            if tasks[0].done() or tasks[0].cancelled():
+                tasks[0] = asyncio.create_task(self._recv(reader))
+                logging.debug('Link: New recv task created.')
+            if tasks[1].done() or tasks[1].cancelled():
+                tasks[1] = asyncio.create_task(self._send(writer))
+                logging.debug('Link: New send task created.')
+
+        # Proper termination of communications.
+        for task in tasks:
+            if not task.cancelled():
+                task.cancel()
+
+        writer.close()
+        await writer.wait_closed()
+
+        logging.debug('Link: Connection closed.')
+
+
+#async def initiate_async(address='127.0.0.1', port=9050, versions=[4, 5]):
+#    """Establish a link with the "in-protocol" (v3) handshake as initiator
+#    :param str address: remote relay address (default: 127.0.0.1).
+#    :param int port: remote relay ORPort (default: 9050).
+#    :param list versions: target link versions (default: [4, 5]).
+#
+#    :returns: a link.link object
+#
+#    """
+#
+#    logging.warning('Setup context')
+#    # Setup context
+#    ctxt = ssl.SSLContext(ssl.PROTOCOL_TLS)
+#    # https://trac.torproject.org/projects/tor/ticket/28616
+#    ctxt.options |= ssl.OP_NO_TLSv1_3
+#
+#    logging.warning('Open connection')
+#    reader, writer = await asyncio.open_connection(address, port, ssl=ctxt)
+#
+#    # VERSIONS handshake
+#    logging.warning('Negociate version')
+#    version = await negotiate_version_async(reader, writer, versions, as_initiator=True)
+#
+#    logging.warning(version)
+#
+#    # Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards
+#    # Number obtained by experimentation with chutney.
+#    cell = await fetch_cell(reader)
+#    msg = ','.join(str(i) for i in list(cell))
+#    logging.warning('cert <<< ' + msg + ' ... length: ' + str(len(cell)))
+#    certs_cell = lnn.cell.certs.cell(cell)
+#
+#    cell = await fetch_cell(reader)
+#    msg = ','.join(str(i) for i in list(cell))
+#    logging.warning('auth <<< ' + msg + ' ... length: ' + str(len(cell)))
+#    auth_cell = lnn.cell.challenge.cell(cell)
+#
+#    cell = await fetch_cell(reader)
+#    msg = ','.join(str(i) for i in list(cell))
+#    logging.warning('info <<< ' + msg + ' ... length: ' + str(len(cell)))
+#    netinfo_cell = lnn.cell.netinfo.cell(cell)
+#
+#    # Sanity checks
+#    if not certs_cell.valid:
+#        raise InvalidCertsCellException('Invalid CERTS cell: {}'.format(certs_cell.raw))
+#    if not auth_cell.valid:
+#        raise InvalidAuthChallengeCellException('Invalid AUTH_CHALLENGE cell:{}'.format(
+#            auth_cell.raw))
+#    if not netinfo_cell.valid:
+#        raise InvalidNetInfoCellException('Invalid NETINFO cell: {}'.format(netinfo_cell.raw))
+#
+#    # Send our NETINFO to say "we don't want to authenticate"
+#    writer.write(lnn.cell.pad(lnn.cell.netinfo.pack(address)))
+#    return Link(reader, writer, version)
+
+

@@ -172,52 +172,6 @@ def fast(link):
     return lnn.onion.state(link, final)
 
 
-async def ntor_raw_async(link, payload ):
-    # Pick an available ID (link version > 3)
-    link.last_id += 1
-    circuit_id = 0x80000000 + link.last_id
-    while circuit_id in link.circuits:
-        circuit_id += 1
-
-    # Sanity checks
-    try:
-        packed = lnn.cell.view.uint(4).write(value=circuit_id)
-        assert circuit_id == lnn.cell.view.uint(4).value(packed)
-    except (OverflowError, AssertionError):
-        link.last_id = 0
-        raise RuntimeError('Erroneous circuit ID: {} ({})'.format(circuit_id, packed))
-
-    # Build a CREATE2 cell containing this first handshake part
-    handshake = lnn.cell.create2.pack(circuit_id, payload)
-
-    # Change: Instead, the handshake data is send to the client with the handshake data.
-    #await link.send_async(handshake)
-    return circuit_id, handshake
-
-
-    # (register a dummy circuit first to reuse the circuit API)
-    dummy = circuit(circuit_id, None)
-    await link.register_async(dummy)
-
-    # Receive answers
-    cell = None
-    try:
-        cell_data = await link.get_async(dummy)
-        cell = lnn.cell.created2.cell(cell_data)
-        if cell is None:
-            await link.unregister_async(dummy)
-            raise RuntimeError('Got timeout while creating circuit.')
-    except KeyError:
-        raise RuntimeError('Got DESTROY cell while creating circuit.')
-
-    # (unregister the dummy circuit before validation/material confirmation)
-    await link.unregister_async(dummy)
-    if not cell.valid:
-        raise RuntimeError('Got invalid CREATED2 cell: {}'.format(cell.raw))
-
-    return circuit_id, cell.created2.data
-
-
 def ntor_raw(link, payload, timeout=None):
     # Pick an available ID (link version > 3)
     link.last_id += 1
@@ -239,6 +193,15 @@ def ntor_raw(link, payload, timeout=None):
 
     # Change: Instead, the handshake data is send to the client with the handshake data.
     return circuit_id, lnn.cell.pad(handshake)
+
+
+def ntor_raw2(circuit_id, payload):
+
+    # Build a CREATE2 cell containing this first handshake part
+    handshake = lnn.cell.create2.pack(circuit_id, payload)
+
+    # The handshake data is send to the client.
+    return lnn.cell.pad(handshake)
 
 
 # Was in the method above, before.

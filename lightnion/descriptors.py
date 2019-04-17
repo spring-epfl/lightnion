@@ -544,3 +544,24 @@ def download_authority(state):
         raise RuntimeError('Unable to parse authority descriptor.')
 
     return state, result['descriptors'][0]
+
+
+def download_authority_direct(host, port):
+    """Retrieve authority.
+    :param host: host from which to retrieve the authority.
+    :param port: port from which to retrieve the authority.
+    :return: Authority.
+    """
+    uri = 'http://%s:%d/tor/server/authority' % (host, port)
+
+    res = urllib.request.urlopen(uri)
+
+    if res is None or res.getcode() != 200:
+        return None
+
+    result, remain = parse(res.read(), flavor='unflavored')
+
+    if not (len(remain) == 0 and result is not None and len(result['descriptors']) == 1):
+        raise RuntimeError('Unable to parse authority descriptor.')
+
+    return result['descriptors'][0]
