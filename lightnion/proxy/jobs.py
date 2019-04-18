@@ -420,13 +420,18 @@ class WebsocketManager:
 
             if tasks[0].done() or tasks[0].cancelled():
                 tasks[0] = asyncio.create_task(self._recv(ws, channel))
-                logging.debug('WsServ: New recv task created.')
+                logging.debug('WsServ: New recv task created for channel {}.'.format(channel.cid))
             if tasks[1].done() or tasks[1].cancelled():
                 tasks[1] = asyncio.create_task(self._send(ws, channel))
-                logging.debug('WsServ: New send task created.')
+                logging.debug('WsServ: New send task created for channel {}.'.format(channel.cid))
             if tasks[2].done():
-                logging.debug('WsServ: Ws handler timed out.')
+                logging.debug('WsServ: Ws handler timed out for channel {}.'.format(channel.cid))
                 break
+            else:
+                # Channel has not timed out, so the timeout is resetted.
+                task[2].cancel()
+                task[2] = asyncio.create_task(self._timeout(ws, channel))
+                logging.debug('WsServ: Reset handler timed out for channel {}.'.format(channel.cid))
 
         # Proper termination of communications.
         for task in tasks:
