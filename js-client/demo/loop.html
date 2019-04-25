@@ -7,12 +7,16 @@
     <pre id='rt'></pre>
     <pre id='bw'></pre>
     <pre id='lt'></pre>
+    <pre id='log'></pre>
 
     <script>
         // stats & cosmetics
         var tcp = null
         var start = null
         var counter = null
+        //var cell_recv = 0
+        //var cell_sent = 0
+        //var cells = []
         var lastctr = null
         var latency = null
         var nblatency = null
@@ -34,12 +38,10 @@
             if (kops < 100)
                 tcp.send(pack_perf(lnn.relay.data_len))
 
-            document.getElementById('rt').innerText = (
-                'roundtrip: ' + rtps + '/s\n(total: ' + counter + ')\n')
-            document.getElementById('bw').innerText = (
-                'bandwidth: ' + kops + 'ko/s\n(total: ' + mo + 'mo)\n')
-            document.getElementById('lt').innerText = (
-                'avg. latency: ' + ltavg + 'ms\n(measures: ' + nblatency + ')')
+            document.getElementById('rt').innerText = ('roundtrip: ' + rtps + '/s\n(total: ' + counter + ')\n')
+            document.getElementById('bw').innerText = ('bandwidth: ' + kops + 'ko/s\n(total: ' + mo + 'mo)\n')
+            document.getElementById('lt').innerText = ('avg. latency: ' + ltavg + 'ms\n(measures: ' + nblatency + ')')
+            //document.getElementById('log').innerText = (cells.join('\n'))
         }
 
         function pack_perf(length)
@@ -65,7 +67,7 @@
         }
 
         // create the channel
-        var channel = lnn.fast('localhost', 4990, function(endpoint)
+        var channel = lnn.open('localhost', 4990, function(endpoint)
         {
             if (endpoint.state != lnn.state.success)
                 return
@@ -74,7 +76,12 @@
             tcp = lnn.stream.tcp(endpoint, '127.0.0.1', 12003, handler)
 
             // send a first packet that will echo (a lot)
-            tcp.send(pack_perf(lnn.relay.data_len))
+            var data_sent = pack_perf(lnn.relay.data_len)
+            tcp.send(data_sent)
+            //cell_sent += 1
+
+            //var cell_repr = data_sent.slice(0,20).map(function(x) { var s = x.toString(16); return (x < 0x10) ? '0'+s : s }).join('')
+            //cells.push("cell " + cell_sent.toString() + " sent to wbskt " + cell_repr)
         })
 
         function handler(request)
@@ -96,6 +103,10 @@
                 if (data.length == 0)
                     return
 
+                //cell_recv += 1
+            	//var cell_repr = data.slice(0,20).map(function(x) { var s = x.toString(16); return (x < 0x10) ? '0'+s : s }).join('')
+                //cells.push("cell " + cell_sent.toString() + " recv by wbskt " + cell_repr)
+
                 counter += 1
                 bandwidth += data.length
 
@@ -109,7 +120,12 @@
                         nblatency += 1
                     }
 
-                    tcp.send(pack_perf(lnn.relay.data_len))
+                    var data_sent = pack_perf(lnn.relay.data_len)
+                    tcp.send(data_sent)
+                    //cell_sent += 1
+
+            	    //var cell_repr = data_sent.slice(0,20).map(function(x) { var s = x.toString(16); return (x < 0x10) ? '0'+s : s }).join('')
+                    //cells.push("cell " + cell_sent.toString() + " sent to wbskt " + cell_repr)
                 }
                 return
             }

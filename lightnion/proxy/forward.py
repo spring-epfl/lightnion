@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import websockets
 import asyncio
 import sys
+import signal
 
 import lightnion as lnn
 import lightnion.proxy
@@ -25,11 +26,11 @@ handler = logging.StreamHandler(stream=sys.stdout)
 handler.setFormatter(formatter)
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 logger.addHandler(handler)
 
 logger = logging.getLogger("asyncio")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 logger.addHandler(handler)
 
 
@@ -78,13 +79,6 @@ class clerk():
         self.link.set_channel_manager(self.channel_manager)
         self.channel_manager.set_link(self.link)
         self.websocket_manager.set_channel_manager(self.channel_manager)
-
-    #def get_coroutines(self):
-    #    coroutines = [
-    #        self.link.connection,
-    #        self.websocket_manager.server()
-    #    ]
-    #    return coroutines
 
     def retrieve_consensus(self):
         """Retrieve relays data with direct HTTP connection and schedule its future retrival."""
@@ -267,7 +261,7 @@ def main(port, slave_node, control_port, dir_port, purge_cache, static_files=Non
     app.clerk = clerk(slave_node, control_port, dir_port, auth_dir)
     logging.info('Bootstrapping HTTP server.')
 
-    logging.getLogger(websockets.__name__).setLevel(logging.DEBUG)
+    logging.getLogger(websockets.__name__).setLevel(logging.INFO)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     app.clerk.prepare()
@@ -276,6 +270,17 @@ def main(port, slave_node, control_port, dir_port, purge_cache, static_files=Non
     loop.set_exception_handler(None)
 
     loop.create_task(app.clerk.link.connection)
-    loop.create_task(app.clerk.websocket_manager.server(loop))
+    loop.create_task(app.clerk.websocket_manager.serve(loop))
+
+    def signal_handler(signum, frame):
+        """
+        Handler to stop coroutines.
+        """
+        logging.debug('Signal handler called.')
+        app.clerk.websocket_manager.stop()
+        loop.stop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)

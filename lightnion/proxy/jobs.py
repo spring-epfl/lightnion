@@ -48,7 +48,7 @@ class Channel:
 
         self.to_send = asyncio.Queue(2048)
 
-        self.destroyed = False
+        self.destroyed = asyncio.Event()
 
 
 class ChannelManager:
@@ -132,7 +132,7 @@ class ChannelManager:
         if self.link is not None:
             for channel in self.channels.values():
                 await self.destroy_circuit_from_client(channel)
-                await self.destroy_circuit_from_link(channel)
+                #await self.destroy_circuit_from_link(channel)
             # Deletion per-se of existing channels handled in websocket after the cell was dispatched.
 
         self.link = link
@@ -159,6 +159,8 @@ class ChannelManager:
         ntor_bin = base64.b64decode(ntor)
 
         (middle, exit) = lnn.path_selection.select_end_path_from_consensus(consensus, descriptors, self.link.guard)
+        logging.warning('Middle {}'.format(middle['router']['nickname']))
+        logging.warning('Exit {}'.format(exit['router']['nickname']))
 
         cid = self.link.gen_cid()
         token = self.gen_token_from_cid(cid)
@@ -179,8 +181,8 @@ class ChannelManager:
         Delete a given channel if it is managed by the channel manager, do nothing otherwise.
         :param channel: Channel to be deleted.
         """
-        if channel.cid in self.channel_manager.channels.keys():
-            del self.channel_manager.channels[channel.cid]
+        if channel.cid in self.channels.keys():
+            del self.channels[channel.cid]
             logging.debug('ChanMgr: Channel {} with token {} deleted.'.format(channel.cid, channel.token))
 
 
@@ -189,9 +191,6 @@ class ChannelManager:
         Destroy a circuit corresponding to a channel as if the order was comming from the client side.
         :param channel: Channel handling the circuit to be destroyed.
         """
-
-        # Mark the channel as destroyed.
-        channel.destroyed = True
 
         # Send a cell to the link to delete the circuit in the relay.
         cid = channel.cid
@@ -202,6 +201,9 @@ class ChannelManager:
 
         await self.link.to_send.put(cell_padded)
 
+        # Destroy the channel.
+        channel.destroyed.set()
+
         logging.debug('ChanMgr: Prepare to delete circuit {} from client.'.format(cid))
 
 
@@ -211,16 +213,8 @@ class ChannelManager:
         :param channel: Channel handling the circuit to be destroyed.
         """
 
-        # Mark the channel as destroyed.
-        channel.destroyed = True
-
-        cid = fake_circuit_id
-        reason = lnn.cell.destroy.reason.FINISHED
-
-        cell = lnn.cell.destroy.pack(cid, reason)
-        cell_padded = lnn.cell.pad(cell)
-
-        await channel.to_send.put(cell_padded)
+        # Destroy the channel.
+        channel.destroyed.set()
 
         logging.debug('ChanMgr: Prepare to delete channel {} from link.'.format(channel.cid))
 
@@ -238,6 +232,7 @@ class ChannelManager:
 
         return self.channels[cid]
 
+
     async def schedule_to_send(self, cell, cid):
         """
         Scedule the data to be send to the correct channel.
@@ -247,25 +242,28 @@ class ChannelManager:
         
         if cid not in self.channels.keys():
             logging.warning('ChanMgr: Channel {} does not exists.'.format(cid))
-            raise CircuitDoesNotExistException(cid)
+            return
+            #raise CircuitDoesNotExistException(cid)
 
         channel = self.channels[cid]
 
-        if channel.destroyed:
-            logging.warning('ChanMgr: Channel {} was destroyed.'.format(cid))
-            raise CircuitDoesNotExistException(cid)
+        if channel.destroyed.is_set():
+            logging.warning('ChanMgr: Channel {} is destroyed.'.format(cid))
+            return
+            #raise CircuitDoesNotExistException(cid)
 
         # If the cell command to delete the circuit,
-        # 1/ send a DESTROY command to the client.
-        # 2/ schedule the channel for deletion.
         header = lnn.cell.header(cell)
         if header.cmd is lnn.cell.cmd.DESTROY:
-            cell = lnn.cell.destroy.cell(cell)
-            if not cell.valid:
-                raise InvalidDestroyCellException()
+            cell_validation = lnn.cell.destroy.cell(cell)
+            logging.warning('ChanMgr: DESTROY cell received for channel {}, reason: {}.'.format(cid, cell_validation.reason))
+            if not cell_validation.valid:
+                logging.debug('ChanMgr: Invalid DESTROY in channel {}.'.format(cid))
+                #raise InvalidDestroyCellException()
+            else:
+                await self.destroy_circuit_from_link(channel)
 
-            # Mark the channel as destroyed.
-            channel.destroyed = True
+            return
 
         cell_padded = lnn.cell.pad(cell)
 
@@ -279,7 +277,7 @@ class WebsocketManager:
     prefix = base_url + '/channels/'
     prefix_len = len(prefix)
 
-    def __init__(self, host='0.0.0.0', port=8765, timeout=600):
+    def __init__(self, host='0.0.0.0', port=8765, timeout=60):
         """
         Websocket server
         :param host: host on which the websocket need to run.
@@ -296,19 +294,29 @@ class WebsocketManager:
         # The websocket server
         self.host = host
         self.port = port
+        self.server = None
+
+        self.cell_sent = 0
+        self.cell_recv = 0
+
 
         logging.debug('WsServ: Websocket server prepared ({}:{})'.format(host, port))
 
 
-    async def server(self, loop):
+    async def serve(self, loop):
         """
         Create and start a websocket server, then wait for it to close.        
         :param host: host on which the websocket need to run.
         :param port: port on which the websocket is listening.
         """
-        server = await websockets.serve(self._handler, self.host, self.port, loop=loop, compression=None)
-        await server.wait_closed()
+        self.server = await websockets.serve(self._handler, self.host, self.port, loop=loop, compression=None)
+        await self.server.wait_closed()
         logging.debug('WsServ: Websocket server closed.')
+
+
+    def stop(self):
+        if self.server is not None:
+            self.server.close()
 
 
     def set_channel_manager(self, channel_manager):
@@ -327,17 +335,14 @@ class WebsocketManager:
         :param channel: Channel correspondind to the client from which data is recieved.
         """
 
-        # destroy the channel if it need to be destroyed.
-        if channel.destroyed:
-            logging.debug('WsServ: Delete channel {} in recv:'.format(channel.cid))
-            self.channel_manager.delete_channel(channel)
-            # Nothing else to do as the channel is deleted
-            return
+        while not ws.closed:
+            cell = await ws.recv()
 
-        cell = await ws.recv()
-        logging.debug('WsServ: Recieved data from channel {}:\n{}'.format(channel.cid, cell))
+            self.cell_recv += 1
+            logging.info('cell {} recv by wbskt: {}'.format(self.cell_recv, cell[:20].hex()))
+            logging.debug('WsServ: Recieved cell from channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
 
-        await self.channel_manager.link.schedule_to_send(cell, channel)
+            await self.channel_manager.link.schedule_to_send(cell, channel)
 
 
     async def _send(self, ws, channel):
@@ -347,45 +352,40 @@ class WebsocketManager:
         :param channel: Channel from which data is sent.
         """
 
-        # retrieve cell properly
-        cell = await channel.to_send.get()
+        while not ws.closed:
+            cell = await channel.to_send.get()
 
-        # Cell analysis to check if the channel need to be scheduled for deletion done in channel handler.
+            cell = lnn.cell.pad(cell)
+            await ws.send(cell)
 
-        # destroy the channel if it need to be destroyed.
-        if channel.destroyed:
-            self.channel_manager.delete_channel(channel)
+            self.cell_sent += 1
+            logging.info('cell {} sent to wbskt: {}'.format(self.cell_sent, cell[:20].hex()))
 
-        # The real circuit ID is kept hidden from the client.
-        cell_mut = lnn.cell.header_view.write(cell, circuit_id=fake_circuit_id)
-        cell_padded = lnn.cell.pad(cell_mut)
-        await ws.send(cell_padded)
-
-        logging.debug('WsServ: Sent data to channel {}:\n{}'.format(channel.cid, cell_padded))
+            logging.debug('WsServ: Sent data to channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
 
 
     async def _timeout(self, ws, channel):
         """
         Handler to send termination cells in case of a timeout.
+        :param ws: The websocket used to communicate with the client.
+        :param channel: Channel from which data is sent.
         """
         await asyncio.sleep(self.timeout)
 
-        # mark the channel as destroyed.
-        channel.destroyed = True
-
-        # Build a cell to destroy the circuit in the relay.
-        cid = channel.cid
-        reason = lnn.cell.destroy.reason.REQUESTED
-
-        cell = lnn.cell.destroy.pack(cid, reason)
-        cell_padded = lnn.cell.pad(cell)
-
-        await self.channel_manager.link.to_send.put(cell_padded)
-
-        # Channel deleted when cell is send.
-        #self.channel_manager.delete_channel(channel)
-
         logging.debug('WsServ: Channel {} timed out.'.format(channel.cid))
+
+        await self.channel_manager.destroy_circuit_from_client(channel)
+
+
+    async def _destroy(self, ws, channel):
+        """
+        Handler to destroy the specific circuit.
+        :param ws: The websocket used to communicate with the client.
+        :param channel: Channel from which data is sent.
+        """
+
+        # Just await for the channel to be destroyed.
+        await channel.destroyed.wait()
 
 
     async def _handler(self, ws, path):
@@ -410,34 +410,53 @@ class WebsocketManager:
             return
 
         tasks = [
+            asyncio.create_task(self._destroy(ws, channel)),
+            #asyncio.create_task(self._timeout(ws, channel)),
             asyncio.create_task(self._recv(ws, channel)),
-            asyncio.create_task(self._send(ws, channel)),
-            asyncio.create_task(self._timeout(ws, channel))
+            asyncio.create_task(self._send(ws, channel))
         ]
 
-        while not ws.closed:
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-            if tasks[0].done() or tasks[0].cancelled():
-                tasks[0] = asyncio.create_task(self._recv(ws, channel))
-                logging.debug('WsServ: New recv task created for channel {}.'.format(channel.cid))
-            if tasks[1].done() or tasks[1].cancelled():
-                tasks[1] = asyncio.create_task(self._send(ws, channel))
-                logging.debug('WsServ: New send task created for channel {}.'.format(channel.cid))
-            if tasks[2].done():
-                logging.debug('WsServ: Ws handler timed out for channel {}.'.format(channel.cid))
-                break
-            else:
-                # Channel has not timed out, so the timeout is resetted.
-                task[2].cancel()
-                task[2] = asyncio.create_task(self._timeout(ws, channel))
-                logging.debug('WsServ: Reset handler timed out for channel {}.'.format(channel.cid))
+        #while not ws.closed:
+        #    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-        # Proper termination of communications.
+        #    # Conditions to continue or stop listening.
+
+        #    # Circuit destroyed -> close websocket.
+        #    if tasks[0].done():
+        #        logging.debug('WsServ: Channel {} destroyed.'.format(channel.cid))
+        #        break
+
+        #    # Long timeout -> close websocket.
+        #    if tasks[1].done():
+        #        logging.debug('WsServ: Ws handler timed out for channel {}.'.format(channel.cid))
+        #        break
+        #    else:
+        #        # Channel has not timed out, so the timeout is resetted.
+        #        tasks[1].cancel()
+        #        tasks[1] = asyncio.create_task(self._timeout(ws, channel))
+        #        logging.debug('WsServ: Reset timeout handler for channel {}.'.format(channel.cid))
+
+        #    # If recv is done, restart it.
+        #    if tasks[2].done() or tasks[2].cancelled():
+        #        tasks[2] = asyncio.create_task(self._recv(ws, channel))
+        #        logging.debug('WsServ: New recv task created for channel {}.'.format(channel.cid))
+
+        #    # If send is done, restart it.
+        #    if tasks[3].done() or tasks[3].cancelled():
+        #        tasks[3] = asyncio.create_task(self._send(ws, channel))
+        #        logging.debug('WsServ: New send task created for channel {}.'.format(channel.cid))
+
+        # The channel is destroyed, and the connection needs to be closed.
+
+        # Cancel tasks which are still pending.
         for task in tasks:
             if not (task.cancelled() or task.done()):
                 task.cancel()
 
+        # Delete the channel and close the websocket.
+        self.channel_manager.delete_channel(channel)
         ws.close()
         await ws.wait_closed()
 

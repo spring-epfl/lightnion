@@ -1,4 +1,5 @@
 lnn.stream = {}
+lnn.stream.entrancy = 0
 lnn.stream.backend = function(error)
 {
     var sendme = function(cell, endpoint)
@@ -29,54 +30,65 @@ lnn.stream.backend = function(error)
     return backend
 }
 
-lnn.stream.handler = function(endpoint)
+lnn.stream.handler = function(endpoint, cell)
 {
-    var cell = endpoint.io.recv()
-    for (; cell !== undefined; cell = endpoint.io.recv())
-    {
-        if (cell[4] != 3) // (relay cell only)
-        {
-            console.log("Got non-relay cell, dropped: ", cell[4])
-            continue
-        }
-
-        cell = lnn.onion.peel(endpoint, cell)
-        if (cell == null)
-        {
-            console.log("Got invalid cell, dropped.")
-            continue
-        }
-
-        if (!(cell.stream_id in endpoint.stream.handles))
-        {
-            console.log("Got cell outside stream, dropped: ", cell.stream_id)
-            continue
-        }
-
-        var handle = endpoint.stream.handles[cell.stream_id]
-        if (cell.cmd == "end")
-            delete endpoint.stream.handles[cell.stream_id]
-
-        handle.cell = cell
-        handle.callback(cell, endpoint)
-
-        /* handle circuit-level sendme */
-        endpoint.stream.smwindow -= 1
-        if (endpoint.stream.smwindow < 900)
-        {
-            endpoint.io.send(lnn.onion.build(endpoint, 'sendme'))
-            endpoint.stream.smwindow += 100
-        }
-
-        /* handle stream-level sendme */
-        handle.smwindow -= 1
-        if (handle.smwindow < 450)
-        {
-            cell = lnn.onion.build(endpoint, 'sendme', handle.id)
-            endpoint.io.send(cell)
-            handle.smwindow += 50
-        }
+    lnn.stream.entrancy += 1
+    if(lnn.stream.entrancy > 1) {
+	console.log("ENTRANCY BUG")
     }
+
+    if (cell[4] != 3) // (relay cell only)
+    {
+	console.log("Got non-relay cell, dropped: ", cell[4])
+	lnn.stream.entrancy -= 1
+	return
+    }
+
+    cell = lnn.onion.peel(endpoint, cell)
+    if (cell == null)
+    {
+	console.log("Got invalid cell, dropped.")
+	lnn.stream.entrancy -= 1
+	return
+    }
+
+    if (!(cell.stream_id in endpoint.stream.handles))
+    {
+	console.log("Got cell outside stream, dropped: ", cell.stream_id)
+	lnn.stream.entrancy -= 1
+	return
+    }
+
+    var handle = endpoint.stream.handles[cell.stream_id]
+    if (cell.cmd == "end")
+	delete endpoint.stream.handles[cell.stream_id]
+
+    handle.cell = cell
+    handle.callback(cell, endpoint)
+
+    /* handle circuit-level sendme */
+    endpoint.stream.smwindow -= 1
+    console.log('Update window: ', endpoint.stream.smwindow)
+    if (endpoint.stream.smwindow < 900)
+    {
+	//console.log("Circuit window is ", endpoint.stream.smwindow)
+	//console.log("Sending circuit level sendme cell now ", endpoint.io.counter)
+	endpoint.io.send(lnn.onion.build(endpoint, 'sendme'))
+	endpoint.stream.smwindow += 100
+    }
+
+    /* handle stream-level sendme */
+    handle.smwindow -= 1
+    if (handle.smwindow < 450)
+    {
+	//console.log("Stream window is ", handle.smwindow)
+	//console.log("Sending stream level sendme cell now ", endpoint.io.counter)
+	cell = lnn.onion.build(endpoint, 'sendme', handle.id)
+	endpoint.io.send(cell)
+	handle.smwindow += 50
+    }
+
+    lnn.stream.entrancy -= 1
 }
 
 lnn.stream.raw = function(endpoint, handler)

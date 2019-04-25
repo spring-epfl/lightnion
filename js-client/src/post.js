@@ -71,7 +71,6 @@ lnn.post.create2 = function(endpoint, success, error)
             var info = JSON.parse(rq.responseText)
             if (endpoint.auth != null)
             {
-                console.log("FUNNY CODE PATH, USES auth buth not set")
                 info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
             }
 
@@ -119,16 +118,12 @@ lnn.post.handshake = function(endpoint, info, success, error)
     var handshake = info['handshake']
     var normal_handler = endpoint.io.handler
 
-    var handler = function(endpoint)
+    var handler = function(endpoint, material)
     {
         endpoint.io.handler = normal_handler
-        var material = endpoint.io.recv()
-        console.log('==============')
-        console.log(material)
-        console.log('===========')
+        //var material = endpoint.io.recv()
 
         material = lnn.ntor.shake(endpoint, material.slice(7, 7+64), false)
-        console.log(material)
 
         if (material == null)
             throw "Invalid guard handshake."
@@ -213,11 +208,11 @@ lnn.post.extend = function(endpoint, descriptor, success, error)
     var extend_success = success
     var normal_handler = endpoint.io.handler
 
-    var handler = function(endpoint)
+    var handler = function(endpoint, data)
     {
         endpoint.io.handler = normal_handler
 
-        var cell = lnn.onion.peel(endpoint, endpoint.io.recv())
+        var cell = lnn.onion.peel(endpoint, data)
         if (cell == null || cell.cmd != "extended2")
         {
             if (extend_error !== undefined)
