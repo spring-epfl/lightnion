@@ -172,7 +172,7 @@ async def get_consensus():
         return cons, 200
     except Exception as e:
         logging.exception(e)
-        auart.abort(503)
+        quart.abort(503)
 
 
 @app.route(url + '/guard')

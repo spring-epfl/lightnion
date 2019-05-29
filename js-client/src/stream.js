@@ -67,7 +67,11 @@ lnn.stream.handler = function(endpoint, cell)
     handle.callback(cell, endpoint)
 
     /* handle circuit-level sendme */
-    endpoint.stream.smwindow -= 1
+
+
+    if(cell.cmd == "data") {
+        endpoint.stream.smwindow -= 1
+    }
     console.log('Update window: ', endpoint.stream.smwindow)
     if (endpoint.stream.smwindow < 900)
     {
@@ -78,7 +82,9 @@ lnn.stream.handler = function(endpoint, cell)
     }
 
     /* handle stream-level sendme */
-    handle.smwindow -= 1
+    if(cell.cmd == "data"){
+        handle.smwindow -= 1
+    }
     if (handle.smwindow < 450)
     {
 	//console.log("Stream window is ", handle.smwindow)
