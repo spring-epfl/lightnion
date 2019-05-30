@@ -7,22 +7,22 @@
     </script>
 </head>
 <body>
+    <!-- fresh circuit everytime  -->
     <form id='form' onsubmit='return perform()'>
       <input id='url' onfocus="this.value=ini" autofocus>
       <input id='curl' type='submit' value='curl' disabled>
     </form>
+
+    <!-- establish circuit seperately and then do curl requests -->
+    <form id='form2' onsubmit='return perform2()'>
+      <input id='url2' onfocus="this.value=ini" autofocus>
+      <input id='curl2' type='submit' value='curl' disabled>
+    </form>
+
+
     <pre id='log'></pre>
     <script>
         "use strict"
-
-        var channel = null
-        lnn.fast('localhost', 4990, function(endpoint)
-        {
-            if (endpoint.state != lnn.state.success)
-                return
-            channel = endpoint
-            document.getElementById('curl').disabled = false
-        })
 
         function perform()
         {
@@ -48,110 +48,63 @@
                 document.getElementById('curl').disabled = false
             }
 
-            curl('http://' + url, success)
+            var error = function(message) {
+                console.log(message)
+                document.getElementById('curl').disabled = false
+            }
+            //everytime new channel established. 
+            lnn.get_request('http://' + url, success, error)
             document.getElementById('curl').disabled = true
             return false
         }
+        
+        document.getElementById('curl').disabled = false
 
-        function curl(url, success)
+
+        ///establish single circuit
+        var channel = null
+        lnn.open('localhost', 4990, function(endpoint)
         {
-            console.log('curl', url)
-            if (url.slice(0, 7) == "http://")
-                url = url.slice(7)
-            else
-                throw 'Urls must start with http://'
+            if (endpoint.state != lnn.state.success)
+                return
+            channel = endpoint
+            document.getElementById('curl2').disabled = false
+        })
 
-            var path = "/" + url.split("/").slice(1).join("/")
-            var host = null
-            if (url.match("/") == null)
-                host = url
-            else
-                host = url.split("/", 1)[0]
-
-            var port = "80"
-            if (host.match(":") != null)
-                port = host.split(":", 2)[1]
-
-            var payload = [
-                ["GET", path, "HTTP/1.1"].join(" "),
-                ["Host:", host].join(" "),
-                ["User-Agent:", agent].join(" "),
-                ["Accept:", "*/*"].join(" ")].join("\r\n") + "\r\n\r\n"
-
-            var data = ''
-            var length = null
-            var rawlen = 0
-            var headers = null
-            var handler = function(request)
+        function  perform2() {
+            var url = document.getElementById('url2').value
+            var success = function(request)
             {
-                if (request.state != lnn.state.pending)
-                    return
+                console.log(request.headers)
+                document.getElementById('log').innerText = request.data
 
-                var payload = request.recv()
-                rawlen += payload.length
-                data += lnn.enc.utf8(payload)
-                if (length == null)
+                switch(url)
                 {
-                    if (data.match('\r\n\r\n'))
-                    {
-                        headers = data.split('\r\n\r\n')[0]
-                        var len = headers.match('Content-Length: ([^\r]*)')
-                        length = parseInt(len[1])
-                    }
+                    case ini:
+                        url = 'api.ipify.org'
+                        break
+                    case 'api.ipify.org':
+                        url = 'wttr.in/?0T'
+                        break
+                    case 'wttr.in/?0T':
+                        url = ''
+                        break
                 }
-
-                if (rawlen < headers.length + length)
-                    return
-
-                success({headers: headers,
-                    data: data.slice(headers.length + 4)})
-                success = function(request) { }
+                document.getElementById('url2').value = url
+                document.getElementById('curl2').disabled = false
             }
 
-            host = host.split(':')[0]
-            lnn.stream.tcp(channel, host, port, handler).send(payload)
+            var error = function(message) {
+                console.log(message)
+                document.getElementById('curl2').disabled = false
+            }
+
+            //send HTTP get request on established channel.
+            lnn.get_request_on_channel(channel,'http://' + url, success, error)
+            document.getElementById('curl2').disabled = true
+            return false
         }
 
-        var agents = [
-            "curl/7.61.0",
-            "curl/7.60.0",
-            "curl/7.59.0",
-            "curl/7.58.0",
-            "curl/7.57.0",
-            "curl/7.56.1",
-            "curl/7.56.0",
-            "curl/7.55.1",
-            "curl/7.55.0",
-            "curl/7.54.1",
-            "curl/7.54.0",
-            "curl/7.53.1",
-            "curl/7.53.0",
-            "curl/7.52.1",
-            "curl/7.52.0",
-            "curl/7.51.0",
-            "curl/7.50.3",
-            "curl/7.50.2",
-            "curl/7.50.1",
-            "curl/7.50.0",
-            "curl/7.50.0",
-            "curl/7.49.1",
-            "curl/7.49.0",
-            "curl/7.48.0",
-            "curl/7.47.1",
-            "curl/7.47.0",
-            "curl/7.46.0",
-            "curl/7.45.0",
-            "curl/7.44.0",
-            "curl/7.43.0",
-            "curl/7.42.1",
-            "curl/7.42.0",
-            "curl/7.41.0",
-            "curl/7.40.0",
-            "curl/7.39.0",
-            "curl/7.38.0"
-        ]
-        var agent = agents[Math.floor(Math.random() * agents.length)]
-        document.getElementById('curl').disabled = true
     </script>
 </body>
 </html>
