@@ -209,6 +209,7 @@ lnn.send_req = function(endpoint,url, method, data, data_type, success,error) {
 
     if(data_type != "json" && data_type != "form") {
         error('Unsupported content type')
+        return
     }
 
     if(data_type == "json") 
@@ -278,12 +279,3 @@ lnn.http_request = function(url, method, data, data_type, success, error,tor_hos
 }
 
 
-lnn.http_request_on_channel = function(endpoint , url, method, data, data_type, success, error) 
-{   
-    if (error === undefined)
-        error = function() { }
-    if (success === undefined)
-        success = function() { }
-
-   lnn.send_req(endpoint,url, method, data, data_type, success,error)
-}

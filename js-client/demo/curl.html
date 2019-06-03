@@ -67,7 +67,7 @@
                 document.getElementById('curl').disabled = false
             }
             //everytime new channel established. 
-            lnn.http_request('http://' + url, "GET", "", "string", success, error)
+            lnn.http_request('http://' + url, "GET", "", "form", success, error)
             document.getElementById('curl').disabled = true
             return false
         }
@@ -114,7 +114,7 @@
             }
 
             //send HTTP get request on established channel.
-            lnn.http_request_on_channel(channel,'http://' + url, "GET", "", "string", success, error)
+            channel.http_request('http://' + url, "GET", "", "form", success, error)
             document.getElementById('curl2').disabled = true
             return false
         }
