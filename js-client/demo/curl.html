@@ -1,6 +1,20 @@
 <html>
 <head>
-    <script src="lightnion.bundle.js"></script>
+    <script src=".dev/nacl-fast.js"></script>
+    <script src=".dev/nacl-util.js"></script>
+    <script src=".dev/sjcl.js"></script>
+    <script src=".dev/header.js"></script>
+    <script src=".dev/endpoint.js"></script>
+    <script src=".dev/get.js"></script>
+    <script src=".dev/ntor.js"></script>
+    <script src=".dev/relay.js"></script>
+    <script src=".dev/onion.js"></script>
+    <script src=".dev/io.js"></script>
+    <script src=".dev/post.js"></script>
+    <script src=".dev/stream.js"></script>
+    <script src=".dev/util.js"></script>
+    <script src=".dev/api.js"></script>
+    <script src=".dev/export.js"></script>
     <meta charset="UTF-8">
     <script>
         var ini = 'artscene.textfiles.com/asciiart/penguin'
@@ -53,7 +67,7 @@
                 document.getElementById('curl').disabled = false
             }
             //everytime new channel established. 
-            lnn.get_request('http://' + url, success, error)
+            lnn.http_request('http://' + url, "GET", "", "string", success, error)
             document.getElementById('curl').disabled = true
             return false
         }
@@ -100,7 +114,7 @@
             }
 
             //send HTTP get request on established channel.
-            lnn.get_request_on_channel(channel,'http://' + url, success, error)
+            lnn.http_request_on_channel(channel,'http://' + url, "GET", "", "string", success, error)
             document.getElementById('curl2').disabled = true
             return false
         }

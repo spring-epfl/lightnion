@@ -1,0 +1,65 @@
+<html>
+<head>
+    <script src=".dev/nacl-fast.js"></script>
+    <script src=".dev/nacl-util.js"></script>
+    <script src=".dev/sjcl.js"></script>
+    <script src=".dev/header.js"></script>
+    <script src=".dev/endpoint.js"></script>
+    <script src=".dev/get.js"></script>
+    <script src=".dev/ntor.js"></script>
+    <script src=".dev/relay.js"></script>
+    <script src=".dev/onion.js"></script>
+    <script src=".dev/io.js"></script>
+    <script src=".dev/post.js"></script>
+    <script src=".dev/stream.js"></script>
+    <script src=".dev/util.js"></script>
+    <script src=".dev/api.js"></script>
+    <script src=".dev/export.js"></script>
+    <meta charset="UTF-8">
+    <script>
+        var ini = 'postman-echo.com/get'
+    </script>
+</head>
+<body>
+    <form id='form' onsubmit='return perform()'>
+      URL: <input id='url' onfocus="this.value=ini" autofocus> <br>
+      Method(GET/POST): <input id='method' value="GET"> <br>
+      Data: <input id='data'> <br>
+      Content-type(form/json): <input id='data_type' value="form"> <br>
+      <input id='send' type='submit' value='send' disabled>
+    </form>
+
+    
+
+    <pre id='log'></pre>
+    <script>
+        "use strict"
+
+        function perform()
+        {
+            var url = document.getElementById('url').value
+            var method = document.getElementById('method').value
+            var data = document.getElementById('data').value
+            var data_type = document.getElementById('data_type').value
+            var success = function(request)
+            {
+                console.log(request.headers)
+                document.getElementById('log').innerText = request.data
+
+                document.getElementById('send').disabled = false
+            }
+
+            var error = function(message) {
+                console.log(message)
+                document.getElementById('send').disabled = false
+            }
+            //everytime new channel established. 
+            lnn.http_request('http://' + url, method, data, data_type, success, error)
+            document.getElementById('send').disabled = true
+            return false
+        }
+        
+        document.getElementById('send').disabled = false
+    </script>
+</body>
+</html>

@@ -139,36 +139,47 @@ lnn.agents = [
     "curl/7.38.0"
 ]
 
-lnn.send_req = function(endpoint,url,success,error) {
+lnn.send_req = function(endpoint,url, method, data, data_type, success,error) {
     var agent = lnn.agents[Math.floor(Math.random() * lnn.agents.length)]
 
-    var data = ''
+    var data_recv = ''
     var length = null
     var rawlen = 0
     var headers = null
     var handler = function(request) 
     {
+        if(request.state == lnn.state.success) {
+            error('Connection closed')
+            return
+        }
+
         if (request.state != lnn.state.pending)
             return
 
         var payload = request.recv()
         rawlen += payload.length
-        data += lnn.enc.utf8(payload)
+        data_recv += lnn.enc.utf8(payload)
+        
+        //console.log("***** " + data_recv)
+        
         if (length == null)
         {
-            if (data.match('\r\n\r\n'))
+            if (data_recv.match('\r\n\r\n'))
             {
-                headers = data.split('\r\n\r\n')[0]
+                headers = data_recv.split('\r\n\r\n')[0]
                 var len = headers.match('Content-Length: ([^\r]*)')
                 length = parseInt(len[1])
             }
         }
-
-        if (rawlen < headers.length + length)
+        
+        if (headers == null || length == null || rawlen < headers.length + length)
             return
 
+        //console.log(headers)
+        //console.log(data_recv)
+
         success({headers: headers,
-            data: data.slice(headers.length + 4)})
+            data: data_recv.slice(headers.length + 4)})
         success = function(request) { }
     }
 
@@ -191,17 +202,52 @@ lnn.send_req = function(endpoint,url,success,error) {
     if (host.match(":") != null)
         port = host.split(":", 2)[1]
 
+    if(method != "GET" && method != "POST") {
+        error ('Unsupported method')
+        return
+    }
+
+    if(data_type != "json" && data_type != "form") {
+        error('Unsupported content type')
+    }
+
+    if(data_type == "json") 
+        data_type = "application/json"
+    else
+        data_type = "application/x-www-form-urlencoded"
+    
+    if(method == "GET" && data.length > 0) {
+        data = "?" + data
+        path += data
+        path = encodeURI(path)
+    }
+    else if(data_type == "application/x-www-form-urlencoded"){
+        data = encodeURI(data)
+    }
+
     var payload = [
-        ["GET", path, "HTTP/1.1"].join(" "),
+        [method, path, "HTTP/1.1"].join(" "),
         ["Host:", host].join(" "),
         ["User-Agent:", agent].join(" "),
-        ["Accept:", "*/*"].join(" ")].join("\r\n") + "\r\n\r\n"
+        ["Accept:", "*/*"].join(" ")]
+
+    if(method == "POST") {
+        payload.push(["Content-Length:",data.length].join(" "))
+        payload.push(["Content-Type:",data_type].join(" "))
+        payload = payload.join("\r\n") + "\r\n\r\n" + data + "\r\n"
+    } 
+    else{
+        payload = payload.join("\r\n") + "\r\n\r\n"
+    }
+
+
+    console.log(payload)
 
     host = host.split(':')[0]
     lnn.stream.tcp(endpoint, host, port, handler).send(payload)
 }
 
-lnn.get_request = function(url, success, error,tor_host,tor_port) 
+lnn.http_request = function(url, method, data, data_type, success, error,tor_host,tor_port) 
 {   
     if(tor_host === undefined) 
         tor_host = 'localhost'
@@ -221,7 +267,7 @@ lnn.get_request = function(url, success, error,tor_host,tor_port)
                 return
             }
             
-            lnn.send_req(endpoint,url,success,error)
+            lnn.send_req(endpoint,url, method, data, data_type,success,error)
 
         }
         ,function() 
@@ -232,12 +278,12 @@ lnn.get_request = function(url, success, error,tor_host,tor_port)
 }
 
 
-lnn.get_request_on_channel = function(endpoint ,url, success, error) 
+lnn.http_request_on_channel = function(endpoint , url, method, data, data_type, success, error) 
 {   
     if (error === undefined)
         error = function() { }
     if (success === undefined)
         success = function() { }
 
-   lnn.send_req(endpoint,url,success,error)
+   lnn.send_req(endpoint,url, method, data, data_type, success,error)
 }
