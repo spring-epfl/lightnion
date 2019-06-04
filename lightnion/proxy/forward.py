@@ -72,7 +72,7 @@ class clerk():
     def prepare(self):
         guard = self.get_guard()
 
-        self.link = lnn.link.Link(guard)
+        self.link = lnn.proxy.link.Link(guard)
         self.channel_manager = lnn.proxy.jobs.ChannelManager()
         self.websocket_manager = lnn.proxy.jobs.WebsocketManager()
 
