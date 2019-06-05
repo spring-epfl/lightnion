@@ -171,6 +171,12 @@ lnn.endpoint = function(host, port)
                 success = function() { }
 
            lnn.send_req(endpoint,url, method, data, data_type, success,error)
+        },
+
+        /*destroy the circuit*/
+        close: function(success,error)
+        {
+            lnn.post.close(endpoint,success,error)
         }
     }
 

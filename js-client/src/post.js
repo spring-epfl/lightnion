@@ -241,3 +241,25 @@ lnn.post.extend = function(endpoint, descriptor, success, error)
     endpoint.io.handler = handler
     endpoint.io.send(cell)
 }
+
+
+lnn.post.close = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 202)
+        {
+            if (success !== undefined)
+                success("Circuit closed")
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error("Error in closing circuit")
+        }
+    }
+
+    rq.open("DELETE", endpoint.url, true)
+    rq.send()
+}
+

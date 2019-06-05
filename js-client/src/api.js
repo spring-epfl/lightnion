@@ -41,7 +41,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
         guard: function(endpoint)
         {
             endpoint.state = lnn.state.guarded
-            success(endpoint)
+            // success(endpoint)
 
             lnn.post.create2(endpoint, cb.startWebSocket, error)
         },
@@ -53,7 +53,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
                 var state = endpoint.state
 
                 endpoint.state = lnn.state.pending
-                success(endpoint)
+                // success(endpoint)
                 endpoint.state = state
             }, error)
             endpoint.io.start()
@@ -64,7 +64,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
         {
 	    console.log('called create cb')
             endpoint.state = lnn.state.created
-            success(endpoint)
+            // success(endpoint)
 
             lnn.post.extend(endpoint, endpoint.path[0], cb.extend, error)
         },
@@ -72,7 +72,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
         {
 	    console.log('called extend cb')
             endpoint.state = lnn.state.extpath
-            success(endpoint)
+            // success(endpoint)
 
             lnn.post.extend(endpoint, endpoint.path[1], cb.success, error)
         },
@@ -86,7 +86,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
     }
 
     endpoint.state = lnn.state.started
-    success(endpoint)
+    // success(endpoint)
 
     // fast channel: one-request channel creation (no guard pinning)
     if (endpoint.fast)
@@ -177,6 +177,8 @@ lnn.send_req = function(endpoint,url, method, data, data_type, success,error) {
 
         //console.log(headers)
         //console.log(data_recv)
+        request.close()
+        console.log("Stream closed")
 
         success({headers: headers,
             data: data_recv.slice(headers.length + 4)})
@@ -268,7 +270,15 @@ lnn.http_request = function(url, method, data, data_type, success, error,tor_hos
                 return
             }
             
-            lnn.send_req(endpoint,url, method, data, data_type,success,error)
+            lnn.send_req(endpoint,url, method, data, data_type,function(request) {
+                //close circuit here.
+                endpoint.close(function(success_msg) {console.log(success_msg)})
+                success(request)
+            },function(message) {
+                //close circuit here
+                endpoint.close(function(success_msg) {console.log(success_msg)})
+                error(message)
+            })
 
         }
         ,function() 

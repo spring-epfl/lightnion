@@ -295,6 +295,13 @@ lnn.stream.tcp = function(endpoint, host, port, handler)
             request.data = new Uint8Array(0)
             return data
         },
+        close: function()
+        {
+            var data = new Uint8Array(1)
+            data[0] = 6 //reason  done.
+            var cell = lnn.onion.build(request.endpoint,"end",request.id,data)
+            endpoint.io.send(cell)
+        },
         state: lnn.state.started,
         packagewindow: null,
         deliverywindow: null,
@@ -302,10 +309,13 @@ lnn.stream.tcp = function(endpoint, host, port, handler)
         endpoint: endpoint,
         callback: function(cell)
         {
+            console.log(cell.cmd)
             if (cell.cmd == "connected")
                 request.state = lnn.state.created
-            if (cell.cmd == "end")
+            if (cell.cmd == "end"){
+                console.log(cell)
                 request.state = lnn.state.success
+            }
             if (cell.cmd == "data")
             {
                 var data = request.data
