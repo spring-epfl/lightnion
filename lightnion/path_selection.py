@@ -173,6 +173,9 @@ def keep_exit_with_descr(descr, router, guard):
     if 'BadExit' in router['flags']:
         return False, None
 
+    if router['digest'] not in descr:
+        return False, None
+
     nhop = descr[router['digest']]
 
     if router['digest'] != nhop['digest']:
@@ -322,6 +325,9 @@ def keep_guard_with_descr(descr, router, testing):
     if 'V2Dir' not in flags:
         return False, None
 
+    if router['digest'] not in descr:
+        return False, None
+
     nhop = descr[router['digest']]
 
     if router['digest'] != nhop['digest']:
@@ -413,6 +419,9 @@ def keep_middle_with_descr(descr, router, exit_node, guard, testing):
        :param guard: the previously chosen guard
        :return: if the router can be kept, the updated state and the descriptor"""
     if not obey_minimal_constraint(router, exit_node, guard, testing=testing):
+        return False, None
+
+    if router['digest'] not in descr:
         return False, None
 
     nhop = descr[router['digest']]
