@@ -140,7 +140,7 @@ class ChannelManager:
         self.maintoken = self._gen_main_token(rnd_gen)
 
 
-    def create_channel(self, ntor, consensus, descriptors):
+    def create_channel(self,  consensus, descriptors):
         """
         Create a new channel.
         :param ntor: First part of the ntor handshake provided by the client.
@@ -156,7 +156,7 @@ class ChannelManager:
         if self.link is None:
             raise LinkNotInitializedException()
 
-        ntor_bin = base64.b64decode(ntor)
+        #ntor_bin = base64.b64decode(ntor)
 
         (middle, exit) = lnn.path_selection.select_end_path_from_consensus(consensus, descriptors, self.link.guard)
         logging.warning('Middle {}'.format(middle['router']['nickname']))
@@ -165,12 +165,12 @@ class ChannelManager:
         cid = self.link.gen_cid()
         token = self.gen_token_from_cid(cid)
 
-        cell = lnn.create.ntor_raw2(cid, ntor_bin)
-        cell = base64.b64encode(cell).decode('utf-8')
+        #cell = lnn.create.ntor_raw2(cid, ntor_bin)
+        #cell = base64.b64encode(cell).decode('utf-8')
 
         self.channels[cid] = Channel(token, cid)
 
-        response = {'id': token, 'path': [middle, exit], 'handshake': cell}
+        response = {'id': token, 'path': [middle, exit], 'guard': self.link.guard}
 
         logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
         return response

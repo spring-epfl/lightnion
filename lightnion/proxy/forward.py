@@ -195,11 +195,11 @@ async def create_channel():
     Create a channel.
     """
     payload = await quart.request.get_json()
-    if not payload or not 'ntor' in payload:
-        quart.abort(400)
+    #if not payload or not 'ntor' in payload:
+    #    quart.abort(400)
 
     logging.info('Create new channel.')
-    ntor = payload['ntor']
+    #ntor = payload['ntor']
 
     auth = None
     if 'auth' in payload:
@@ -211,12 +211,12 @@ async def create_channel():
 
     try:
         #data = app.clerk.create.perform(data)
-        ntor_res = app.clerk.channel_manager.create_channel(ntor, app.clerk.consensus, app.clerk.descriptors)
+        ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors)
         if auth is not None:
             # TODO the proxy pack the ntor key in a tor cell, this can be done client side.
-            ntor_res = app.clerk.auth.perform(auth, ntor_res)
+            ckt_info = app.clerk.auth.perform(auth,ckt_info)
 
-        response = quart.jsonify(ntor_res)
+        response = quart.jsonify(ckt_info)
         return response, 201 # Created
 
     except Exception as e:

@@ -61,7 +61,7 @@ lnn.post.create = function(endpoint, success, error)
 }
 
 
-lnn.post.create2 = function(endpoint, success, error)
+lnn.post.circuit_info = function(endpoint, success, error)
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -81,10 +81,6 @@ lnn.post.create2 = function(endpoint, success, error)
             if (endpoint.fast)
             {
                 endpoint.guard = info["guard"]
-                endpoint.material.identity = lnn.dec.base64(
-                    info["guard"].router.identity + "=")
-                endpoint.material.onionkey = lnn.dec.base64(
-                    info["guard"]["ntor-onion-key"])
             }
             if (success !== undefined)
                 success(endpoint, info)
@@ -95,13 +91,14 @@ lnn.post.create2 = function(endpoint, success, error)
         }
     }
 
-    var payload = null
+    var payload = {}
+    /**
     if (endpoint.fast)
         payload = lnn.ntor.fast(endpoint)
     else
         payload = lnn.ntor.hand(endpoint)
 
-    payload = {ntor: payload}
+    payload = {ntor: payload}*/
     if (endpoint.auth != null)
     {
         payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)
@@ -115,7 +112,7 @@ lnn.post.create2 = function(endpoint, success, error)
 
 lnn.post.handshake = function(endpoint, info, success, error)
 {
-    var handshake = info['handshake']
+    //var handshake = info['handshake']
     var normal_handler = endpoint.io.handler
 
     var handler = function(endpoint, material)
@@ -140,7 +137,21 @@ lnn.post.handshake = function(endpoint, info, success, error)
     }
 
     endpoint.io.handler = handler
-    endpoint.io.send(lnn.dec.base64(handshake))
+    //console.log(lnn.dec.base64(handshake))
+    var handshake = new Uint8Array(lnn.relay.full_len)
+    var payload = lnn.ntor.hand(endpoint,endpoint.guard,false)
+
+
+    var view = new DataView(handshake.buffer)
+    view.setUint32(0, 2147483648 /* fake circuit_id */, false)
+    view.setUint8(4, 10 /* CREATE2 CELL */, false)
+    view.setUint16(5, 2 /* ntor handshake */, false)
+    view.setUint16(7, payload.length, false)
+    handshake.set(payload,9)
+
+    console.log(handshake)
+
+    endpoint.io.send(handshake)
 }
 
 lnn.post.channel = function(endpoint, success, error)

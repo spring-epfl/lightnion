@@ -43,7 +43,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
             endpoint.state = lnn.state.guarded
             // success(endpoint)
 
-            lnn.post.create2(endpoint, cb.startWebSocket, error)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error)
         },
 	startWebSocket: function(endpoint, info) {
 	    console.log('called startWebSocket cb')
@@ -90,7 +90,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
 
     // fast channel: one-request channel creation (no guard pinning)
     if (endpoint.fast)
-        lnn.post.create2(endpoint, cb.startWebSocket, error)
+        lnn.post.circuit_info(endpoint, cb.startWebSocket, error)
     else
         lnn.get.guard(endpoint, cb.guard, error)
 
@@ -261,7 +261,7 @@ lnn.http_request = function(url, method, data, data_type, success, error,tor_hos
     if (success === undefined)
         success = function() { }
 
-    
+    var closed = false
 
     var channel = lnn.open(
         tor_host,tor_port,function(endpoint)
@@ -272,11 +272,17 @@ lnn.http_request = function(url, method, data, data_type, success, error,tor_hos
             
             lnn.send_req(endpoint,url, method, data, data_type,function(request) {
                 //close circuit here.
-                endpoint.close(function(success_msg) {console.log(success_msg)})
+                if(!closed) {
+                    endpoint.close(function(success_msg) {console.log(success_msg)})
+                    closed = true
+                }
                 success(request)
             },function(message) {
                 //close circuit here
-                endpoint.close(function(success_msg) {console.log(success_msg)})
+                if(!closed) {
+                    endpoint.close(function(success_msg) {console.log(success_msg)})
+                    closed = true
+                }
                 error(message)
             })
 
