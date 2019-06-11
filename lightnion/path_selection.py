@@ -141,6 +141,10 @@ def keep_exit(router, state):
 
     # Retrieve the descriptor
     state, nhop = descriptors.download(state, cons=router, flavor='unflavored')
+    
+    if len(nhop) == 0:
+        return False, state, None
+
     nhop = nhop[0]
 
     if router['digest'] != nhop['digest']:
@@ -149,11 +153,14 @@ def keep_exit(router, state):
     if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
         return False, state, None
 
-    if 'policy' not in nhop or nhop['policy']['rules'][0]['type'] != 'accept':
+    if 'policy' not in nhop:
         return False, state, None
-
-    return True, state, nhop
-
+    
+    for rule in nhop['policy']['rules']:
+        if rule['pattern'] == "*:*" and rule['type'] == 'accept':
+            return True, state, nhop
+    
+    return False, state, None
 
 def keep_exit_with_descr(descr, router, guard):
     """Checks that the router is not a bad exit, is not down, is stable,
@@ -184,13 +191,17 @@ def keep_exit_with_descr(descr, router, guard):
     if 'identity' not in nhop or nhop['identity']['type'] != 'ed25519':
         return False, None
 
-    if 'policy' not in nhop or nhop['policy']['rules'][0]['type'] != 'accept':
+    if 'policy' not in nhop:
         return False, None
 
     if in_same_family(nhop, guard):
         return False, None
 
-    return True, nhop
+    for rule in nhop['policy']['rules']:
+        if rule['pattern'] == "*:*" and rule['type'] == 'accept':
+            return True,  nhop
+    
+    return False, None
 
 
 
@@ -287,6 +298,9 @@ def keep_guard(router, state, exit_node, testing):
 
     # Retrieve the descriptor
     state, nhop = descriptors.download(state, cons=router, flavor='unflavored')
+
+    if len(nhop) == 0:
+        return False, state, None
     nhop = nhop[0]
 
     if router['digest'] != nhop['digest']:
@@ -397,6 +411,9 @@ def keep_middle(router, state, exit_node, guard, testing):
 
     # Retrieve the descriptor
     state, nhop = descriptors.download(state, cons=router, flavor='unflavored')
+
+    if len(nhop) == 0:
+        return False, state, None
     nhop = nhop[0]
 
     if router['digest'] != nhop['digest']:
