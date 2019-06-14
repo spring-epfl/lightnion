@@ -157,9 +157,12 @@ url = lnn.proxy.base_url
 @app.route(url + '/descriptors')
 def get_descriptors():
     try:
-        return flask.jsonify(app.clerk.slave.descriptors(app.clerk.slave.consensus())), 200
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
+        app.clerk.wait_for_consensus()
+        desc = quart.jsonify(app.clerk.descriptors)
+        return desc, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
 
 @app.route(url + '/consensus')
 async def get_consensus():

@@ -6,7 +6,7 @@ from lightnion import signature
 
 if __name__ == "__main__":
     # The url of one of the TOR's authority node to download a consensus
-    url = "http://193.23.244.244/tor/status-vote/current/consensus"
+    url = "http://154.35.175.225/tor/status-vote/current/consensus"
 
     # HTTP request
     print("Request for consensus")
@@ -16,13 +16,13 @@ if __name__ == "__main__":
         raw_cons = request.text
     else:
         raise Exception("Consensus could not be downloaded")
-
+    
     # Get the keys
     print("Get the signing keys")
     path = "./tools/authority_signing_keys.json"
     if not os.path.exists(path):
         print("Download keys")
-        get_signing_keys_info(path)
+        get_signing_keys_info(path = path)
 
     with open(path, "r") as file:
         print("Get keys from disk")

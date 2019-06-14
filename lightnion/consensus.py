@@ -7,6 +7,7 @@ import os
 import urllib.request
 
 import lightnion as lnn
+from tools.keys import get_signing_keys_info
 
 
 # TODO: remove extra (useless) checks/exceptions within this file
@@ -759,9 +760,15 @@ def download(state, flavor='microdesc', cache=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    state, answer = lnn.hop.directory_query(state, endpoint)
+    state, cons = lnn.hop.directory_query(state, endpoint)
 
-    consensus, remaining = parse(answer, flavor=flavor)
+    ip = '%s:%d'%(hostname,port)
+    keys = get_signing_keys_info(ip)
+
+    if not lnn.signature.verify(cons.decode('utf-8'), keys):
+        raise RuntimeError('Consensus Verification Failed')
+
+    consensus, remaining = parse(cons, flavor=flavor)
 
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
@@ -788,15 +795,20 @@ def download_direct(hostname, port, flavor='microdesc'):
     uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
 
     res = urllib.request.urlopen(uri)
+    cons = res.read()
 
-    consensus, remaining = parse(res.read(), flavor=flavor)
+    ip = '%s:%d'%(hostname,port)
+    keys = get_signing_keys_info(ip)
 
+    if not lnn.signature.verify(cons.decode('utf-8'), keys):
+        raise RuntimeError('Consensus Verification Failed')
+
+    consensus, remaining = parse(cons, flavor=flavor)
+    
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
 
     return consensus
-
-
 
 def load(file_name, cache=True):
     """Load the consensus from a file

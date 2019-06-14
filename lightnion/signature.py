@@ -2,6 +2,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA
 import Crypto
 import binascii
+from Crypto.Util.number import *
 
 
 def verify(raw_cons, keys, minimal=0.5):
@@ -69,15 +70,16 @@ def get_hash(public_key, signature):
     :param signature: the signature
     :return: the binary digest of the signature
     """
+    signature=bytes_to_long(signature)
+    m = public_key._encrypt(signature)
+    m = long_to_bytes(m)
 
-    m = public_key.encrypt(signature, 0)[0]
     # Compute k the number of bytes of the original message
     mod_bits = Crypto.Util.number.size(public_key.n)
     k = Crypto.Util.number.ceil_div(mod_bits, 8)
     # Prepend leading 0 bytes that encrypt does not return
     m = b'\x00' * (k - len(m)) + m
     return m
-
 
 def get_binary_signature(fingerprint, signatures_and_key_digest):
     """

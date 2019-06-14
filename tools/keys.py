@@ -6,15 +6,14 @@ import json as js
 import re
 
 # Those are the IP's addresses of the 9 authorities
-ips = ['171.25.193.9:443', '86.59.21.38', '199.58.81.140', '194.109.206.212', '204.13.164.118',
-       '131.188.40.189', '128.31.0.34:9131', '193.23.244.244', '154.35.175.225']
+ips = ['171.25.193.9:443', '86.59.21.38', '199.58.81.140',  '204.13.164.118',
+       '131.188.40.189', '128.31.0.34:9131',  '154.35.175.225']
 
 
-def download_signing_keys():
+def download_signing_keys(ip):
     """Download the signing keys from the one of the authorities, parse the file and returns a dictionary
     of identity digest and keys
     :return: dictionary or none if there is a problem during the request"""
-    ip = random.choice(ips)
     url = "http://{}/tor/keys/all".format(ip)
     rq = requests.get(url)
 
@@ -59,25 +58,26 @@ def parse_signing_keys(raw):
     return keys
 
 
-def get_signing_keys_info(path="tools/authority_signing_keys.json"):
+def get_signing_keys_info(ip = random.choice(ips), path = "./tools/authority_signing_keys.json"):
     """
     Get the information of the authority router keys and save it to a json file.
 
 
     :param path: where we want to save the json
     """
-    keys_dict = download_signing_keys()
+    keys_dict = download_signing_keys(ip)
     if keys_dict is None:
         raise ValueError("Error occurred during download of the keys")
 
-    to_json(keys_dict, path)
+    return to_json(keys_dict, path)
 
 
-def get_chutney_keys_info(saving_path="tools/chutney_authority_signing_keys.json"):
+def get_chutney_keys_info(saving_path="./tools/chutney_authority_signing_keys.json"):
     """
     This function scrap the chutney's authority keys
     :param saving_path: where we want to save the json
     """
+    #change to your chutney dir. 
     rootdir = "/home/vagrant/chutney/net/nodes"
     keys = ""
     for d in os.listdir(rootdir):
@@ -87,7 +87,7 @@ def get_chutney_keys_info(saving_path="tools/chutney_authority_signing_keys.json
             with open(subdir + "/keys/authority_certificate", "r") as file2:
                 keys += file2.read()
     keys = parse_signing_keys(keys)
-    to_json(keys, saving_path)
+    return to_json(keys, saving_path)
 
 
 def to_json(keys_dict, path):
@@ -123,3 +123,5 @@ def to_json(keys_dict, path):
         file.write(info_json)
 
     print("{} keys have been saved to {}".format(len(keys_dict.keys()), path))
+
+    return info

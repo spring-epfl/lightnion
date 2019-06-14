@@ -15,3 +15,5 @@ import lightnion.hop
 import lightnion.consensus
 import lightnion.descriptors
 import lightnion.extend
+
+import lightnion.signature
