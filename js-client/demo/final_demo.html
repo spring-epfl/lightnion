@@ -1,10 +1,6 @@
 <html>
 
 <head>
-    <script src="signature.js"></script>
-    <script src="path.js"></script>
-    <script src="parser.js"></script>
-    <script src="consensusParser.js"></script>
     <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
     <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
@@ -60,7 +56,7 @@
             read_text_file("keys.json", k => {
                 let keys = JSON.parse(k)
 
-                if (signature.verify(cons_raw, keys, 0.5)) {
+                if (lnn.signature.verify(cons_raw, keys, 0.5)) {
                     document.getElementById("log").textContent = "Consensus has been verified succesfully"
                     if (from_disk) {
                         read_text_file("descriptors_2019-01-10", des => {
@@ -83,7 +79,7 @@
 
         function select_path_listener() {
 
-            let [guard, middle, exit] = path.select(cons, des, true)
+            let [guard, middle, exit] = lnn.path.select(cons, des, true)
 
             document.getElementById('log').textContent = "Exit: " + exit['router'].nickname + "\n"
             document.getElementById('log').textContent += "Guard: " + guard['router'].nickname + "\n"
@@ -91,9 +87,10 @@
         }
 
         function parser_listener() {
-            let cons_parser = new ConsensusParser(cons_raw)
-            cons = cons_parser.parse()
-            des = parser.descriptors.parse(des_raw)
+            cons = lnn.consensusParser.parse(cons_raw)
+            des = lnn.parser.descriptors.parse(des_raw)
+
+            console.log(des)
 
             //document.getElementById("log").textContent = JSON.stringify(cons, undefined, '\t')
 

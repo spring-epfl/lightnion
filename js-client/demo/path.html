@@ -1,8 +1,25 @@
 <html>
 
 <head>
-  <script src="path.js"></script>
-  <script src="lightnion.bundle.js"></script>
+  <script src=".dev/nacl-fast.js"></script>
+  <script src=".dev/nacl-util.js"></script>
+  <script src=".dev/sjcl.js"></script>
+  <script src=".dev/header.js"></script>
+  <script src=".dev/endpoint.js"></script>
+  <script src=".dev/get.js"></script>
+  <script src=".dev/ntor.js"></script>
+  <script src=".dev/relay.js"></script>
+  <script src=".dev/onion.js"></script>
+  <script src=".dev/io.js"></script>
+  <script src=".dev/post.js"></script>
+  <script src=".dev/stream.js"></script>
+  <script src=".dev/util.js"></script>
+  <script src=".dev/api.js"></script>
+  <script src=".dev/signature.js"></script>
+  <script src=".dev/consensusParser.js"></script>
+  <script src=".dev/parser.js"></script>
+  <script src=".dev/path.js"></script>
+  <script src=".dev/export.js"></script>
   <meta charset="UTF-8">
 </head>
 
@@ -17,13 +34,16 @@
         if (end.state != lnn.state.success) return
         document.getElementById('status').textContent = "Chanel opened"
 
-        lnn.get.consensus(end,
+
+        lnn.get.consensus_raw(end,
           end => {
             document.getElementById('status').textContent = "Consensus downloaded"
 
-            lnn.get.descriptors(end, end => {
+            lnn.get.descriptors_raw(end, end => {
+              cons = lnn.consensusParser.parse(end.consensus_raw)
+              des = lnn.parser.descriptors.parse(end.descriptors_raw)
 
-              let [guard, middle, exit] = path.select(end.consensus, end.descriptors, true)
+              let [guard, middle, exit] = lnn.path.select(cons,des, true)
               document.getElementById('exit').textContent = "Exit: " + exit['router'].nickname
               document.getElementById('guard').textContent = "Guard: " + guard['router'].nickname
               document.getElementById('middle').textContent = "Middle: " + middle['router'].nickname

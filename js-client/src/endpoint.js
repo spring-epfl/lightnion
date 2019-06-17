@@ -160,6 +160,8 @@ lnn.endpoint = function(host, port)
          * @default null
          */
         descriptors: null,
+        consensus_raw: null,
+        descriptors_raw: null,
 
         /*perform http get/post request*/
         

@@ -57,6 +57,9 @@ class clerk():
 
         self.consensus = None
         self.descriptors = None
+        self.consensus_raw = None
+        self.descriptors_raw = None
+
         self.timer_consensus = None
 
         self.guard_node = None
@@ -90,8 +93,12 @@ class clerk():
         cons = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
         desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
 
-        self.descriptors = desc
+        self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
+        self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons)
+
+        
         self.consensus = cons
+        self.descriptors = desc
 
         try:
             # Compute delay until retrival of the next consensus.
@@ -177,6 +184,28 @@ async def get_consensus():
         logging.exception(e)
         quart.abort(503)
 
+@app.route(url + '/descriptors-raw')
+def get_descriptors_raw():
+    try:
+        app.clerk.wait_for_consensus()
+        desc = app.clerk.descriptors_raw
+        return desc, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/consensus-raw')
+async def get_consensus_raw():
+    """
+    Retrieve consensus.
+    """
+    try:
+        app.clerk.wait_for_consensus()
+        cons = app.clerk.consensus_raw
+        return cons, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
 
 @app.route(url + '/guard')
 async def get_guard():

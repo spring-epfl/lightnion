@@ -1,39 +1,39 @@
 
-path = {}
+lnn.path = {}
 
 /**
- * This function selects a path from the parsed consensus and parsed descriptors
+ * This function selects a lnn.path from the parsed consensus and parsed descriptors
  * 
  * @param {Object} consensus a parsed consensus
  * @param {Object} descriptors parsed descriptors of the routers in the consensus
- * @param {Bool} isChutney boolean used to indicate if the path selection is done with routers from chutney
+ * @param {Bool} isChutney boolean used to indicate if the lnn.path selection is done with routers from chutney
  */
-path.select = function (consensus, descriptors, isChutney) {
+lnn.path.select = function (consensus, descriptors, isChutney) {
     if(isChutney === undefined){
-        path["isChutney"] = false
+        lnn.path["isChutney"] = false
     }else{
-        path["isChutney"] = isChutney
+        lnn.path["isChutney"] = isChutney
     }
 
     //build a hashmap of descriptor where the keys are the identity
-    path["descriptorsMap"] = {}
+    lnn.path["descriptorsMap"] = {}
 
     for (let descriptor of descriptors) {
         let identity = descriptor['router'].identity
-        path.descriptorsMap[identity] = descriptor
+        lnn.path.descriptorsMap[identity] = descriptor
     }
 
     //pre-process consensus by filering the routers that do not obey
     //the minimal constraints
-    path["consensus"] = consensus['routers'].filter(r => !path.obeyMinimalConstraints(r))
+    lnn.path["consensus"] = consensus['routers'].filter(r => !lnn.path.obeyMinimalConstraints(r))
 
-    //path selection
-    path["exit"] = path.chooseGoodExit(consensus)
-    path["guard"] = path.chooseGoodGuard(consensus)
-    path["middle"] = path.chooseGoodMiddle(consensus)
+    //lnn.path selection
+    lnn.path["exit"] = lnn.path.chooseGoodExit(consensus)
+    lnn.path["guard"] = lnn.path.chooseGoodGuard(consensus)
+    lnn.path["middle"] = lnn.path.chooseGoodMiddle(consensus)
 
-    //TODO: it should create/return a new path and not the descriptors
-    return [path.guard, path.middle, path.exit]
+    //TODO: it should create/return a new lnn.path and not the descriptors
+    return [lnn.path.guard, lnn.path.middle, lnn.path.exit]
 }
 
 /**
@@ -41,8 +41,8 @@ path.select = function (consensus, descriptors, isChutney) {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path.obeyMinimalConstraints = function (router) {
-    let des = path.descriptorsMap[router['identity']]
+lnn.path.obeyMinimalConstraints = function (router) {
+    let des = lnn.path.descriptorsMap[router['identity']]
     let flags = router['flags']
 
     if (!flags.includes("Valid")) return false
@@ -60,11 +60,11 @@ path.obeyMinimalConstraints = function (router) {
  * @param {Array} candidates the list of candidates
  */
 
-path.weightedRandomChoice = function (candidates) {
+lnn.path.weightedRandomChoice = function (candidates) {
     let total = 0
     
     for(let candidate of candidates){
-        let des =path.descriptorsMap[candidate['identity']]
+        let des =lnn.path.descriptorsMap[candidate['identity']]
         if(des !== undefined){
             total += des['bandwidth']['avg']
         }
@@ -74,7 +74,7 @@ path.weightedRandomChoice = function (candidates) {
     let upto = 0
 
     for (let router of candidates) {
-        let des = path.descriptorsMap[router['identity']]
+        let des = lnn.path.descriptorsMap[router['identity']]
 
         if(des !== undefined){
             let bandwidth = des['bandwidth']['avg']
@@ -95,9 +95,9 @@ path.weightedRandomChoice = function (candidates) {
  * @param {Object} des2 the descriptor of the second router
  * 
  */
-path.inSame16Subnet = function (des1, des2) {
+lnn.path.inSame16Subnet = function (des1, des2) {
 
-    if(path.isChutney){
+    if(lnn.path.isChutney){
         return false
     }
 
@@ -113,7 +113,7 @@ path.inSame16Subnet = function (des1, des2) {
  * @param {Object} des1 the descriptor of the first router
  * @param {Object} des2 the descriptor of the second router
  */
-path.inSameFamily = function (des1, des2) {
+lnn.path.inSameFamily = function (des1, des2) {
     if (des1['family'] != undefined && des2['family'] != undefined) {
         for (let fam of des1['family']) {
             if (des2['family'].includes(fam)) return true
@@ -124,11 +124,11 @@ path.inSameFamily = function (des1, des2) {
 }
 
 /**
- * This function choose a good exit given the TOR path selection rules
+ * This function choose a good exit given the TOR lnn.path selection rules
  */
-path.chooseGoodExit = function () {
-    let candidates = path.consensus.filter(path.isGoodExit)
-    return path.weightedRandomChoice(candidates)
+lnn.path.chooseGoodExit = function () {
+    let candidates = lnn.path.consensus.filter(lnn.path.isGoodExit)
+    return lnn.path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -136,7 +136,7 @@ path.chooseGoodExit = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path.isGoodExit = function (router) {
+lnn.path.isGoodExit = function (router) {
     let flags = router['flags']
     if (!flags.includes('Exit') || flags.includes('BadExit')) return false
     if (router['exit-policy']['type'] !== 'accept') return false
@@ -146,15 +146,15 @@ path.isGoodExit = function (router) {
 }
 
 /**
- * This function choose a good guard given the TOR path selection rules.
+ * This function choose a good guard given the TOR lnn.path selection rules.
  * 
- * Note:    this implements a lightweight version of the TOR path selection, where the selection based on the different
+ * Note:    this implements a lightweight version of the TOR lnn.path selection, where the selection based on the different
  *          sets is put aside
  * 
  */
-path.chooseGoodGuard = function () {
-    let candidates = path.consensus.filter(r => path.isGoodGuard(r))
-    return path.weightedRandomChoice(candidates)
+lnn.path.chooseGoodGuard = function () {
+    let candidates = lnn.path.consensus.filter(r => lnn.path.isGoodGuard(r))
+    return lnn.path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -162,33 +162,33 @@ path.chooseGoodGuard = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path.isGoodGuard = function (router) {
+lnn.path.isGoodGuard = function (router) {
     let flags = router['flags']
-    let des = path.descriptorsMap[router.identity]
+    let des = lnn.path.descriptorsMap[router.identity]
 
     if(des === undefined){
         return false
     }
 
-    if(des["router"]["identity"] === path.exit["router"]["identity"]){
+    if(des["router"]["identity"] === lnn.path.exit["router"]["identity"]){
         return false
     }
 
     if (!flags.includes('Guard')) return false
     if (!flags.includes('Stable')) return false
     if (!flags.includes('V2Dir')) return false
-    if (path.inSame16Subnet(des, path.exit)) return false
-    if (path.inSameFamily(des, path.exit)) return false
+    if (lnn.path.inSame16Subnet(des, lnn.path.exit)) return false
+    if (lnn.path.inSameFamily(des, lnn.path.exit)) return false
 
     return true
 }
 
 /**
- * This function choose a good middle given the TOR path selection rules
+ * This function choose a good middle given the TOR lnn.path selection rules
  */
-path.chooseGoodMiddle = function () {
-    let candidates = path.consensus.filter(r => path.isGoodMiddle(r))
-    return path.weightedRandomChoice(candidates)
+lnn.path.chooseGoodMiddle = function () {
+    let candidates = lnn.path.consensus.filter(r => lnn.path.isGoodMiddle(r))
+    return lnn.path.weightedRandomChoice(candidates)
 }
 
 /**
@@ -196,21 +196,22 @@ path.chooseGoodMiddle = function () {
  * 
  * @param {Object} router the router subpart of one of the nodes of the parsed consensus
  */
-path.isGoodMiddle = function (router) {
-    let des = path.descriptorsMap[router.identity]
+lnn.path.isGoodMiddle = function (router) {
+    let des = lnn.path.descriptorsMap[router.identity]
 
     if(des === undefined){
         return false
     }
 
-    if(des["router"]["identity"] === path.exit["router"]["identity"] ||des["router"]["identity"] === path.guard["router"]["identity"]){
+    if(des["router"]["identity"] === lnn.path.exit["router"]["identity"] ||des["router"]["identity"] === lnn.path.guard["router"]["identity"]){
         return false
     }
 
-    if (path.inSame16Subnet(des, path.guard)) return false
-    if (path.inSame16Subnet(des, path.exit)) return false
-    if (path.inSameFamily(des, path.guard)) return false
-    if (path.inSameFamily(des, path.exit)) return false
+    if (lnn.path.inSame16Subnet(des, lnn.path.guard)) return false
+    if (lnn.path.inSame16Subnet(des, lnn.path.exit)) return false
+    if (lnn.path.inSameFamily(des, lnn.path.guard)) return false
+    if (lnn.path.inSameFamily(des, lnn.path.exit)) return false
 
     return true
 }
+

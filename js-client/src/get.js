@@ -98,4 +98,43 @@ lnn.get.descriptors = function(endpoint, success, error){
     rq.send()
 }
 
+lnn.get.consensus_raw = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 200)
+        {
+            endpoint.consensus_raw =  rq.responseText
+            if (success !== undefined)
+                success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error(endpoint, rq.status)
+        }
+    }
+    rq.open("GET", endpoint.urls.consensus+"-raw", true)
+    rq.send()
+}
+
+/**
+ * Perform GET /descriptors 
+ */
+lnn.get.descriptors_raw = function(endpoint, success, error){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.descriptors_raw = rq.responseText
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.descriptors+"-raw", true)
+    rq.send()
+}
 

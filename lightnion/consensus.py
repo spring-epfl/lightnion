@@ -760,15 +760,18 @@ def download(state, flavor='microdesc', cache=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
+    ip = '%s:%d'%('127.0.0.1',7000)
+    keys = get_signing_keys_info(ip)
     state, cons = lnn.hop.directory_query(state, endpoint)
 
-    ip = '%s:%d'%(hostname,port)
-    keys = get_signing_keys_info(ip)
+    cons_original = cons
+    cons, http = consume_http(cons)
 
-    if not lnn.signature.verify(cons.decode('utf-8'), keys):
-        raise RuntimeError('Consensus Verification Failed')
+    if flavor != 'microdesc':
+        if not lnn.signature.verify(cons.decode('utf-8'), keys):
+            raise RuntimeError('Consensus Verification Failed')
 
-    consensus, remaining = parse(cons, flavor=flavor)
+    consensus, remaining = parse(cons_original, flavor=flavor)
 
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
@@ -800,8 +803,9 @@ def download_direct(hostname, port, flavor='microdesc'):
     ip = '%s:%d'%(hostname,port)
     keys = get_signing_keys_info(ip)
 
-    if not lnn.signature.verify(cons.decode('utf-8'), keys):
-        raise RuntimeError('Consensus Verification Failed')
+    if flavor != 'microdesc':
+        if not lnn.signature.verify(cons.decode('utf-8'), keys):
+            raise RuntimeError('Consensus Verification Failed')
 
     consensus, remaining = parse(cons, flavor=flavor)
     
@@ -809,6 +813,25 @@ def download_direct(hostname, port, flavor='microdesc'):
         raise RuntimeError('Unable to parse downloaded consensus!')
 
     return consensus
+
+def download_raw(hostname, port, flavor='unflavored'):
+    """Retrieve raw consensus via a direct HTTP connection.
+    :param hostname: host name of the node from which to retrieve the consensus.
+    :param port: port of the node from which to retrieve the consensus.
+    :param flavor: flavour of the consensus to retrieve.
+    """
+
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    endpoint = 'consensus-microdesc' if flavor == 'microdesc' else 'consensus'
+    uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
+
+    res = urllib.request.urlopen(uri)
+    cons = res.read()
+
+    return cons
 
 def load(file_name, cache=True):
     """Load the consensus from a file

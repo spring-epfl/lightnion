@@ -441,7 +441,36 @@ def download_direct(host, port, cons, flavor='unflavored'):
     else:
         return {d['digest']: d for d in descriptors}
 
+def download_raw(host, port, cons, flavor='unflavored'):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param cons: consensus for which nodes a descriptor need to be retrieved.
+    """
 
+    if flavor == 'microdesc':
+        endpoint = '/tor/micro/d/'
+        separator = '-'
+        digests = [router['micro-digest'] for router in cons['routers']]
+
+    else:
+        endpoint = '/tor/server/d/'
+        separator = '+'
+        digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
+
+
+    # Retrieve descriptors not in the cache
+    desc = b""
+    for query in batch_query(digests, endpoint, separator):
+        uri = 'http://%s:%d%s' % (host, port, query)
+        res = urllib.request.urlopen(uri)
+
+        if res is None or res.getcode() != 200:
+            raise RuntimeError('Unable to fetch descriptors.')
+
+        desc += res.read()
+    
+    return desc        
 def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
     logging.warning('Use DEPRECATED method descriptor.download()!')
 

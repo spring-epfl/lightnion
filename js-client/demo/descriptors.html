@@ -20,6 +20,7 @@
                 lnn.get.descriptors(endpoint, endpoint => {
                     console.log(endpoint.consensus)
                     console.log(endpoint.descriptors)
+                    document.getElementById('log').innerHTML = JSON.stringify(endpoint.descriptors, null, 2);
                 })
             })
         },
