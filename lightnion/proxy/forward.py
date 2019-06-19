@@ -59,6 +59,7 @@ class clerk():
         self.descriptors = None
         self.consensus_raw = None
         self.descriptors_raw = None
+        self.signing_keys = None
 
         self.timer_consensus = None
 
@@ -90,14 +91,16 @@ class clerk():
         refresh_tolerance_delay = 2.0
 
         # retrieve consensus and descriptors
-        cons = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+        cons,sg_keys = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
         desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
 
         self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
         self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons)
 
-        
+        print(len(cons['routers']))
+        print(len(desc))
         self.consensus = cons
+        self.signing_keys = sg_keys
         self.descriptors = desc
 
         try:
@@ -197,12 +200,25 @@ def get_descriptors_raw():
 @app.route(url + '/consensus-raw')
 async def get_consensus_raw():
     """
-    Retrieve consensus.
+    Retrieve raw consensus.
     """
     try:
         app.clerk.wait_for_consensus()
         cons = app.clerk.consensus_raw
         return cons, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/signing-keys')
+async def get_signing_keys():
+    """
+    Retrieve signing keys to verify consensus.
+    """
+    try:
+        app.clerk.wait_for_consensus()
+        keys = quart.jsonify(app.clerk.signing_keys)
+        return keys, 200
     except Exception as e:
         logging.exception(e)
         quart.abort(503)
@@ -239,11 +255,18 @@ async def create_channel():
         if app.clerk.auth is None:
             quart.abort(400)
 
-    app.clerk.wait_for_consensus()
+    select_path = False
+    if 'select_path' in payload:
+        if payload['select_path'] == "true":
+            select_path = True
+    print(select_path)
+
+    if not select_path:
+        app.clerk.wait_for_consensus()
 
     try:
         #data = app.clerk.create.perform(data)
-        ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors)
+        ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors, select_path)
         if auth is not None:
             # TODO the proxy pack the ntor key in a tor cell, this can be done client side.
             ckt_info = app.clerk.auth.perform(auth,ckt_info)

@@ -42,7 +42,8 @@ lnn.endpoint = function(host, port)
         socket: ws + "/channels",
         channels: http + "/channels",
         consensus: http + "/consensus",
-        descriptors: http + "/descriptors"
+        descriptors: http + "/descriptors",
+        signing_keys: http + "/signing-keys"
     }
 
     /**
@@ -162,6 +163,7 @@ lnn.endpoint = function(host, port)
         descriptors: null,
         consensus_raw: null,
         descriptors_raw: null,
+        signing_keys: null,
 
         /*perform http get/post request*/
         

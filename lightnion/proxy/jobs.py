@@ -140,7 +140,7 @@ class ChannelManager:
         self.maintoken = self._gen_main_token(rnd_gen)
 
 
-    def create_channel(self,  consensus, descriptors):
+    def create_channel(self,  consensus, descriptors, select_path):
         """
         Create a new channel.
         :param ntor: First part of the ntor handshake provided by the client.
@@ -158,10 +158,6 @@ class ChannelManager:
 
         #ntor_bin = base64.b64decode(ntor)
 
-        (middle, exit) = lnn.path_selection.select_end_path_from_consensus(consensus, descriptors, self.link.guard)
-        logging.warning('Middle {}'.format(middle['router']['nickname']))
-        logging.warning('Exit {}'.format(exit['router']['nickname']))
-
         cid = self.link.gen_cid()
         token = self.gen_token_from_cid(cid)
 
@@ -170,11 +166,17 @@ class ChannelManager:
 
         self.channels[cid] = Channel(token, cid)
 
-        response = {'id': token, 'path': [middle, exit], 'guard': self.link.guard}
-
-        logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
-        return response
-
+        if not select_path:
+            (middle, exit) = lnn.path_selection.select_end_path_from_consensus(consensus, descriptors, self.link.guard)
+            logging.warning('Middle {}'.format(middle['router']['nickname']))
+            logging.warning('Exit {}'.format(exit['router']['nickname']))
+            response = {'id': token, 'path': [middle, exit], 'guard': self.link.guard}
+            logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
+            return response
+        else:
+            response = {'id': token, 'guard': self.link.guard}
+            logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
+            return response
 
     def delete_channel(self, channel):
         """

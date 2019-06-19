@@ -25,8 +25,11 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
 
     //pre-process consensus by filering the routers that do not obey
     //the minimal constraints
-    lnn.path["consensus"] = consensus['routers'].filter(r => !lnn.path.obeyMinimalConstraints(r))
-
+    console.log(consensus['routers'].length)
+    console.log(descriptors.length)
+    lnn.path["consensus"] = consensus['routers'].filter(r => lnn.path.obeyMinimalConstraints(r))
+    console.log(lnn.path["consensus"].length)
+    
     //lnn.path selection
     lnn.path["exit"] = lnn.path.chooseGoodExit(consensus)
     lnn.path["guard"] = lnn.path.chooseGoodGuard(consensus)
@@ -34,6 +37,37 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
 
     //TODO: it should create/return a new lnn.path and not the descriptors
     return [lnn.path.guard, lnn.path.middle, lnn.path.exit]
+}
+
+lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney) {
+    if(isChutney === undefined){
+        lnn.path["isChutney"] = false
+    }else{
+        lnn.path["isChutney"] = isChutney
+    }
+
+    //build a hashmap of descriptor where the keys are the identity
+    lnn.path["descriptorsMap"] = {}
+
+    for (let descriptor of descriptors) {
+        let identity = descriptor['router'].identity
+        lnn.path.descriptorsMap[identity] = descriptor
+    }
+
+    //pre-process consensus by filering the routers that do not obey
+    //the minimal constraints
+    console.log(consensus['routers'].length)
+    console.log(descriptors.length)
+    lnn.path["consensus"] = consensus['routers'].filter(r => lnn.path.obeyMinimalConstraints(r))
+    console.log(lnn.path["consensus"].length)
+
+    //lnn.path selection
+    lnn.path["guard"] = guard
+    lnn.path["exit"] = lnn.path.chooseGoodExitGivenGuard()
+    lnn.path["middle"] = lnn.path.chooseGoodMiddle()
+
+    //TODO: it should create/return a new lnn.path and not the descriptors
+    return [lnn.path.middle, lnn.path.exit]
 }
 
 /**
@@ -44,11 +78,12 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
 lnn.path.obeyMinimalConstraints = function (router) {
     let des = lnn.path.descriptorsMap[router['identity']]
     let flags = router['flags']
-
+    
+    if(des === undefined) return false
     if (!flags.includes("Valid")) return false
     if (!flags.includes("Running")) return false
-    if (!router['version'].startsWith("TOR 0.3.")) return false
-    if (router['digest'] !== des['digest']) return false
+    if (!router['version'].startsWith("Tor 0.3.")) return false
+    //if (router['digest'] !== des['digest']) return false
     if (des['identity']['type'] !== 'ed25519') return false
 
     return true
@@ -131,6 +166,11 @@ lnn.path.chooseGoodExit = function () {
     return lnn.path.weightedRandomChoice(candidates)
 }
 
+lnn.path.chooseGoodExitGivenGuard = function () {
+    let candidates = lnn.path.consensus.filter(lnn.path.isGoodExitGivenGuard)
+    return lnn.path.weightedRandomChoice(candidates)
+}
+
 /**
  * This function checks if the given router is a suitable candidate to become an exit
  * 
@@ -143,6 +183,26 @@ lnn.path.isGoodExit = function (router) {
 
     return true
 
+}
+
+lnn.path.isGoodExitGivenGuard = function (router) {
+    let flags = router['flags']
+    if (!flags.includes('Exit') || flags.includes('BadExit')) return false
+    if (router['exit-policy']['type'] !== 'accept') return false
+
+    let des = lnn.path.descriptorsMap[router.identity]
+    if(des === undefined){
+        return false
+    }
+
+    if(des["router"]["identity"] === lnn.path.guard["router"]["identity"]){
+        return false
+    }
+
+    if (lnn.path.inSame16Subnet(des, lnn.path.guard)) return false
+    if (lnn.path.inSameFamily(des, lnn.path.guard)) return false
+
+    return true
 }
 
 /**

@@ -138,3 +138,21 @@ lnn.get.descriptors_raw = function(endpoint, success, error){
     rq.send()
 }
 
+lnn.get.signing_keys = function(endpoint, success, error){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.signing_keys = JSON.parse(rq.responseText)
+            console.log(endpoint.signing_keys)
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.signing_keys, true)
+    rq.send()
+}
+

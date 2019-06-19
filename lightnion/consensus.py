@@ -760,7 +760,7 @@ def download(state, flavor='microdesc', cache=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    ip = '%s:%d'%('127.0.0.1',7000)
+    ip = '%s:%d'%('127.0.0.1',7000) #for real tor, change to 9051
     keys = get_signing_keys_info(ip)
     state, cons = lnn.hop.directory_query(state, endpoint)
 
@@ -812,7 +812,7 @@ def download_direct(hostname, port, flavor='microdesc'):
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
 
-    return consensus
+    return consensus,keys
 
 def download_raw(hostname, port, flavor='unflavored'):
     """Retrieve raw consensus via a direct HTTP connection.

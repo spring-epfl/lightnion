@@ -61,8 +61,12 @@ lnn.post.create = function(endpoint, success, error)
 }
 
 
-lnn.post.circuit_info = function(endpoint, success, error)
+lnn.post.circuit_info = function(endpoint, success, error, select_path)
 {
+    if(select_path === undefined) {
+        select_path = false
+    }
+
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
     {
@@ -76,12 +80,26 @@ lnn.post.circuit_info = function(endpoint, success, error)
 
             endpoint.id = info["id"]
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
-            endpoint.path = info["path"]
+            
 
             if (endpoint.fast)
             {
                 endpoint.guard = info["guard"]
             }
+
+            if(!select_path)
+                endpoint.path = info["path"]
+            else {
+                endpoint.consensus = lnn.consensusParser.parse(endpoint.consensus_raw)
+                endpoint.descriptors = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
+                console.log(info)
+                console.log(endpoint.consensus)
+                console.log(endpoint.descriptors)
+                endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true)
+                console.log(endpoint.guard)
+                console.log(endpoint.path)
+            }
+
             if (success !== undefined)
                 success(endpoint, info)
         }
@@ -103,6 +121,7 @@ lnn.post.circuit_info = function(endpoint, success, error)
     {
         payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)
     }
+    payload["select_path"] = select_path.toString()
     payload = JSON.stringify(payload)
 
     rq.open("POST", endpoint.urls.channels, true)

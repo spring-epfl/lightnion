@@ -1,10 +1,14 @@
-lnn.fast = function(host, port, success, error, io)
+lnn.fast = function(host, port, success, error, io, select_path)
 {
-    return lnn.open(host, port, success, error, io, true)
+    if(select_path === undefined) 
+        select_path = true
+    return lnn.open(host, port, success, error, io, true, null, select_path)
 }
 
-lnn.auth = function(host, port, suffix, success, error, io)
+lnn.auth = function(host, port, suffix, success, error, io, select_path)
 {
+    if(select_path === undefined) 
+        select_path = true
     if (typeof(suffix) == "string")
     {
         suffix = suffix.replace(/-/g, "+").replace(/_/g, "/")
@@ -20,10 +24,10 @@ lnn.auth = function(host, port, suffix, success, error, io)
     return lnn.open(host, port, success, error, io, true, {
         identity: suffix.slice(0, 20),
         onionkey: suffix.slice(20),
-        ntor: nacl.box.keyPair()})
+        ntor: nacl.box.keyPair()}, select_path)
 }
 
-lnn.open = function(host, port, success, error, io, fast, auth)
+lnn.open = function(host, port, success, error, io, fast, auth, select_path)
 {
     var endpoint = lnn.endpoint(host, port)
     if (io === undefined)
@@ -34,6 +38,9 @@ lnn.open = function(host, port, success, error, io, fast, auth)
         error = function() { }
     if (success === undefined)
         success = function() { }
+    if(select_path === undefined) 
+        select_path = true
+    
     endpoint.fast = fast
     endpoint.auth = auth
 
@@ -43,7 +50,7 @@ lnn.open = function(host, port, success, error, io, fast, auth)
             endpoint.state = lnn.state.guarded
             // success(endpoint)
 
-            lnn.post.circuit_info(endpoint, cb.startWebSocket, error)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
         },
 	startWebSocket: function(endpoint, info) {
 	    console.log('called startWebSocket cb')
@@ -88,11 +95,46 @@ lnn.open = function(host, port, success, error, io, fast, auth)
     endpoint.state = lnn.state.started
     // success(endpoint)
 
-    // fast channel: one-request channel creation (no guard pinning)
-    if (endpoint.fast)
-        lnn.post.circuit_info(endpoint, cb.startWebSocket, error)
-    else
-        lnn.get.guard(endpoint, cb.guard, error)
+    if(select_path) {
+        lnn.get.consensus_raw(endpoint,function()
+        {
+            console.log("Raw consensus downloaded")
+            lnn.get.signing_keys(endpoint,function() 
+            {
+                if(!lnn.signature.verify(endpoint.consensus_raw,endpoint.signing_keys,0.5))
+                {
+                    throw "signature verification failed."
+                }
+                console.log("signature verification success")
+                lnn.get.descriptors_raw(endpoint,function()
+                {
+                    console.log("Raw descriptors downloaded")
+                    if (endpoint.fast)
+                        lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
+                    else
+                        lnn.get.guard(endpoint, cb.guard, error)
+
+                },function()
+                {
+                    throw "Failed to fetch raw descriptors"
+                })
+            },function() 
+            {
+                throw "Failed to fetch signing keys"
+            })    
+        },function()
+        {
+            throw "Failed to fetch raw consensus!"
+        })
+    } 
+    else 
+    {
+        // fast channel: one-request channel creation (no guard pinning)
+        if (endpoint.fast)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
+        else
+            lnn.get.guard(endpoint, cb.guard, error)
+    }
 
     return endpoint
 }
