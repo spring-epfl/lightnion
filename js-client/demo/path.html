@@ -39,17 +39,47 @@
         lnn.get.consensus_raw(end,
           end => {
             document.getElementById('status').textContent = "Consensus downloaded"
+            lnn.get.signing_keys(end, end => {
 
-            lnn.get.descriptors_raw(end, end => {
-              cons = lnn.consensusParser.parse(end.consensus_raw)
-              des = lnn.parser.descriptors.parse(end.descriptors_raw)
+                lnn.get.descriptors_raw(end, end => {
+                  let startv = Date.now()
+                  var verif = lnn.signature.verify(end.consensus_raw, end.signing_keys, 0.5)
+                  let endv = Date.now()
+                  console.log("Verificatio status: " + verif)
+                  console.log("Verificatio took: " + (endv - startv))
+                  
+                  let start = Date.now()
+                  cons = lnn.consensusParser.parse(end.consensus_raw)
+                  let mid = Date.now()
+                  des = lnn.parser.descriptors.parse(end.descriptors_raw)
+                  let endd = Date.now()
 
-              let [guard, middle, exit] = lnn.path.select(cons,des, true)
-              document.getElementById('exit').textContent = "Exit: " + exit['router'].nickname
-              document.getElementById('guard').textContent = "Guard: " + guard['router'].nickname
-              document.getElementById('middle').textContent = "Middle: " + middle['router'].nickname
 
-            }, error)
+                  console.log("cons. parsing took: " + (mid - start))
+                  console.log("des. parsing took: " + (endd - mid))
+
+                  let stp = Date.now()
+                  let [guard, middle, exit] = lnn.path.select(cons,des, true)
+                  let enp = Date.now()
+                  console.log("path sel took: " + (enp - stp))
+
+
+                  document.getElementById('exit').textContent = "Exit: " + exit['router'].nickname
+                  document.getElementById('guard').textContent = "Guard: " + guard['router'].nickname
+                  document.getElementById('middle').textContent = "Middle: " + middle['router'].nickname
+
+                  let stp2 = Date.now()
+                  let [ middle2, exit2] = lnn.path.select_end_path(cons,des,end.guard, true)
+                  let enp2 = Date.now()
+                  console.log(end.guard)
+                  console.log(middle2)
+                  console.log(exit2)
+                  console.log("path sel2 took: " + (enp2 - stp2))
+
+
+                }, error)
+            
+            },error)
           }, error)
       }, error)
 

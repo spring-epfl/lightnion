@@ -98,7 +98,7 @@ lnn.get.descriptors = function(endpoint, success, error){
     rq.send()
 }
 
-lnn.get.consensus_raw = function(endpoint, success, error)
+lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'unflavored')
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -114,14 +114,14 @@ lnn.get.consensus_raw = function(endpoint, success, error)
             error(endpoint, rq.status)
         }
     }
-    rq.open("GET", endpoint.urls.consensus+"-raw", true)
+    rq.open("GET", endpoint.urls.consensus+ "-raw/" + flavor, true)
     rq.send()
 }
 
 /**
  * Perform GET /descriptors 
  */
-lnn.get.descriptors_raw = function(endpoint, success, error){
+lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'unflavored'){
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function(){
         if(rq.readyState == 4 && rq.status == 200){
@@ -134,7 +134,7 @@ lnn.get.descriptors_raw = function(endpoint, success, error){
         }
     }
 
-    rq.open("GET", endpoint.urls.descriptors+"-raw", true)
+    rq.open("GET", endpoint.urls.descriptors+ "-raw/" + flavor, true)
     rq.send()
 }
 

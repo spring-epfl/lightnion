@@ -424,7 +424,7 @@ def download_direct(host, port, cons, flavor='unflavored'):
         if res is None or res.getcode() != 200:
             raise RuntimeError('Unable to fetch descriptors.')
 
-        new_batch, remaining = parse(res.read(), flavor='unflavored')
+        new_batch, remaining = parse(res.read(), flavor=flavor)
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
 
@@ -434,7 +434,7 @@ def download_direct(host, port, cons, flavor='unflavored'):
         if new_batch is not None:
             descriptors += new_batch['descriptors']
 
-        validate_descriptors(descriptors, digests)
+        validate_descriptors(descriptors, digests, flavor  = flavor)
 
     if flavor == 'microdesc':
         return {d['micro-digest']: d for d in descriptors}

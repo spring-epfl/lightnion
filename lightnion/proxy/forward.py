@@ -57,8 +57,14 @@ class clerk():
 
         self.consensus = None
         self.descriptors = None
+
         self.consensus_raw = None
         self.descriptors_raw = None
+        self.mic_consensus_raw = None
+        self.mic_descriptors_raw = None
+
+        self.consm = None
+        self.descm = None        
         self.signing_keys = None
 
         self.timer_consensus = None
@@ -93,15 +99,26 @@ class clerk():
         # retrieve consensus and descriptors
         cons,sg_keys = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
         desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
+        
+        self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
+        self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
 
         self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
-        self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons)
+        self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons, flavor='unflavored')
+
+        self.mic_consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='microdesc')
+        self.mic_descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
 
         print(len(cons['routers']))
         print(len(desc))
+        print(len(self.descm))
+
         self.consensus = cons
         self.signing_keys = sg_keys
         self.descriptors = desc
+
+        
+
 
         try:
             # Compute delay until retrival of the next consensus.
@@ -187,24 +204,31 @@ async def get_consensus():
         logging.exception(e)
         quart.abort(503)
 
-@app.route(url + '/descriptors-raw')
-def get_descriptors_raw():
+@app.route(url + '/descriptors-raw/<flavor>')
+def get_descriptors_raw(flavor):
     try:
         app.clerk.wait_for_consensus()
-        desc = app.clerk.descriptors_raw
+
+        desc = app.clerk.mic_descriptors_raw
+        if flavor == 'unflavored':
+            desc = app.clerk.descriptors_raw
+        
         return desc, 200
     except Exception as e:
         logging.exception(e)
         quart.abort(503)
 
-@app.route(url + '/consensus-raw')
-async def get_consensus_raw():
+@app.route(url + '/consensus-raw/<flavor>')
+async def get_consensus_raw(flavor):
     """
     Retrieve raw consensus.
     """
     try:
         app.clerk.wait_for_consensus()
-        cons = app.clerk.consensus_raw
+        cons = app.clerk.mic_consensus_raw
+        if flavor == 'unflavored':
+            cons =app.clerk.consensus_raw
+
         return cons, 200
     except Exception as e:
         logging.exception(e)
