@@ -5,19 +5,29 @@ lnn.parser.descriptors = {
     total_lines: -1,
     lines: undefined,
     valid_bridge_distribution: ["none", "any", "https", "email", "moat", "hyphae"],
+    
     exactly_once: ["router", "bandwidth", "published", "onion-key", "signing-key", "router-signatures"],
+    exactly_once_mic: ["onion-key","policy","ipv6-policy"],
 
-    parse: function (raw_descriptors, endpoint) {
+    parse: function (raw_descriptors, flavor = 'unflavored') {
+        if(flavor != 'unflavored' && flavor != 'microdesc') {
+            throw 'Error: Unexpected flavor'
+        }
+
         let descriptors = []
         lnn.parser.descriptors.lines = raw_descriptors.split('\n')
         lnn.parser.descriptors.line_count = 0
         lnn.parser.descriptors.total_lines = lnn.parser.descriptors.lines.length
+        lnn.parser.descriptors.flavor = flavor
+
         while (lnn.parser.descriptors.line_count < lnn.parser.descriptors.total_lines) {
             if(lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count] === ""){
                 lnn.parser.descriptors.line_count++
                 continue
             }
+            
             let descriptor = lnn.parser.descriptors.consume_one_node()
+            descriptor['flavor'] = flavor
             descriptors.push(descriptor)
         }
         return descriptors
@@ -28,6 +38,7 @@ lnn.parser.descriptors = {
  * Parse one node in the raw data file
  * @returns {object} the descriptor of the parsed node
  */
+ let tot  =0
 lnn.parser.descriptors.consume_one_node = function () {
 
     if (lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].startsWith('@type')) lnn.parser.descriptors.line_count++
@@ -36,12 +47,28 @@ lnn.parser.descriptors.consume_one_node = function () {
     }
 
     let descriptor = {}
-    descriptor = lnn.parser.descriptors.consume_router(descriptor)
-    descriptor = lnn.parser.descriptors.try_consume_identity_ed25519(descriptor)
+
+    if(lnn.parser.descriptors.flavor == 'unflavored') {
+        descriptor = lnn.parser.descriptors.consume_router(descriptor)
+        descriptor = lnn.parser.descriptors.try_consume_identity_ed25519(descriptor)
+    } else {
+        descriptor = lnn.parser.descriptors.consume_onion_key(descriptor)
+    }
 
     let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count]
 
-    while (!line.startsWith("router-signature")) {
+    
+    while (true) {
+        if(lnn.parser.descriptors.flavor == 'unflavored') {
+            if(line.startsWith("router-signature")) 
+                break
+        } else{
+            if(lnn.parser.descriptors.line_count == lnn.parser.descriptors.total_lines
+                || line.startsWith('@type') || line.startsWith('onion-key'))
+                break
+        }
+
+
         let index_sp = line.indexOf(" ")
         let first_word = (index_sp === -1) ? line : line.substring(0, index_sp)
         switch (first_word) {
@@ -129,6 +156,15 @@ lnn.parser.descriptors.consume_one_node = function () {
             case "proto":
                 descriptor = lnn.parser.consume_proto("proto", lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
                 break
+            case "p":
+                descriptor = lnn.parser.consume_exit_policy('p', lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
+                break
+            case "p6":
+                descriptor = lnn.parser.consume_exit_policy('p6', lnn.parser.descriptors.lines, lnn.parser.descriptors.line_count++, descriptor)
+                break
+            case "id":
+                descriptor = lnn.parser.descriptors.consume_id(descriptor)
+                break
             default:
                 ++lnn.parser.descriptors.line_count
                 break
@@ -137,14 +173,26 @@ lnn.parser.descriptors.consume_one_node = function () {
 
     }
 
-    descriptor = lnn.parser.descriptors.consume_router_signature(descriptor)
-    
+
     if(descriptor['ipv6-policy'] === undefined) descriptor['ipv6-policy'] = {
         "type": "reject",
         "PortList":[[1,65535]]
     }
+    if(descriptor['policy'] === undefined) {
+        descriptor['policy'] = {
+            "type": "reject",
+            "PortList":[[1,65535]]
+        }
+        //console.log(++tot)
+    }
 
-    if (!lnn.parser.descriptors.check_exactly_once(descriptor)) throw "Invalid descriptor: some mandatory fields are not present"
+
+    let fields = lnn.parser.descriptors.exactly_once_mic
+    if(lnn.parser.descriptors.flavor == 'unflavored') {
+        descriptor = lnn.parser.descriptors.consume_router_signature(descriptor)
+        fields = lnn.parser.descriptors.exactly_once
+    }
+    if (!lnn.parser.descriptors.check_exactly_once(descriptor,fields)) throw "Invalid descriptor: some mandatory fields are not present"
 
     return descriptor
 }
@@ -152,7 +200,7 @@ lnn.parser.descriptors.consume_one_node = function () {
 /**
  * Checks that all mandatory fields of the descriptor were parsed
  */
-lnn.parser.descriptors.check_exactly_once = function (descriptor) {
+lnn.parser.descriptors.check_exactly_once = function (descriptor,fields) {
     
     if(descriptor['ipv6-policy'] === undefined) descriptor
     
@@ -163,7 +211,7 @@ lnn.parser.descriptors.check_exactly_once = function (descriptor) {
         parsed = descriptor["router-sig-ed25519"] === undefined
     }
 
-    return parsed && lnn.parser.descriptors.exactly_once.every(field => descriptor[field] !== undefined)
+    return parsed && fields.every(field => descriptor[field] !== undefined)
 }
 
 /**
@@ -194,7 +242,7 @@ lnn.parser.descriptors.consume_router = function (descriptor) {
     return descriptor
 }
 /**
- * Consume try to consume the idendtity ed25519 certificate and its master key
+ * Consume try to consume the identity ed25519 certificate and its master key
  * @param {object} descriptor the currently being built decriptors object
  * @returns {Object} the updated descriptor
  */
@@ -214,6 +262,28 @@ lnn.parser.descriptors.try_consume_identity_ed25519 = function (descriptor) {
         return descriptor
     }
 
+    return descriptor
+}
+
+lnn.parser.descriptors.consume_id = function (descriptor) {
+    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(' ')
+
+    lnn.parser.check_format(3, 'id', words)
+    let type = words[1]
+
+    if(type != 'rsa1024' && type != 'ed25519') 
+        throw `Unexpected identity type  ${type}`
+
+    lnn.parser.check_reused('identity', descriptor)
+    if (!lnn.parser.is_valid_base64(lnn.parser.add_ending(words[2]))) 
+        throw `Invalid master key: the master key ${words[2]} must be in base64`
+
+    descriptor['identity'] = {
+        "type": type,
+        "master-key": words[2]
+    }
+
+    ++lnn.parser.descriptors.line_count
     return descriptor
 }
 
@@ -352,7 +422,9 @@ lnn.parser.descriptors.consume_uptime = function (descriptor) {
  * @returns {Object} the updated descriptor
  */
 lnn.parser.descriptors.consume_onion_key = function (descriptor) {
+    let words = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count].split(" ")
     lnn.parser.check_reused('onion-key', descriptor)
+    lnn.parser.check_format(1,'onion-key',words)
     return lnn.parser.descriptors.consume_key('onion-key', descriptor)
 }
 
@@ -771,6 +843,9 @@ lnn.parser.consume_exit_policy = function (field, lines, index, node) {
     if (policy !== 'accept' && policy !== 'reject') throw "Invalid policy: policy must either be accept or reject"
 
     let ranges = lnn.parser.parse_range_once(words[2])
+    
+    if(field  == 'p') field = 'policy'
+    if(field == 'p6') field = 'ipv6-policy'
 
     node[field] = {
         'type': policy,
