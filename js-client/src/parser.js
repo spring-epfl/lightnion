@@ -31,6 +31,38 @@ lnn.parser.descriptors = {
             descriptors.push(descriptor)
         }
         return descriptors
+    },
+    validate: function(descriptors,consensus,flavor = 'unflavored',fail_on_missing = false) {
+        let digest_name = (flavor == 'unflavored') ? 'digest' : 'micro-digest'
+        let digests = []
+        for (idx = 0; idx < consensus['routers'].length; idx++){ 
+            let router = consensus['routers'][idx]    
+            digests.push(router[digest_name])
+        }
+
+        let obtained = []
+        for (idx = 0; idx < descriptors.length; idx++){ 
+            obtained.push(descriptors[idx][digest_name])    
+        }
+
+        let invalid = []
+        console.log(obtained.length)
+        for (idx = 0; idx < digests.length; idx++){
+            let digest = digests[idx]
+            if (obtained.includes(digest)){
+                obtained.splice( obtained.indexOf(digest), 1 );
+            }
+            else
+                invalid.push(digest)
+        }
+        console.log(obtained.length)
+        if (obtained.length){
+            console.log(obtained.length)
+            throw `Invalid descriptors found`
+        }
+
+        if (fail_on_missing && invalid.length > 0)
+            throw `Failed to obtain some descriptors`
     }
 }
 
@@ -47,6 +79,7 @@ lnn.parser.descriptors.consume_one_node = function () {
     }
 
     let descriptor = {}
+    let startLine = lnn.parser.descriptors.line_count
 
     if(lnn.parser.descriptors.flavor == 'unflavored') {
         descriptor = lnn.parser.descriptors.consume_router(descriptor)
@@ -56,8 +89,8 @@ lnn.parser.descriptors.consume_one_node = function () {
     }
 
     let line = lnn.parser.descriptors.lines[lnn.parser.descriptors.line_count]
-
     
+
     while (true) {
         if(lnn.parser.descriptors.flavor == 'unflavored') {
             if(line.startsWith("router-signature")) 
@@ -188,12 +221,41 @@ lnn.parser.descriptors.consume_one_node = function () {
 
 
     let fields = lnn.parser.descriptors.exactly_once_mic
+    let endLine = lnn.parser.descriptors.line_count //include  till router-signature
+
     if(lnn.parser.descriptors.flavor == 'unflavored') {
+        endLine+=1 //include  till router-signature
         descriptor = lnn.parser.descriptors.consume_router_signature(descriptor)
         fields = lnn.parser.descriptors.exactly_once
     }
     if (!lnn.parser.descriptors.check_exactly_once(descriptor,fields)) throw "Invalid descriptor: some mandatory fields are not present"
 
+    let fullDesc = ""
+    for(i = startLine; i < endLine; i++) {
+        if(lnn.parser.descriptors.lines[i] == "")
+            continue
+        fullDesc += (lnn.parser.descriptors.lines[i] + '\n')
+    }
+
+    if(lnn.parser.descriptors.flavor == 'unflavored') {
+        let digest = sjcl.hash.sha1.hash(fullDesc)
+        digest = lnn.enc.base64(lnn.dec.bits(digest))
+
+        
+        while(digest.length > 0 && digest[digest.length - 1] == '=')
+            digest = digest.slice(0,-1)
+        descriptor['digest'] = digest
+    }
+    else {
+        //console.log(sjcl.codec.utf8String.toBits('hiiis'))
+        let mdigest = sjcl.hash.sha256.hash(fullDesc)
+        mdigest = lnn.dec.bits(mdigest)
+        mdigest = lnn.enc.base64(mdigest)
+        
+        while(mdigest.length > 0 && mdigest[mdigest.length - 1] == '=')
+            mdigest = mdigest.slice(0,-1)
+        descriptor['micro-digest'] = mdigest
+    }
     return descriptor
 }
  
