@@ -56,7 +56,7 @@
             read_text_file("keys.json", k => {
                 let keys = JSON.parse(k)
 
-                if (lnn.signature.verify(cons_raw, keys, 0.5)) {
+                if (lnn.signature.verify(cons_raw, keys, 0.5,'unflavored')) {
                     document.getElementById("log").textContent = "Consensus has been verified succesfully"
                     if (from_disk) {
                         read_text_file("descriptors_2019-01-10", des => {
@@ -87,8 +87,8 @@
         }
 
         function parser_listener() {
-            cons = lnn.consensusParser.parse(cons_raw)
-            des = lnn.parser.descriptors.parse(des_raw)
+            cons = lnn.consensusParser.parse(cons_raw,'unflavored')
+            des = lnn.parser.descriptors.parse(des_raw,'unflavored')
 
             console.log(des)
 

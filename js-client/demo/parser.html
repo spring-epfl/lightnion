@@ -15,7 +15,7 @@
             rawFile.onreadystatechange = function () {
                 if (rawFile.readyState === 4) {
                     if (rawFile.status === 200 || rawFile.status == 0) {
-                        let des = lnn.parser.descriptors.parse(rawFile.responseText)
+                        let des = lnn.parser.descriptors.parse(rawFile.responseText,'unflavored')
                         let json = JSON.stringify(des, null, '\t')
                         console.log(des)
                         document.getElementById("descriptor").textContent = json

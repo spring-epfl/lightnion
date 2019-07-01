@@ -6,6 +6,7 @@ lightnion.js: $(SOURCES)
 	cat $(SOURCES) > $@
 
 lightnion.min.js: lightnion.js
+	cd sjcl && sed -i 's/ADVANCED/SIMPLE/g' compress/compress_with_closure.sh
 	$(COMPRESSOR) $< > $@
 
 lightnion.bundle.js: lightnion.min.js $(BUNDLES)

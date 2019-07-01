@@ -92,9 +92,9 @@ lnn.post.circuit_info = function(endpoint, success, error, select_path)
             else {
                 endpoint.consensus = lnn.consensusParser.parse(endpoint.consensus_raw)
                 endpoint.descriptors = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
-                console.log(info)
-                console.log(endpoint.consensus)
-                console.log(endpoint.descriptors)
+                lnn.parser.descriptors.validate(endpoint.descriptors,endpoint.consensus)
+
+
                 endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true)
                 console.log(endpoint.guard)
                 console.log(endpoint.path)

@@ -3,6 +3,7 @@ lnn.path = {}
 
 /**
  * This function selects a lnn.path from the parsed consensus and parsed descriptors
+ * Flavor is 'unflavored'
  * 
  * @param {Object} consensus a parsed consensus
  * @param {Object} descriptors parsed descriptors of the routers in the consensus
@@ -39,6 +40,7 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
     return [lnn.path.guard, lnn.path.middle, lnn.path.exit]
 }
 
+//assumes microdesc flavor.
 lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney) {
     if(isChutney === undefined){
         lnn.path["isChutney"] = false
@@ -47,9 +49,18 @@ lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney) {
     }
 
     //build a hashmap of descriptor where the keys are the identity
+    let consMap = {}
+    for(let router of consensus['routers']) {
+        consMap[router['micro-digest']] = router
+    }
+
     lnn.path["descriptorsMap"] = {}
 
     for (let descriptor of descriptors) {
+        descriptor['router'] = consMap[descriptor['micro-digest']]
+        descriptor['bandwidth'] = {}
+        descriptor['bandwidth']['avg'] = descriptor['router']['w']['Bandwidth']
+
         let identity = descriptor['router'].identity
         lnn.path.descriptorsMap[identity] = descriptor
     }
@@ -83,7 +94,7 @@ lnn.path.obeyMinimalConstraints = function (router) {
     if (!flags.includes("Valid")) return false
     if (!flags.includes("Running")) return false
     if (!router['version'].startsWith("Tor 0.3.")) return false
-    //if (router['digest'] !== des['digest']) return false
+
     if (des['identity']['type'] !== 'ed25519') return false
 
     return true
@@ -179,6 +190,9 @@ lnn.path.chooseGoodExitGivenGuard = function () {
 lnn.path.isGoodExit = function (router) {
     let flags = router['flags']
     if (!flags.includes('Exit') || flags.includes('BadExit')) return false
+
+    if(router['exit-policy'] === undefined ) 
+        router['exit-policy'] = lnn.path.descriptorsMap[router.identity]['policy']
     if (router['exit-policy']['type'] !== 'accept') return false
 
     return true
@@ -188,9 +202,13 @@ lnn.path.isGoodExit = function (router) {
 lnn.path.isGoodExitGivenGuard = function (router) {
     let flags = router['flags']
     if (!flags.includes('Exit') || flags.includes('BadExit')) return false
+    let des = lnn.path.descriptorsMap[router.identity]
+    
+
+    if(router['exit-policy'] === undefined ) 
+        router['exit-policy'] = des['policy']
     if (router['exit-policy']['type'] !== 'accept') return false
 
-    let des = lnn.path.descriptorsMap[router.identity]
     if(des === undefined){
         return false
     }

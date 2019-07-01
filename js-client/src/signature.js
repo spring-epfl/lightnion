@@ -20,7 +20,7 @@ lnn.signature = {}
  * @param {Number} minimal the minimal percentage of the signatures that must be verified in order to verify the consensus
  * @returns {Boolean} the result of the verification
  */
-lnn.signature.verify = function (raw_cons, keys, minimal) {
+lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') {
     if (minimal === undefined) {
         minimal = 0.5
     } else if (minimal <= 0 || minimal > 1) {
@@ -33,7 +33,8 @@ lnn.signature.verify = function (raw_cons, keys, minimal) {
     //get the hash of the consensus
     let split_cons = raw_cons.split('directory-signature ')
     raw_cons = split_cons[0] + "directory-signature "
-    let hash = sjcl.hash.sha1.hash(raw_cons)
+
+    let hash = (flavor == 'unflavored') ? sjcl.hash.sha1.hash(raw_cons) : sjcl.hash.sha256.hash(raw_cons)
     hash = sjcl.codec.hex.fromBits(hash)
 
     // Get the signatures and the signing keys

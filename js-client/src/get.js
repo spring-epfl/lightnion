@@ -98,7 +98,7 @@ lnn.get.descriptors = function(endpoint, success, error){
     rq.send()
 }
 
-lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'unflavored')
+lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'microdesc')
 {
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function()
@@ -121,7 +121,7 @@ lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'unflavored')
 /**
  * Perform GET /descriptors 
  */
-lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'unflavored'){
+lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'microdesc'){
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function(){
         if(rq.readyState == 4 && rq.status == 200){

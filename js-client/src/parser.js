@@ -9,7 +9,7 @@ lnn.parser.descriptors = {
     exactly_once: ["router", "bandwidth", "published", "onion-key", "signing-key", "router-signatures"],
     exactly_once_mic: ["onion-key","policy","ipv6-policy"],
 
-    parse: function (raw_descriptors, flavor = 'unflavored') {
+    parse: function (raw_descriptors, flavor = 'microdesc') {
         if(flavor != 'unflavored' && flavor != 'microdesc') {
             throw 'Error: Unexpected flavor'
         }
@@ -32,7 +32,7 @@ lnn.parser.descriptors = {
         }
         return descriptors
     },
-    validate: function(descriptors,consensus,flavor = 'unflavored',fail_on_missing = false) {
+    validate: function(descriptors,consensus,flavor = 'microdesc',fail_on_missing = false) {
         let digest_name = (flavor == 'unflavored') ? 'digest' : 'micro-digest'
         let digests = []
         for (idx = 0; idx < consensus['routers'].length; idx++){ 
@@ -56,6 +56,7 @@ lnn.parser.descriptors = {
                 invalid.push(digest)
         }
         console.log(obtained.length)
+           
         if (obtained.length){
             console.log(obtained.length)
             throw `Invalid descriptors found`
@@ -241,7 +242,7 @@ lnn.parser.descriptors.consume_one_node = function () {
         let digest = sjcl.hash.sha1.hash(fullDesc)
         digest = lnn.enc.base64(lnn.dec.bits(digest))
 
-        
+
         while(digest.length > 0 && digest[digest.length - 1] == '=')
             digest = digest.slice(0,-1)
         descriptor['digest'] = digest

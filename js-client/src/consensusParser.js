@@ -1,5 +1,5 @@
 lnn.consensusParser = {} 
-lnn.consensusParser.parse = function(rawText,flavor = 'unflavored') {
+lnn.consensusParser.parse = function(rawText,flavor = 'microdesc') {
     if (typeof rawText !== 'string') throw `Error: the consensus must be given as a string`
     lnn.consensusParser.lines = rawText.split('\n')
     lnn.consensusParser.words = lnn.consensusParser.lines[0].split(' ')

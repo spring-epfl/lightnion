@@ -61,7 +61,7 @@
                 for (let i = 0; i < rep; i++) {
 
                     let start = Date.now()
-                    var verif = lnn.signature.verify(cons_raw, keys, 0.5)
+                    var verif = lnn.signature.verify(cons_raw, keys, 0.5,'unflavored')
                     let end = Date.now()
 
                     console.log(end - start)
@@ -111,7 +111,7 @@
             console.log("------------------CONSENSUS PARSER-------------------")
             for (let i = 0; i < rep; i++) {
                 let start = Date.now()
-                cons = lnn.consensusParser.parse(cons_raw)
+                cons = lnn.consensusParser.parse(cons_raw,'unflavored')
             
                 let end = Date.now()
 
@@ -121,7 +121,7 @@
             console.log("------------------Descriptor PARSER-------------------")
             for (let i = 0; i < rep; i++) {
                 let start = Date.now()
-                des = lnn.parser.descriptors.parse(des_raw)
+                des = lnn.parser.descriptors.parse(des_raw,'unflavored')
                 let end = Date.now()
 
                 console.log(end - start)
