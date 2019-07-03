@@ -61,7 +61,7 @@ lnn.post.create = function(endpoint, success, error)
 }
 
 
-lnn.post.circuit_info = function(endpoint, success, error, select_path)
+lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_ports)
 {
     if(select_path === undefined) {
         select_path = false
@@ -95,7 +95,7 @@ lnn.post.circuit_info = function(endpoint, success, error, select_path)
                 lnn.parser.descriptors.validate(endpoint.descriptors,endpoint.consensus)
 
 
-                endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true)
+                endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true, tcp_ports)
                 console.log(endpoint.guard)
                 console.log(endpoint.path)
             }

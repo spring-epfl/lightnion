@@ -27,7 +27,7 @@ lnn.auth = function(host, port, suffix, success, error, io, select_path)
         ntor: nacl.box.keyPair()}, select_path)
 }
 
-lnn.open = function(host, port, success, error, io, fast, auth, select_path)
+lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp_ports)
 {
     var endpoint = lnn.endpoint(host, port)
     if (io === undefined)
@@ -40,9 +40,12 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path)
         success = function() { }
     if(select_path === undefined) 
         select_path = true
-    
+    if(tcp_ports === undefined )
+        tcp_ports = [80,443]
+
     endpoint.fast = fast
     endpoint.auth = auth
+    endpoint.select_path = select_path
 
     var cb = {
         guard: function(endpoint)
@@ -50,7 +53,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path)
             endpoint.state = lnn.state.guarded
             // success(endpoint)
 
-            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
         },
 	startWebSocket: function(endpoint, info) {
 	    console.log('called startWebSocket cb')
@@ -110,7 +113,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path)
                 {
                     console.log("Raw descriptors downloaded")
                     if (endpoint.fast)
-                        lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
+                        lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
                     else
                         lnn.get.guard(endpoint, cb.guard, error)
 
@@ -131,7 +134,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path)
     {
         // fast channel: one-request channel creation (no guard pinning)
         if (endpoint.fast)
-            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
         else
             lnn.get.guard(endpoint, cb.guard, error)
     }

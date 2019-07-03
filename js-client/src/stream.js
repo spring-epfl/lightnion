@@ -248,44 +248,57 @@ lnn.stream.dir = function(endpoint, path, handler)
     return request
 }
 
-lnn.stream.tcp = function(endpoint, host, port, handler)
+lnn.stream.tcp = function(endPoint, host, port, handler)
 {
     var request = {
         id: null,
         data: new Uint8Array(0),
         cell: null,
-        send: function(data)
+        cache: [],
+        send: function(send_data)
         {
-            if (typeof(data) == "string")
-                data = lnn.dec.utf8(data)
+            if(send_data !== undefined){ 
+                request.cache.push(send_data)
+            }
 
-            var payload = new Uint8Array(lnn.relay.data_len)
-            while (data.length > payload.length)
-            {
-                payload.set(data.slice(0, payload.length), 0)
-                data = data.slice(payload.length)
+            if(request.state == lnn.state.started) { //not yet recvd reply for relay begin
+                return
+            }
 
+            while(request.cache.length) {
+                var data = request.cache.shift()
+                
+                if (typeof(data) == "string")
+                    data = lnn.dec.utf8(data)
+
+                var payload = new Uint8Array(lnn.relay.data_len)
+                while (data.length > payload.length)
+                {
+                    payload.set(data.slice(0, payload.length), 0)
+                    data = data.slice(payload.length)
+
+                    var cell = lnn.onion.build(
+                        request.endpoint, "data", request.id, payload)
+
+                    if(request.deliverywindow > 0) {
+                        request.endpoint.stream.send(cell,request.endpoint)
+                        request.deliverywindow -= 1 
+                    }
+                    else {
+                        request.tosend.push(cell)
+                    }
+
+                }
                 var cell = lnn.onion.build(
-                    request.endpoint, "data", request.id, payload)
+                        request.endpoint, "data", request.id, data)
 
                 if(request.deliverywindow > 0) {
-                    endpoint.stream.send(cell,endpoint)
+                    request.endpoint.stream.send(cell,request.endpoint)
                     request.deliverywindow -= 1 
                 }
                 else {
                     request.tosend.push(cell)
                 }
-
-            }
-            var cell = lnn.onion.build(
-                    request.endpoint, "data", request.id, data)
-
-            if(request.deliverywindow > 0) {
-                endpoint.stream.send(cell,endpoint)
-                request.deliverywindow -= 1 
-            }
-            else {
-                request.tosend.push(cell)
             }
 
         },
@@ -300,21 +313,50 @@ lnn.stream.tcp = function(endpoint, host, port, handler)
             var data = new Uint8Array(1)
             data[0] = 6 //reason  done.
             var cell = lnn.onion.build(request.endpoint,"end",request.id,data)
-            endpoint.io.send(cell)
+            request.endpoint.io.send(cell)
         },
         state: lnn.state.started,
         packagewindow: null,
         deliverywindow: null,
         tosend: [],
-        endpoint: endpoint,
+        endpoint: endPoint,
+        retries: 0,
         callback: function(cell)
         {
             console.log(cell.cmd)
-            if (cell.cmd == "connected")
+            if (cell.cmd == "connected"){
                 request.state = lnn.state.created
+                request.retries = 0
+                request.send()
+            }
             if (cell.cmd == "end"){
-                console.log(cell)
-                request.state = lnn.state.success
+                if(cell.data[0] == 4) { //REASON EXIT_POLICY
+                    if(request.retries == 3) { //threshold for retrying
+                        throw 'Retries limit exceeded. Cant connect to host. '
+                    }
+
+                    request.retries += 1
+                    console.log("Retrying to build circuit, retry#: " + request.retries)
+
+                    var ports = [80,443]
+                    if(!ports.includes(port))
+                        ports.push(port)
+
+                    lnn.open(
+                        request.endpoint.host,
+                        request.endpoint.port,
+                        request.success_on_open,
+                        request.error_on_open,
+                        undefined,
+                        request.endpoint.fast,
+                        request.endpoint.auth,
+                        request.endpoint.select_path,
+                        ports
+                    )
+                }
+                else {
+                    request.state = lnn.state.success
+                }
             }
             if (cell.cmd == "data")
             {
@@ -328,7 +370,7 @@ lnn.stream.tcp = function(endpoint, host, port, handler)
                 request.deliverywindow += 50
                 while(request.deliverywindow > 0 && request.tosend.length > 0) {
                     var cell = request.tosend.shift()
-                    endpoint.stream.send(cell,endpoint)
+                    request.endpoint.stream.send(cell,request.endpoint)
                     request.deliverywindow -= 1
                 }
             }
@@ -337,14 +379,38 @@ lnn.stream.tcp = function(endpoint, host, port, handler)
             handler(request)
             if (cell.cmd == "connected")
                 request.state = lnn.state.pending
+        },
+        success_on_open: function(endp) {
+            if(endp.consensus == null)
+                endp.consensus = request.endpoint.consensus
+            if(endp.descriptors == null)
+                endp.descriptors = request.endpoint.descriptors
+            if(endp.consensus_raw == null)
+                endp.consensus_raw = request.endpoint.consensus_raw
+            if(endp.descriptors_raw == null)
+                endp.descriptors_raw = request.endpoint.descriptors_raw
+            if(endp.signing_keys == null)
+                endp.signing_keys = request.endpoint.signing_keys
+
+            request.endpoint = endp
+
+            var id = request.endpoint.stream.register(request)
+            var data = lnn.relay.begin(host, port)
+            var cell = lnn.onion.build(request.endpoint, "begin", id, data)
+            request.endpoint.io.send(cell)
+
+            handler(request)   
+        },
+        error_on_open: function(error_msg) {
+            throw error_msg
         }
     }
 
-    var id = endpoint.stream.register(request)
+    var id = endPoint.stream.register(request)
 
     var data = lnn.relay.begin(host, port)
-    var cell = lnn.onion.build(endpoint, "begin", id, data)
-    endpoint.io.send(cell)
+    var cell = lnn.onion.build(endPoint, "begin", id, data)
+    endPoint.io.send(cell)
 
     handler(request)
     return request

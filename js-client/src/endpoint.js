@@ -165,6 +165,8 @@ lnn.endpoint = function(host, port)
         descriptors_raw: null,
         signing_keys: null,
 
+        select_path: false,
+
         /*perform http get/post request*/
         
         http_request: function(url, method, data, data_type, success, error) 

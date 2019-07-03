@@ -41,7 +41,7 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
 }
 
 //assumes microdesc flavor.
-lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney) {
+lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney, tcp_ports) {
     if(isChutney === undefined){
         lnn.path["isChutney"] = false
     }else{
@@ -74,7 +74,7 @@ lnn.path.select_end_path = function (consensus, descriptors,guard, isChutney) {
 
     //lnn.path selection
     lnn.path["guard"] = guard
-    lnn.path["exit"] = lnn.path.chooseGoodExitGivenGuard()
+    lnn.path["exit"] = lnn.path.chooseGoodExitGivenGuard(tcp_ports)
     lnn.path["middle"] = lnn.path.chooseGoodMiddle()
 
     //TODO: it should create/return a new lnn.path and not the descriptors
@@ -177,8 +177,9 @@ lnn.path.chooseGoodExit = function () {
     return lnn.path.weightedRandomChoice(candidates)
 }
 
-lnn.path.chooseGoodExitGivenGuard = function () {
-    let candidates = lnn.path.consensus.filter(lnn.path.isGoodExitGivenGuard)
+lnn.path.chooseGoodExitGivenGuard = function (tcp_ports) {
+    let candidates = lnn.path.consensus.filter(r => lnn.path.isGoodExitGivenGuard(r,tcp_ports))
+    console.log("Exit candidates: " + candidates.length)
     return lnn.path.weightedRandomChoice(candidates)
 }
 
@@ -199,7 +200,7 @@ lnn.path.isGoodExit = function (router) {
 
 }
 
-lnn.path.isGoodExitGivenGuard = function (router) {
+lnn.path.isGoodExitGivenGuard = function (router, tcp_ports) {
     let flags = router['flags']
     if (!flags.includes('Exit') || flags.includes('BadExit')) return false
     let des = lnn.path.descriptorsMap[router.identity]
@@ -207,7 +208,32 @@ lnn.path.isGoodExitGivenGuard = function (router) {
 
     if(router['exit-policy'] === undefined ) 
         router['exit-policy'] = des['policy']
-    if (router['exit-policy']['type'] !== 'accept') return false
+
+    let port_arr = router['exit-policy']['PortList']
+    for(i = 0; i < tcp_ports.length; i++) {
+        let found = false
+        let cur_port = tcp_ports[i]
+
+        for(j = 0; j < port_arr.length; j++) {
+            if(port_arr[j][0] == cur_port) {
+                found = true
+                break
+            }
+            else if(port_arr[j].length == 2){
+                if(port_arr[j][0] <= cur_port && cur_port <= port_arr[j][1]) {
+                    found = true
+                    break
+                }
+            }
+        }
+
+        if(router['exit-policy']['type'] == 'accept') {
+            if(!found) return false
+        } 
+        else {
+            if(found) return false
+        }
+    }
 
     if(des === undefined){
         return false

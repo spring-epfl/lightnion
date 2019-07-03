@@ -1,6 +1,25 @@
 <html>
 <head>
-    <script src="lightnion.bundle.js"></script>
+      <script src=".dev/BigInteger.min.js"></script>
+  <script src=".dev/nacl-fast.js"></script>
+  <script src=".dev/nacl-util.js"></script>
+  <script src=".dev/sjcl.js"></script>
+  <script src=".dev/header.js"></script>
+  <script src=".dev/endpoint.js"></script>
+  <script src=".dev/get.js"></script>
+  <script src=".dev/ntor.js"></script>
+  <script src=".dev/relay.js"></script>
+  <script src=".dev/onion.js"></script>
+  <script src=".dev/io.js"></script>
+  <script src=".dev/post.js"></script>
+  <script src=".dev/stream.js"></script>
+  <script src=".dev/util.js"></script>
+  <script src=".dev/api.js"></script>
+  <script src=".dev/signature.js"></script>
+  <script src=".dev/consensusParser.js"></script>
+  <script src=".dev/parser.js"></script>
+  <script src=".dev/path.js"></script>
+  <script src=".dev/export.js"></script>
     <meta charset="UTF-8">
 </head>
 <body>
@@ -11,18 +30,21 @@
         lnn.open('localhost', 4990,
         function success(endpoint)
         {
-            lnn.get.consensus(endpoint, endpoint => {
+            if (endpoint.state != lnn.state.success)
+                return
+            
+            lnn.get.descriptors_raw(endpoint, function success(endpoint) {
 
-                if (endpoint.state != lnn.state.success)
-                    return
                 document.getElementById('loaded').innerHTML = '(channel opened)'
-
-                lnn.get.descriptors(endpoint, endpoint => {
-                    console.log(endpoint.consensus)
-                    console.log(endpoint.descriptors)
-                    document.getElementById('log').innerHTML = JSON.stringify(endpoint.descriptors, null, 2);
-                })
-            })
+                document.getElementById('loaded').innerHTML = endpoint.descriptors_raw
+                
+                ct = Date.now()
+                let pdesc = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
+                console.log(Date.now() - ct)
+                
+                console.log(pdesc) 
+                 
+            },function error(){})
         },
         function error(endpoint)
         {

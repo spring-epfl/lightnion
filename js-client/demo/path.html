@@ -64,7 +64,7 @@
 
                  
                   let stp2 = Date.now()
-                  let [ middle2, exit2] = lnn.path.select_end_path(cons,des,end.guard, true)
+                  let [ middle2, exit2] = lnn.path.select_end_path(cons,des,end.guard, true,[80,443])
                   let enp2 = Date.now()
                   console.log("path sel2 took: " + (enp2 - stp2))
 

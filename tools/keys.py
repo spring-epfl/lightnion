@@ -58,13 +58,17 @@ def parse_signing_keys(raw):
     return keys
 
 
-def get_signing_keys_info(ip = random.choice(ips), path = "./tools/authority_signing_keys.json"):
+def get_signing_keys_info(ip = None, path = "./tools/authority_signing_keys.json"):
     """
     Get the information of the authority router keys and save it to a json file.
 
 
     :param path: where we want to save the json
     """
+    if ip is None:
+        ip = random.choice(ips)
+    
+
     keys_dict = download_signing_keys(ip)
     if keys_dict is None:
         raise ValueError("Error occurred during download of the keys")

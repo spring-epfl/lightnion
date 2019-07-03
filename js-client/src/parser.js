@@ -59,6 +59,7 @@ lnn.parser.descriptors = {
            
         if (obtained.length){
             console.log(obtained.length)
+                
             throw `Invalid descriptors found`
         }
 
@@ -877,11 +878,7 @@ lnn.parser.parse_range_once = function (value) {
             let low = Number(lowHigh[0])
             let high = Number(lowHigh[1])
 
-            if (low === high - 1) {
-                subvalues.push([low, high])
-            } else {
-                subvalues.push([[low, high]])
-            }
+            subvalues.push([low, high])
         } else {
             subvalues.push([Number(subvalue)])
         }
