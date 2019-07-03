@@ -332,27 +332,30 @@ lnn.stream.tcp = function(endPoint, host, port, handler)
             if (cell.cmd == "end"){
                 if(cell.data[0] == 4) { //REASON EXIT_POLICY
                     if(request.retries == 3) { //threshold for retrying
-                        throw 'Retries limit exceeded. Cant connect to host. '
+                        console.log( 'Retries limit exceeded. Cant connect to host. ' )
+                        request.state = lnn.state.success
+                        request.retries = 0
                     }
+                    else {
+                        request.retries += 1
+                        console.log("Retrying to build circuit, retry#: " + request.retries)
 
-                    request.retries += 1
-                    console.log("Retrying to build circuit, retry#: " + request.retries)
+                        var ports = [80,443]
+                        if(!ports.includes(port))
+                            ports.push(port)
 
-                    var ports = [80,443]
-                    if(!ports.includes(port))
-                        ports.push(port)
-
-                    lnn.open(
-                        request.endpoint.host,
-                        request.endpoint.port,
-                        request.success_on_open,
-                        request.error_on_open,
-                        undefined,
-                        request.endpoint.fast,
-                        request.endpoint.auth,
-                        request.endpoint.select_path,
-                        ports
-                    )
+                        lnn.open(
+                            request.endpoint.host,
+                            request.endpoint.port,
+                            request.success_on_open,
+                            request.error_on_open,
+                            undefined,
+                            request.endpoint.fast,
+                            request.endpoint.auth,
+                            request.endpoint.select_path,
+                            ports
+                        )
+                    }
                 }
                 else {
                     request.state = lnn.state.success
