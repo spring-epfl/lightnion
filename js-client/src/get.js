@@ -143,7 +143,6 @@ lnn.get.signing_keys = function(endpoint, success, error){
     rq.onreadystatechange = function(){
         if(rq.readyState == 4 && rq.status == 200){
             endpoint.signing_keys = JSON.parse(rq.responseText)
-            console.log(endpoint.signing_keys)
             
             if(success !== undefined) success(endpoint)
         }

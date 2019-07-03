@@ -26,10 +26,7 @@ lnn.path.select = function (consensus, descriptors, isChutney) {
 
     //pre-process consensus by filering the routers that do not obey
     //the minimal constraints
-    console.log(consensus['routers'].length)
-    console.log(descriptors.length)
     lnn.path["consensus"] = consensus['routers'].filter(r => lnn.path.obeyMinimalConstraints(r))
-    console.log(lnn.path["consensus"].length)
     
     //lnn.path selection
     lnn.path["exit"] = lnn.path.chooseGoodExit(consensus)

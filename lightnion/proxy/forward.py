@@ -117,15 +117,13 @@ class clerk():
         self.signing_keys = sg_keys
         self.descriptors = desc
 
-        
-
 
         try:
             # Compute delay until retrival of the next consensus.
             fresh_until = datetime.utcfromtimestamp(self.consensus['headers']['fresh-until']['stamp'])
             now = datetime.utcnow()
             delay = (fresh_until - now).total_seconds() + refresh_tolerance_delay
-
+            
             self.timer_consensus = threading.Timer(delay, clerk.retrieve_consensus, [self])
             self.timer_consensus.start()
 
@@ -283,7 +281,6 @@ async def create_channel():
     if 'select_path' in payload:
         if payload['select_path'] == "true":
             select_path = True
-    print(select_path)
 
     if not select_path:
         app.clerk.wait_for_consensus()

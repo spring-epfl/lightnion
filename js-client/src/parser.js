@@ -58,8 +58,6 @@ lnn.parser.descriptors = {
         console.log(obtained.length)
            
         if (obtained.length){
-            console.log(obtained.length)
-                
             throw `Invalid descriptors found`
         }
 
@@ -218,7 +216,6 @@ lnn.parser.descriptors.consume_one_node = function () {
             "type": "reject",
             "PortList":[[1,65535]]
         }
-        //console.log(++tot)
     }
 
 
@@ -249,7 +246,6 @@ lnn.parser.descriptors.consume_one_node = function () {
         descriptor['digest'] = digest
     }
     else {
-        //console.log(sjcl.codec.utf8String.toBits('hiiis'))
         let mdigest = sjcl.hash.sha256.hash(fullDesc)
         mdigest = lnn.dec.bits(mdigest)
         mdigest = lnn.enc.base64(mdigest)
@@ -772,10 +768,8 @@ lnn.parser.descriptors.consume_key = function (field, descriptor) {
 */
 lnn.parser.check_format = function (expected_length, expected_word, words) {
     if (words.length != expected_length) {
-        console.log(words)
         throw `wrong_format_exception: ${expected_length} fields are expected`
     } else if (words[0] !== expected_word) {
-        console.log(words)
         throw `not_equal_exception: ${expected_word} is not equal to ${words[0]}`
     }
 }

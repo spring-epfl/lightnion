@@ -156,7 +156,7 @@ lnn.post.handshake = function(endpoint, info, success, error)
     }
 
     endpoint.io.handler = handler
-    //console.log(lnn.dec.base64(handshake))
+    
     var handshake = new Uint8Array(lnn.relay.full_len)
     var payload = lnn.ntor.hand(endpoint,endpoint.guard,false)
 
@@ -168,7 +168,6 @@ lnn.post.handshake = function(endpoint, info, success, error)
     view.setUint16(7, payload.length, false)
     handshake.set(payload,9)
 
-    console.log(handshake)
 
     endpoint.io.send(handshake)
 }

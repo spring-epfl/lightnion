@@ -51,7 +51,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
         guard: function(endpoint)
         {
             endpoint.state = lnn.state.guarded
-            // success(endpoint)
+            
 
             lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
         },
@@ -63,7 +63,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
                 var state = endpoint.state
 
                 endpoint.state = lnn.state.pending
-                // success(endpoint)
+                
                 endpoint.state = state
             }, error)
             endpoint.io.start()
@@ -74,7 +74,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
         {
 	    console.log('called create cb')
             endpoint.state = lnn.state.created
-            // success(endpoint)
+            
 
             lnn.post.extend(endpoint, endpoint.path[0], cb.extend, error)
         },
@@ -82,7 +82,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
         {
 	    console.log('called extend cb')
             endpoint.state = lnn.state.extpath
-            // success(endpoint)
+            
 
             lnn.post.extend(endpoint, endpoint.path[1], cb.success, error)
         },
@@ -96,12 +96,11 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
     }
 
     endpoint.state = lnn.state.started
-    // success(endpoint)
+    
 
     if(select_path) {
         lnn.get.consensus_raw(endpoint,function()
         {
-            console.log("Raw consensus downloaded")
             lnn.get.signing_keys(endpoint,function() 
             {
                 if(!lnn.signature.verify(endpoint.consensus_raw,endpoint.signing_keys,0.5))
@@ -111,7 +110,6 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
                 console.log("signature verification success")
                 lnn.get.descriptors_raw(endpoint,function()
                 {
-                    console.log("Raw descriptors downloaded")
                     if (endpoint.fast)
                         lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
                     else
@@ -205,7 +203,6 @@ lnn.send_req = function(endpoint,url, method, data, data_type, success,error) {
         rawlen += payload.length
         data_recv += lnn.enc.utf8(payload)
         
-        //console.log("***** " + data_recv)
         
         if (length == null)
         {
@@ -220,8 +217,6 @@ lnn.send_req = function(endpoint,url, method, data, data_type, success,error) {
         if (headers == null || length == null || rawlen < headers.length + length)
             return
 
-        //console.log(headers)
-        //console.log(data_recv)
         request.close()
         console.log("Stream closed")
 
