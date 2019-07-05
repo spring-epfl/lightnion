@@ -53,6 +53,7 @@ You can then use `lightnion.js` in your website (make sure you are also running 
 ```JavaScript
 // create a channel through the proxy
 lnn.open('proxy.example.net', 4990, function(channel)
+
 {
     // Callback interface (skip intermediate states)
     if (lln.state != lln.state.success)
@@ -62,6 +63,7 @@ lnn.open('proxy.example.net', 4990, function(channel)
     var handler = function(response) {...};
 
     // Send HTTP GET request to api.ipify.org
+
     tcp = lnn.stream.tcp(channel, 'api.ipify.org', 80, handler)
     tcp.send('GET / HTTP/1.1\r\n' +
              'Host: api.ipify.org\r\n\r\n')
