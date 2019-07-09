@@ -185,10 +185,17 @@ $BROWSER http://localhost:4990/curl.html # 157l – press return several times
 # - refresh the page (you may have a new exit)
 
 # high level APIs for get and post request
-#1. create a endpoint and use it for multiple streams: 
-#	- endpoint.http_request(url, method, data,...)
+#1. create a endpoint(circuit) and use it for multiple streams: 
+#	- endpoint.http_request(url, method, data, data_type, success, error) 
+#		- method: "GET" / "POST"
+#		- data: form data('&' seperated var=value) OR json 
+#		- data_type: "json" / "form"
+#		- success/error: callbacks
+#
 #2. Create circuit seperately for one stream:
-#   - lnn.http_request(url, method, data,...)
+#   - lnn.http_request(url, method, data, data_type, success, error,host,port) 
+#		- host,port: The proxy to connect (for creating circuit)   
+#
 
 $BROWSER http://localhost:4990/get-post.html 
 # get or post request with data (form or json)

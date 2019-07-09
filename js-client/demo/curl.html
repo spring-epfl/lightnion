@@ -9,12 +9,14 @@
 <body>
     <!-- fresh circuit everytime  -->
     <form id='form' onsubmit='return perform()'>
+      One circuit per stream: 
       <input id='url' onfocus="this.value=ini" autofocus>
       <input id='curl' type='submit' value='curl' disabled>
     </form>
 
     <!-- establish circuit seperately and then do curl requests -->
     <form id='form2' onsubmit='return perform2()'>
+        Multiple streams over same circuit: 
       <input id='url2' onfocus="this.value=ini" autofocus>
       <input id='curl2' type='submit' value='curl' disabled>
     </form>

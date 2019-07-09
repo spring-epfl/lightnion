@@ -52,6 +52,20 @@ You can then use `lightnion.js` in your website (make sure you are also running 
 
 ```JavaScript
 // create a channel through the proxy
+
+/*
+Params: (host, port, success, error, io, fast, auth, select_path, tcp_ports,info)
+- Proxy host
+- Proxy port
+- success callback
+- error callback
+- socket io (default: websocket)
+- fast connection (default: false)
+- auth-enabled? (default: false)
+- select path at client? (o/w: at proxy) (default: true)
+- tcp ports to be used on streams. (default: [80,443])
+- info: optional callback for step-by-step information
+*/
 lnn.open('proxy.example.net', 4990, function(channel)
 
 {
@@ -98,7 +112,9 @@ You can now explore some of the demos:
  * [Retrieves consensus, more info](http://localhost:4990/verbose.html)
  * [Compare regular and fast key exchange](http://localhost:4990/fast.html)
  * [Webpage retrieval (curl)](http://localhost:4990/curl.html)
+ * [Get / post request](http://localhost:4990/get-post.html)
  * [Webpage via TLS](http://localhost:4990/tls.html)
+ * [Path selection at client benchmarking](http://localhost:4990/path.html)
 
 Requirements
 ------------
