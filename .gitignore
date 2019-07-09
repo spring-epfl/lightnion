@@ -7,3 +7,7 @@ local-relay-*
 ubuntu-bionic-18.04-cloudimg-console.log
 .vscode/
 .idea/*
+descriptors.json
+tools/chutney_authority_signing_keys.json
+tools/authority_signing_keys.json
+

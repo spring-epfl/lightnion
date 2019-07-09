@@ -41,7 +41,10 @@ lnn.endpoint = function(host, port)
         guard: http + "/guard",
         socket: ws + "/channels",
         channels: http + "/channels",
-        consensus: http + "/consensus"}
+        consensus: http + "/consensus",
+        descriptors: http + "/descriptors",
+        signing_keys: http + "/signing-keys"
+    }
 
     /**
      * Captures the state of a channel, returned by {@link lnn.open}.
@@ -49,12 +52,12 @@ lnn.endpoint = function(host, port)
      * @interface endpoint_t
      * @see lnn.endpoint
      *
-     * @property {lnn.state} state         channel state
+     * @property {lnn.state} state              channel state
      * @property {io.io_t} io                   io adapter in use
      * @property {endpoint_t~urls_t} urls       static API urls in use
-     * @property {stream.backend_t} stream      stream backend in use
-     * @property {onion.backward_t} backward    backward cryptographic state
-     * @property {onion.forward_t} forward      forward cryptographic state
+     * @property {backend_t} stream             stream backend in use
+     * @property {backward_t} backward          backward cryptographic state
+     * @property {forward_t} forward            forward cryptographic state
      * @property {material_t|half_t} material   shared cryptographic material
      * @property {null|half_t} auth             stores {@link lnn.auth}
      *                                          material
@@ -149,7 +152,39 @@ lnn.endpoint = function(host, port)
          * @readonly
          * @default null
          */
-        consensus: null}
+        consensus: null,
+        
+        /**
+         * Consensus obtained by {@link lnn.get.descriptors} upon request
+         * @name endpoint_t#descriptors
+         * @readonly
+         * @default null
+         */
+        descriptors: null,
+        consensus_raw: null,
+        descriptors_raw: null,
+        signing_keys: null,
+
+        select_path: false,
+
+        /*perform http get/post request*/
+        
+        http_request: function(url, method, data, data_type, success, error) 
+        {   
+            if (error === undefined)
+                error = function() { }
+            if (success === undefined)
+                success = function() { }
+
+           lnn.send_req(endpoint,url, method, data, data_type, success,error)
+        },
+
+        /*destroy the circuit*/
+        close: function(success,error)
+        {
+            lnn.post.close(endpoint,success,error)
+        }
+    }
 
     return endpoint
 }

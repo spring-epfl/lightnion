@@ -1,0 +1,35 @@
+<html>
+<head>
+      <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <pre id='loaded'>Nothing to see here!</pre>
+    <pre id='log'></pre>
+
+    <script>
+        lnn.open('localhost', 4990,
+        function success(endpoint)
+        {
+            if (endpoint.state != lnn.state.success)
+                return
+            
+            lnn.get.descriptors_raw(endpoint, function success(endpoint) {
+
+                document.getElementById('loaded').innerHTML = '(channel opened)'
+                document.getElementById('loaded').innerHTML = endpoint.descriptors_raw
+                
+                ct = Date.now()
+                let pdesc = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
+                console.log(Date.now() - ct)
+                
+            },function error(){})
+        },
+        function error(endpoint)
+        {
+            document.getElementById('loaded').innerHTML = '(unable to open)'
+        })
+
+    </script>
+</body>
+</html>

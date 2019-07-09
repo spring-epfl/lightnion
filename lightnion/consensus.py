@@ -4,7 +4,10 @@ import binascii
 import time
 import os
 
+import urllib.request
+
 import lightnion as lnn
+from tools.keys import get_signing_keys_info
 
 
 # TODO: remove extra (useless) checks/exceptions within this file
@@ -757,9 +760,18 @@ def download(state, flavor='microdesc', cache=True):
     if flavor == 'microdesc':
         endpoint += '-microdesc'
 
-    state, answer = lnn.hop.directory_query(state, endpoint)
+    ip = '%s:%d'%('127.0.0.1',7000) #for real tor, change to 9051
+    keys = get_signing_keys_info(ip)
+    state, cons = lnn.hop.directory_query(state, endpoint)
 
-    consensus, remaining = parse(answer, flavor=flavor)
+    cons_original = cons
+    cons, http = consume_http(cons)
+
+    if flavor != 'microdesc':
+        if not lnn.signature.verify(cons.decode('utf-8'), keys):
+            raise RuntimeError('Consensus Verification Failed')
+
+    consensus, remaining = parse(cons_original, flavor=flavor)
 
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
@@ -769,6 +781,57 @@ def download(state, flavor='microdesc', cache=True):
 
     return state, consensus
 
+
+def download_direct(hostname, port, flavor='microdesc'):
+    """Retrieve consensus via a direct HTTP connection.
+    :param hostname: host name of the node from which to retrieve the consensus.
+    :param port: port of the node from which to retrieve the consensus.
+    :param flavor: flavour of the consensus to retrieve.
+    :param cache: if the retrieved consensus should put in the cache.
+    """
+
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    endpoint = 'consensus-microdesc' if flavor == 'microdesc' else 'consensus'
+    uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
+
+    res = urllib.request.urlopen(uri)
+    cons = res.read()
+
+    ip = '%s:%d'%(hostname,port)
+    keys = get_signing_keys_info(ip)
+
+    if flavor != 'microdesc':
+        if not lnn.signature.verify(cons.decode('utf-8'), keys):
+            raise RuntimeError('Consensus Verification Failed')
+
+    consensus, remaining = parse(cons, flavor=flavor)
+    
+    if consensus is None or remaining is None or not len(remaining) == 0:
+        raise RuntimeError('Unable to parse downloaded consensus!')
+
+    return consensus,keys
+
+def download_raw(hostname, port, flavor='unflavored'):
+    """Retrieve raw consensus via a direct HTTP connection.
+    :param hostname: host name of the node from which to retrieve the consensus.
+    :param port: port of the node from which to retrieve the consensus.
+    :param flavor: flavour of the consensus to retrieve.
+    """
+
+    if flavor not in ['unflavored', 'microdesc']:
+        raise NotImplementedError(
+            'Consensus flavor "{}" not supported.'.format(flavor))
+
+    endpoint = 'consensus-microdesc' if flavor == 'microdesc' else 'consensus'
+    uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
+
+    res = urllib.request.urlopen(uri)
+    cons = res.read()
+
+    return cons
 
 def load(file_name, cache=True):
     """Load the consensus from a file

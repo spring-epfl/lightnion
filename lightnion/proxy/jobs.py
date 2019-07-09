@@ -1,829 +1,465 @@
 import logging
 import hashlib
-import queue
 import base64
 import time
+import websockets
+import asyncio
 
 import lightnion as lnn
-import lightnion.http
+from . import parts, base_url, fake_circuit_id
+import lightnion.path_selection
+import lightnion.utils
 
-# TODO: rewrite everything? (with less complexity? using asyncio only?)
 
-default_qsize = 128
-default_expiracy = 10
-circuit_expiracy = 60
-request_max_cells = 120
+class InvalidTokenException(Exception):
+    def __init__(self, token):
+        super().__init__('Value {} is not a valid token.'.format(token))
 
-isalive_period = 30
-refresh_timeout = 3
-refresh_batches = 8
+class CircuitDoesNotExistException(Exception):
+    def __init__(self, cid):
+        super().__init__('Circuit id {} does not exist.'.format(cid))
 
-class expired(BaseException):
+class ChannelDoesNotExistException(Exception):
+    def __init__(self, channel):
+        super().__init__('Channel {} does not exist.'.format(channel))
+
+class LinkNotInitializedException(Exception):
     pass
 
-class basic:
-    def __init__(self, clerk, qsize=default_qsize):
-        self.clerk = clerk
-        self.qsize = qsize
+class LinkAlreadyInitializedException(Exception):
+    pass
 
-        self.reset()
+def dummy_random_gen():
+    return b'Dummy random data.'
 
-    def reset(self):
-        self._in = queue.Queue(maxsize=self.qsize)
-        self._out = queue.Queue(maxsize=self.qsize)
 
-    def get(self, timeout=1):
-        try:
-            return self._out.get(timeout=timeout)
-        except queue.Empty:
-            pass
-        raise expired
+class Channel:
+    """
+    Channel
+    """
+    def __init__(self, token, cid):
+        """
+        Channel constructor.
+        :param token: Token identifyint the channel.
+        :param cid: Circuit id corresponding to the channel.
+        """
+        self.token = token
+        self.cid = cid
 
-    def put(self, job, timeout=1):
-        try:
-            return self._in.put(job, timeout=timeout)
-        except queue.Full:
-            pass
-        raise expired
+        self.to_send = asyncio.Queue(2048)
 
-    def get_job(self):
-        try:
-            return self._in.get_nowait()
-        except queue.Empty:
-            pass
-        raise expired
+        self.destroyed = asyncio.Event()
 
-    def put_job(self, job):
-        try:
-            return self._out.put_nowait(job)
-        except queue.Full:
-            pass
-        raise expired
 
-    def isfresh(self):
-        return True
+class ChannelManager:
+    """
+    Channel manager
+    """
 
-    def isalive(self):
-        return True
+    # Cryptographic tools to generate tokens.
+    crypto = parts.crypto()
 
-    def refresh(self):
-        raise NotImplementedError
+    def __init__(self):
+        """
+        Channel manager constructor
+        """
+        # channels identified by a token
+        self.channels = dict()
 
-    def perform(self, timeout=1):
-        raise NotImplementedError
-
-    def close(self):
-        pass
-
-class ordered(basic):
-    def __init__(self, clerk, expiracy=default_expiracy, qsize=default_qsize):
-        super().__init__(clerk=clerk, qsize=qsize)
-        self.pending_jobs = dict()
-        self.expiracy = expiracy
-        self.last_job = 0
-
-    def put(self, job, timeout=1):
-        self.last_job += 1
-        jid = self.last_job
-
-        date = time.time()
-        super().put((jid, job, date), timeout=timeout)
-        return jid
-
-    def get(self, job_id, timeout=1):
-        timeout = timeout / self.qsize
-
-        for _ in range(self.qsize):
-            if job_id in self.pending_jobs:
-                job, date = self.pending_jobs[job_id]
-                if time.time() - date > self.expiracy:
-                    raise expired
-
-                self.pending_jobs.pop(job_id, None)
-                return job
-
-            try:
-                jid, job, date = super().get(timeout=timeout)
-                self.pending_jobs[jid] = (job, date)
-            except expired:
-                continue
-
-            olds = []
-            for jid, (_, date) in self.pending_jobs.items():
-                if time.time() - date > self.expiracy:
-                    olds.append(jid)
-
-            for jid in olds:
-                self.pending_jobs.pop(jid, None)
-        raise expired
-
-    def get_job(self):
-        jid, job, date = super().get_job()
-
-        qsize = self._in.qsize()
-        while (False
-            or (time.time() - date > self.expiracy)
-            or (jid % 2 > 0 and qsize > self.qsize // 2)
-            or (jid % 4 > 0 and qsize > 3 * self.qsize // 4)):
-            jid, job, date = super().get_job()
-        return jid, job
-
-    def put_job(self, job, job_id):
-        date = time.time()
-        super().put_job((job_id, job, date))
-
-class producer(basic):
-    def __init__(self, clerk, qsize=default_qsize):
-        self.guard = None
-        self.child = None
-        self._path = None
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def reset(self):
-        super().reset()
-
-        logging.info('Resetting path emitter.')
-        if self.child is not None:
-            self.child.close()
-
-            for _ in range(refresh_timeout):
-                if self.child.dead:
-                    break
-                time.sleep(1)
-
-            if not self.child.dead:
-                logging.warning('Enforcing path emitter death.')
-                self.child.process.terminate()
-
-                for _ in range(refresh_timeout):
-                    if self.child.dead:
-                        break
-                    self.child.process.terminate()
-                    time.sleep(1)
-
-            if not self.child.dead:
-                raise RuntimeError('Unable to kill path emitter, abort!')
-
-            logging.debug('Previous path emitter successfully terminated.')
-
-        addr, port = self.clerk.slave_node[0], self.clerk.control_port
-        self.child = lnn.proxy.path.fetch(tor_process=False,
-            control_host=addr, control_port=port)
-        self.guard = self.child.guard
-
-        logging.debug('Path emitter successfully started.')
-
-    def isalive(self):
-        return (not self.child.dead
-            and self.guard == self.child.guard)
-
-    def isfresh(self):
-        return not (self._out.qsize() < self.qsize - 1)
-
-    def refresh(self):
-        try:
-            if self._path is not None:
-                self.put_job(self._path)
-                self._path = None
-                return True
-        except expired:
-            pass
-
-        try:
-            if self._path is None:
-                self._path = self.child.path_queue.get_nowait()
-                return True
-        except queue.Empty:
-            return False
-
-        return False
-
-    def close(self):
-        self.child.close()
-
-class slave(basic):
-    def __init__(self, clerk, qsize=default_qsize):
+        # link and main token set later
         self.link = None
-        self.circ = None
-        self.desc = None
-        self.identity = None
-        super().__init__(clerk=clerk, qsize=qsize)
+        self.maintoken = None
 
-    def get(self):
-        raise NotImplementedError
 
-    def put(self, job):
-        raise NotImplementedError
+    def _cid_from_token(self, token):
+        """
+        Extract a circuit id from a token.
+        :param token: token from which the circuit id is extracted.
+        """
+        cid = self.crypto.decrypt_token(token, self.maintoken)
 
-    def get_job(self):
-        raise NotImplementedError
+        if cid is None:
+            logging.debug('ChanMgr: Invalid token: {}'.format(token))
+            raise InvalidTokenException()
 
-    def put_job(self, job):
-        raise NotImplementedError
+        return cid
 
-    def reset(self):
-        super().reset()
 
-        logging.info('Resetting slave node link.')
+    def gen_token_from_cid(self, cid):
+        """
+        Produce a token from a circuit id.
+        :param cid: circuit id used to generate the token.
+        """
+        return self.crypto.compute_token(cid, self.maintoken)
+
+
+    def _gen_main_token(self, rnd_gen):
+        """
+        Generate the main token used to produce channel tokens.
+        :param rnd_gen: method to generate a ransdom number to initialize the token generator.
+        :return: main token
+        """
+        if self.link is None:
+            raise LinkNotInitializedException()
+
+        guard_id = self.link.guard['digest'].encode('utf-8')
+        secret = rnd_gen()
+        maintoken = hashlib.sha256(guard_id + secret).digest()
+        logging.debug('ChanMgr: Main token generated: {}'.format(maintoken))
+        return maintoken
+
+
+    def set_link(self, link, rnd_gen=dummy_random_gen):
+        """
+        Set a link to be used by the channel handler.
+        :param link: Link to use.
+        :param rnd_gen: Method to generate a ransdom number to initialize the token generator.
+        """
         if self.link is not None:
-            self.link.close()
+            raise LinkAlreadyInitializedException()
 
-            for _ in range(refresh_timeout):
-                if self.link.io.dead:
-                    break
-                time.sleep(1)
-
-            if not self.link.io.dead:
-                raise RuntimeError('Unable to close slave link, abort!')
-
-            logging.debug('Previous slave link successfully terminated.')
-
-        addr, port = self.clerk.slave_node
-        self.link = lnn.link.initiate(addr, port)
-        self.circ = lnn.create.fast(self.link)
-        self.last = time.time()
-
-        if not self.isalive(force_check=True):
-            raise RuntimeError('Unable to interact with slave node, abort!')
-
-    def authority(self, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-        self.circ, self.desc = lnn.descriptors.download_authority(self.circ)
-        return self.desc
-
-    def descriptors(self, query, fail_on_missing=True, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-
-        self.circ, descs = lnn.descriptors.download(self.circ, query,
-            flavor='unflavored', fail_on_missing=fail_on_missing)
-        return descs
-
-    def consensus(self, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-
-        self.circ, cons = lnn.consensus.download(self.circ,
-            flavor='unflavored')
-        return cons
-
-    def isalive(self, force_check=False):
-        if self.link is None:
-            return False
-
-        if self.link.io.dead:
-            logging.warning('Slave node link seems dead.')
-            return False
-
-        if self.circ.circuit.destroyed:
-            logging.warning('Bootstrap node circuit got destroyed.')
-            return False
-
-        if force_check or (time.time() - self.last) > isalive_period:
-            logging.debug('Update slave node descriptor (heath check).')
-
-            desc = self.authority(check_alive=False)
-            if self.identity not in (None, desc['identity']):
-                raise RuntimeError('Slave node changed identity, abort!')
-
-            self.last = time.time()
-            self.identity = desc['identity']
-        return True
-
-    def close(self):
-        self.link.close()
-
-class consensus(basic):
-    def __init__(self, clerk, qsize=default_qsize):
-        clerk.consensus = dict(headers=None)
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def reset(self):
-        if not self.clerk.slave.isalive():
-            self.clerk.slave.reset()
-
-        census = self.clerk.slave.consensus()
-
-        if census['headers']['valid-until']['stamp'] < time.time():
-            raise RuntimeError('Unable to get a fresh consensus, abort!')
-        if not census['headers'] == self.clerk.consensus['headers']:
-            super().reset()
-            logging.info('Consensus successfully refreshed.')
-
-        self.clerk.consensus = census
-
-        # (cache descriptors for later use)
-        self.clerk.slave.descriptors(census, fail_on_missing=False)
-
-    def isalive(self):
-        valid_until = self.clerk.consensus['headers']['valid-until']['stamp']
-        return not (valid_until < time.time())
-
-    def isfresh(self):
-        return not (self._out.qsize() < self.qsize)
-
-    def refresh(self):
-        try:
-            self.put_job(self.clerk.consensus)
-            return True
-        except expired:
-            return False
-
-    def perform(self, timeout=1):
-        return self.get(timeout=timeout)
-
-class guard(basic):
-    def __init__(self, clerk, qsize=default_qsize):
-        self.link = None
-        self.circ = None
-        self.desc = None
-        self.identity = None
-        clerk.maintoken = None
-        super().__init__(clerk=clerk, qsize=qsize)
-
-    def put(self, job):
-        raise NotImplementedError
-
-    def get_job(self):
-        raise NotImplementedError
-
-    def router(self, check_alive=True):
-        if check_alive and not self.clerk.consensus_getter.isalive():
-            self.clerk.consensus_getter.reset()
-
-        try:
-            guard = lnn.proxy.path.convert(
-                self.clerk.producer.guard,
-                consensus=self.clerk.consensus,
-                expect='list')[0]
-        except BaseException:
-            self.clerk.producer.reset()
-
-        return guard
-
-    def maintoken(self):
-        logging.info('Resetting guard node link.')
-
-        token = hashlib.sha256(bytes(self.identity, 'utf8')
-            + self.link.io.binding()).digest()
-
-        if not token == self.clerk.maintoken:
-            logging.info('Shared tokenid updated.')
-
-        logging.debug('Shared tokenid: {}'.format(token.hex()))
-        self.clerk.maintoken = token
-
-    def authority(self, check_alive=True):
-        if check_alive and not self.isalive():
-            self.reset()
-        self.circ, desc = lnn.descriptors.download_authority(self.circ)
-        return desc
-
-    def reset(self):
-        logging.info('Resetting guard node link.')
-
-        router = self.router()
-        if not self.router == router:
-            logging.info('New guard: {}'.format(router['nickname']))
-        self.identity = router['identity']
-
-        # TODO: link authentication instead of NTOR handshakes!
-        addr, port = router['address'], router['orport']
-        self.link = lnn.link.initiate(address=addr, port=port)
-
-        self.desc = self.clerk.slave.descriptors(router)[0]
-        self.circ = lnn.create.ntor(self.link, self.desc)
-
-        self.last = time.time()
-        self.used = None
-        self.maintoken()
-
-        super().reset()
-        if not self.isalive(force_check=True):
-            raise RuntimeError('Unable to interact with guard node, abort!')
-
-    def isalive(self, force_check=False):
-        if self.link is None:
-            return False
-
-        if self.link.io.dead:
-            logging.warning('Guard node link seems dead.')
-            return False
-
-        if self.circ.circuit.destroyed:
-            logging.warning('Guard keepalive circuit got destroyed.')
-            return False
-
-        router = self.router()
-        if not self.identity == router['identity']:
-            logging.warning('Guard may have changed, need reset!')
-            return False
-        self.identity = router['identity']
-
-        if force_check or (time.time() - self.last) > isalive_period:
-            logging.debug('Update guard descriptor (health check).')
-
-            desc = self.authority(check_alive=False)
-            if self.identity != desc['router']['identity']:
-                logging.warning('Guard changed its identity, need reset!')
-
-                self.clerk.producer.reset()
-                return False
-
-            for key in ['ntor-onion-key', 'identity', 'router']:
-                if not (self.desc[key] == desc[key]):
-                    logging.info('Guard changed {}, need reset!.'.format(key))
-
-                    self.clerk.producer.reset()
-                    return False
-            self.last = time.time()
-
-            olds = []
-            news = []
-            for key, circuit in self.link.circuits.items():
-                if not hasattr(circuit, 'used'):
-                    continue
-
-                if time.time() - circuit.used > circuit_expiracy:
-                    logging.debug('Destroy {} (old age/unused).'.format(key))
-                    olds.append(circuit)
-                else:
-                    news.append(circuit)
-
-            for circuit in olds:
-                try:
-                    self.clerk.delete.perform(circuit)
-                except expired:
-                    pass
-
-            if (len(news) < 1
-                and self.used is not None
-                and time.time() - self.used > isalive_period):
-                logging.info('Resetting guard link to clean up.')
-                return False
-
-        return True
-
-    def isfresh(self):
-        return not (self.link.io.pending > 0 or self._out.qsize() < self.qsize)
-
-    def refresh(self):
-        redo = False
-        try:
-            self.put_job(self.desc)
-            redo = True
-        except expired:
-            pass
-
-        try:
-            for _ in range(request_max_cells):
-                if not self.link.pull(block=False):
-                    return (redo or False)
-            return True
-
-        except RuntimeError as e:
-            if 'queues are full' in str(e): # TODO: do better than this hack
-                sizes = [(c, c.queue.qsize())
-                     for _, c in self.link.circuits.items()]
-                sizes.sort(key=lambda sz: -sz[1])
-
-                # Delete the most overfilled circuit
-                self.clerk.delete.perform(sizes[0][0])
-                while (not self.clerk.delete.isfresh()
-                    and self.clerk.delete.refresh()):
-                    pass
-                return True
-            else:
-                raise e
-
-    def perform(self, timeout=1):
-        return self.get(timeout=timeout)
-
-class create(ordered):
-    def __init__(self, clerk, max_fails=5, qsize=default_qsize):
-        self.last = time.time()
-        self.fails = 0
-        self.max_fails = max_fails
-        self.alive_job_id = None
-        self.alive_material = None
-        super().__init__(clerk, qsize=qsize)
-
-    def isalive(self):
-        delta = time.time() - self.last
-        if not delta > isalive_period:
-            return True
-
-        if self.alive_job_id is None:
-            logging.info('Handshaking with guard to check liveness...')
-            try:
-                data, self.alive_material = lnn.http.ntor.hand(
-                    self.clerk.guard.desc, encode=False)
-                self.alive_job_id = self.put(data)
-            except expired:
-                logging.info('Unable to trigger handshaking.')
-                return True
-
-        if not delta > isalive_period + default_expiracy / 2:
-            return True
-
-        logging.info('Finishing handshake with guard to check liveness...')
-        if self.alive_job_id is None:
-            logging.info('Ignored handshake.')
-            self.last = time.time()
-            return True
-
-        try:
-            data = self.get(self.alive_job_id)
-            some = lnn.http.ntor.shake(data['ntor'], self.alive_material)
-            if some is None:
-                logging.info('Handshake failed.')
-                return False
-
-            channel = self.clerk.channel_from_uid(data['id'])
-            channel.delete()
-        except expired:
-            logging.info('Handshake expired.')
-            return False
-        except BaseException as e:
-            logging.debug('Failed: {}'.format(e))
-            logging.info('Handshake failed: guard link died?')
-            return False
-
-        self.clerk.guard.used = None
-        self.alive_job_id = None
-        self.fails = 0
-        self.last = time.time()
-
-        logging.info('Handshake success.')
-        return True
-
-    def reset(self):
-        super().reset()
-        if self.alive_job_id is not None:
-            logging.info('Handshake failed, increasing failure.')
-            self.fails += 1
-            if self.fails > self.max_fails:
-                logging.error('Unable to create circuits, resetting guard.')
-                self.clerk.guard.reset()
-                self.fails = 0
-
-            self.alive_job_id = None
-            self.last = time.time()
-
-    def isfresh(self):
-        return not (self._in.qsize() > 0)
-
-    def refresh(self):
-        try:
-            job_id, data = self.get_job()
-            logging.info('Got an incoming create channel request.')
-        except expired:
-            return False
-
-        if not self.clerk.guard.isalive():
-            self.clerk.guard.reset()
-
-        # fast channel:
-        #   if no identity/onion-key is given within the ntor handshake, the
-        #   client doesn't know the guard identity/onion-key and we default to
-        #   any guard we want!
-        #
-        fast = False
-        if len(data) == 32:
-            fast = True
-            identity = base64.b64decode(
-                self.clerk.guard.desc['router']['identity'] + '====')
-            onion_key = base64.b64decode(
-                self.clerk.guard.desc['ntor-onion-key'] + '====')
-            data = identity + onion_key + data
-
-        try:
-            circid, data = lnn.create.ntor_raw(
-                self.clerk.guard.link, data, timeout=1)
-            circuit = lnn.create.circuit(circid, None)
-            data = str(base64.b64encode(data), 'utf8')
-        except BaseException as e:
-            logging.debug('Got an invalid create ntor handshake: {}'.format(e))
-            return True
-
-        if not self.clerk.producer.isalive():
-            self.clerk.producer.reset()
-
-        if not self.clerk.consensus_getter.isalive():
-            self.clerk.consensus_getter.reset()
-
-        try:
-            middle, exit = lnn.proxy.path.convert(*self.clerk.producer.get(),
-                consensus=self.clerk.consensus, expect='list')
-        except expired:
-            logging.debug('Unable to get a path from producer.')
-            return False
-
-        middle = self.clerk.slave.descriptors(middle)[0]
-        exit = self.clerk.slave.descriptors(exit)[0]
-
-        token = self.clerk.crypto.compute_token(circid, self.clerk.maintoken)
-
-        logging.debug('Circuit created with circuit_id: {}'.format(
-            circid))
-        logging.debug('Path picked: {} -> {}'.format(
-            middle['router']['nickname'], exit['router']['nickname']))
-        logging.debug('Token emitted: {}'.format(token))
-
-        try:
-            answer = {'id': token, 'path': [middle, exit], 'ntor': data}
-            if fast:
-                answer['guard'] = self.clerk.guard.desc
-            self.put_job((circuit, answer), job_id)
-        except expired:
-            logging.warning('Too many create channel requests, dropping.')
-            return False
-
-        self.clerk.channels[circuit.id] = channel(
-                self.clerk, circuit, self.clerk.guard.link)
-        return True
-
-    def get(self, job_id, timeout=1):
-        circuit, data = super().get(job_id, timeout=timeout)
-        self.clerk.guard.used = time.time()
-        circuit.used = time.time()
-        return data
-
-    def perform(self, data, timeout=(1+2*default_expiracy)):
-        timeout = timeout / 2
-
-        data = base64.b64decode(data)
-        job_id = self.put(data, timeout=timeout/2)
-        return self.get(job_id, timeout=timeout/2)
-
-class delete(basic):
-    def isfresh(self):
-        return not (self._in.qsize() > 0)
-
-    def refresh(self):
-        try:
-            circuit = self.get_job()
-            logging.info('Got an incoming delete channel request.')
-        except expired:
-            return False
-
-        if not self.clerk.guard.isalive():
-            self.clerk.guard.reset()
-            return False
-
-        self.clerk.guard.link.unregister(circuit)
-        logging.debug('Deleting circuit: {}'.format(circuit.id))
-
-        reason = lnn.cell.destroy.reason.REQUESTED
-        self.clerk.guard.link.send(lnn.cell.destroy.pack(circuit.id, reason))
-        logging.debug('Remaining circuits: {}'.format(list(
-            self.clerk.guard.link.circuits)))
-
-        circuit.destroyed = True
-        circuit.reason = reason
-        return True
-
-    def perform(self, circuit, timeout=1):
-        self.put(circuit)
-        return {}
-
-class channel(basic):
-    def __init__(self, clerk, circuit, link,
-        expiracy=circuit_expiracy, qsize=default_qsize):
-        self.expiracy = expiracy
-        self.circuit = circuit
-        self.cells = []
-        self.packs = []
-        self.tasks = []
-        self.used = time.time()
         self.link = link
-        self.born = False
-        super().__init__(clerk=clerk, qsize=qsize)
+        logging.debug('ChanMgr: Link set.')
+        self.maintoken = self._gen_main_token(rnd_gen)
 
-    def isalive(self):
-        return (True
-            and self.circuit.id in self.clerk.channels
-            and self.circuit.id in self.link.circuits
-            and not self.circuit.destroyed
-            and not (time.time() - self.used) > self.expiracy)
 
-    def delete(self):
-        self.link.unregister(self.circuit)
-        logging.debug('Deleting channel: {}'.format(self.circuit.id))
+    async def reset_link(self, link, rnd_gen=dummy_random_gen):
+        """
+        Reset the link used the channel handler.
+        :param link: Link to use.
+        :param rnd_gen: Method to generate a ransdom number to initialize the token generator.
+        """
+        if self.link is not None:
+            for channel in self.channels.values():
+                await self.destroy_circuit_from_client(channel)
+                #await self.destroy_circuit_from_link(channel)
+            # Deletion per-se of existing channels handled in websocket after the cell was dispatched.
 
-        reason = lnn.cell.destroy.reason.FINISHED
-        self.link.send(lnn.cell.destroy.pack(self.circuit.id, reason))
+        self.link = link
+        logging.debug('ChanMgr: Link resetted.')
+        self.maintoken = self._gen_main_token(rnd_gen)
 
-        self.circuit.destroyed = True
-        self.circuit.reason = reason
 
-    def reset(self):
-        super().reset()
-        if self.born:
-            if not self.circuit.destroyed:
-                self.delete()
+    def create_channel(self,  consensus, descriptors, select_path):
+        """
+        Create a new channel.
+        :param ntor: First part of the ntor handshake provided by the client.
+        :param consensus: The current consensus.
+        :param descriptors: A collection of the current descriptors.
+        :return: Response to be send to the client
+        """
 
-            try:
-                self.clerk.channels.pop(self.circuit.id, None)
-            except ValueError:
-                pass
+        # TODO: Currently, the ntor is provided by the client to be packaged
+        #       in the proxy and send back to the client to be send again to
+        #       the websocket. This need to be simplified.
 
-            for task in self.tasks:
-                task.cancel()
+        if self.link is None:
+            raise LinkNotInitializedException()
+
+        #ntor_bin = base64.b64decode(ntor)
+
+        cid = self.link.gen_cid()
+        token = self.gen_token_from_cid(cid)
+
+        #cell = lnn.create.ntor_raw2(cid, ntor_bin)
+        #cell = base64.b64encode(cell).decode('utf-8')
+
+        self.channels[cid] = Channel(token, cid)
+
+        if not select_path:
+            (middle, exit) = lnn.path_selection.select_end_path_from_consensus(consensus, descriptors, self.link.guard)
+            logging.warning('Middle {}'.format(middle['router']['nickname']))
+            logging.warning('Exit {}'.format(exit['router']['nickname']))
+            response = {'id': token, 'path': [middle, exit], 'guard': self.link.guard}
+            logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
+            return response
+        else:
+            response = {'id': token, 'guard': self.link.guard}
+            logging.debug('ChanMgr: Channel {} with token {} created.'.format(cid, token))
+            return response
+
+    def delete_channel(self, channel):
+        """
+        Delete a given channel if it is managed by the channel manager, do nothing otherwise.
+        :param channel: Channel to be deleted.
+        """
+        if channel.cid in self.channels.keys():
+            del self.channels[channel.cid]
+            logging.debug('ChanMgr: Channel {} with token {} deleted.'.format(channel.cid, channel.token))
+
+
+    async def destroy_circuit_from_client(self, channel):
+        """
+        Destroy a circuit corresponding to a channel as if the order was comming from the client side.
+        :param channel: Channel handling the circuit to be destroyed.
+        """
+
+        # Send a cell to the link to delete the circuit in the relay.
+        cid = channel.cid
+        reason = lnn.cell.destroy.reason.REQUESTED
+
+        cell = lnn.cell.destroy.pack(cid, reason)
+        cell_padded = lnn.cell.pad(cell)
+
+        await self.link.to_send.put(cell_padded)
+
+        # Destroy the channel.
+        channel.destroyed.set()
+
+        logging.debug('ChanMgr: Prepare to delete circuit {} from client.'.format(cid))
+
+
+    async def destroy_circuit_from_link(self, channel):
+        """
+        Destroy a circuit corresponding to a channel as if the order was comming from the link side.
+        :param channel: Channel handling the circuit to be destroyed.
+        """
+
+        # Destroy the channel.
+        channel.destroyed.set()
+
+        logging.debug('ChanMgr: Prepare to delete channel {} from link.'.format(channel.cid))
+
+
+    def get_channel_by_token(self, token):
+        """
+        Get a channel by its token.
+        :param token: Token identifying the channel.
+        """
+
+        cid = self._cid_from_token(token)
+
+        if cid not in self.channels.keys():
+            raise ChannelDoesNotExistException(token)
+
+        return self.channels[cid]
+
+
+    async def schedule_to_send(self, cell, cid):
+        """
+        Scedule the data to be send to the correct channel.
+        :param cell: cell to be send.
+        """
+        logging.debug('ChanMgr: Begin adding data to sending queue of channel {}.'.format(cid))
+        
+        if cid not in self.channels.keys():
+            logging.warning('ChanMgr: Channel {} does not exists.'.format(cid))
+            return
+            #raise CircuitDoesNotExistException(cid)
+
+        channel = self.channels[cid]
+
+        if channel.destroyed.is_set():
+            logging.warning('ChanMgr: Channel {} is destroyed.'.format(cid))
+            return
+            #raise CircuitDoesNotExistException(cid)
+
+        # If the cell command to delete the circuit,
+        header = lnn.cell.header(cell)
+        if header.cmd is lnn.cell.cmd.DESTROY:
+            cell_validation = lnn.cell.destroy.cell(cell)
+            logging.warning('ChanMgr: DESTROY cell received for channel {}, reason: {}.'.format(cid, cell_validation.reason))
+            if not cell_validation.valid:
+                logging.debug('ChanMgr: Invalid DESTROY in channel {}.'.format(cid))
+                #raise InvalidDestroyCellException()
+            else:
+                await self.destroy_circuit_from_link(channel)
+
             return
 
-        logging.info('Channel for circuit {} opened.'.format(self.circuit.id))
-        self.link.register(self.circuit)
-        self.born = True
+        cell_padded = lnn.cell.pad(cell)
 
-    def isfresh(self):
-        return not (self._in.qsize() > 0)
+        await channel.to_send.put(cell_padded)
 
-    def send(self, cell):
-        cell = lnn.cell.header_view.write(cell, circuit_id=self.circuit.id)
+        logging.debug('ChanMgr: Data added to sending queue of channel {}.'.format(channel.cid))
+
+
+
+class WebsocketManager:
+    prefix = base_url + '/channels/'
+    prefix_len = len(prefix)
+
+    def __init__(self, host='0.0.0.0', port=8765, timeout=60):
+        """
+        Websocket server
+        :param host: host on which the websocket need to run.
+        :param port: port on which the websocket is listening.
+        :param timeout: timeout before closing the connection.
+        """
+
+        # Time witout activity until channel is deleted.
+        self.timeout = timeout
+
+        # The channel manager is set later
+        self.channel_manager = None
+
+        # The websocket server
+        self.host = host
+        self.port = port
+        self.server = None
+
+        self.cell_sent = 0
+        self.cell_recv = 0
+
+
+        logging.debug('WsServ: Websocket server prepared ({}:{})'.format(host, port))
+
+
+    async def serve(self, loop):
+        """
+        Create and start a websocket server, then wait for it to close.        
+        :param host: host on which the websocket need to run.
+        :param port: port on which the websocket is listening.
+        """
+        self.server = await websockets.serve(self._handler, self.host, self.port, loop=loop, compression=None)
+        await self.server.wait_closed()
+        logging.debug('WsServ: Websocket server closed.')
+
+
+    def stop(self):
+        if self.server is not None:
+            self.server.close()
+
+
+    def set_channel_manager(self, channel_manager):
+        """
+        Set the channel manager to use for dispatching data.
+        :param channel_manager: The channel manager to use.
+        """
+        self.channel_manager = channel_manager
+        logging.debug('WsServ: Channel manager set.')
+
+
+    async def _recv(self, ws, channel):
+        """
+        Handler to receive a message from the client via the websocket.
+        :param ws: websocket used to communicate with the client.
+        :param channel: Channel correspondind to the client from which data is recieved.
+        """
+
+        while not ws.closed:
+            cell = await ws.recv()
+
+            self.cell_recv += 1
+            logging.info('cell {} recv by wbskt: {}'.format(self.cell_recv, cell[:20].hex()))
+            logging.debug('WsServ: Recieved cell from channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
+
+            await self.channel_manager.link.schedule_to_send(cell, channel)
+
+
+    async def _send(self, ws, channel):
+        """
+        Handler to send a message to the client via the websocket.
+        :param ws: The websocket used to communicate with the client.
+        :param channel: Channel from which data is sent.
+        """
+
+        while not ws.closed:
+            cell = await channel.to_send.get()
+
+            cell = lnn.cell.pad(cell)
+            await ws.send(cell)
+
+            self.cell_sent += 1
+            logging.info('cell {} sent to wbskt: {}'.format(self.cell_sent, cell[:20].hex()))
+
+            logging.debug('WsServ: Sent data to channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
+
+
+    async def _timeout(self, ws, channel):
+        """
+        Handler to send termination cells in case of a timeout.
+        :param ws: The websocket used to communicate with the client.
+        :param channel: Channel from which data is sent.
+        """
+        await asyncio.sleep(self.timeout)
+
+        logging.debug('WsServ: Channel {} timed out.'.format(channel.cid))
+
+        await self.channel_manager.destroy_circuit_from_client(channel)
+
+
+    async def _destroy(self, ws, channel):
+        """
+        Handler to destroy the specific circuit.
+        :param ws: The websocket used to communicate with the client.
+        :param channel: Channel from which data is sent.
+        """
+
+        # Just await for the channel to be destroyed.
+        await channel.destroyed.wait()
+
+
+    async def _handler(self, ws, path):
+        """
+        Handler to process a IO on the websocket or on the link.
+        :param ws: The websocket used to communicate with the client.
+        :param path: Path used by the client.
+        """
+
+        if not path.startswith(WebsocketManager.prefix):
+            logging.warning('WsServ: Attempted to connect to websocket with an invalid prefix {}.'.format(path))
+            return
+
+        token = path[WebsocketManager.prefix_len:]
+
+        logging.debug('WsServ: Begin handler for channel id by token {}.'.format(token))
+
         try:
-            self.link.send(cell, block=False)
-        except queue.Full:
-            return False
-        return True
+            channel = self.channel_manager.get_channel_by_token(token)
+        except Exception:
+            logging.warning('WsServ: Attempted to connect to websocket with an invalid token {}.'.format(token))
+            return
 
-    def recv(self):
-        try:
-            cell = self.circuit.queue.get(block=False)
-            cell = lnn.cell.header_view.write(cell,
-                circuit_id=lnn.proxy.fake_circuit_id)
-            return cell
-        except queue.Empty:
-            return None
+        tasks = [
+            asyncio.create_task(self._destroy(ws, channel)),
+            #asyncio.create_task(self._timeout(ws, channel)),
+            asyncio.create_task(self._recv(ws, channel)),
+            asyncio.create_task(self._send(ws, channel))
+        ]
 
-    def refresh(self):
-        if not self.isalive():
-            return False
+        done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-        redo = False
-        try:
-            if len(self.cells) < 1:
-                self.cells = self.get_job()
-                redo = True
-                self.used = time.time()
-                self.circuit.used = time.time()
-        except expired:
-            pass
+        #while not ws.closed:
+        #    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
 
-        while len(self.cells) > 0:
-            cell = self.cells.pop(0)
-            if not self.send(cell):
-                self.cells.insert(cell, 0)
-                redo = False
-                break
+        #    # Conditions to continue or stop listening.
 
-        if len(self.packs) < 1:
-            for _ in range(request_max_cells - len(self.packs)):
-                cell = self.recv()
-                if cell is None:
-                    break
-                self.packs.append(cell)
+        #    # Circuit destroyed -> close websocket.
+        #    if tasks[0].done():
+        #        logging.debug('WsServ: Channel {} destroyed.'.format(channel.cid))
+        #        break
 
-        if len(self.packs) > 0:
-            try:
-                self.put_job(self.packs)
-                self.packs = []
-                redo = True
-            except expired:
-                pass
-        elif redo:
-            try:
-                self.put_job([])
-            except expired:
-                pass
+        #    # Long timeout -> close websocket.
+        #    if tasks[1].done():
+        #        logging.debug('WsServ: Ws handler timed out for channel {}.'.format(channel.cid))
+        #        break
+        #    else:
+        #        # Channel has not timed out, so the timeout is resetted.
+        #        tasks[1].cancel()
+        #        tasks[1] = asyncio.create_task(self._timeout(ws, channel))
+        #        logging.debug('WsServ: Reset timeout handler for channel {}.'.format(channel.cid))
 
-        return redo
+        #    # If recv is done, restart it.
+        #    if tasks[2].done() or tasks[2].cancelled():
+        #        tasks[2] = asyncio.create_task(self._recv(ws, channel))
+        #        logging.debug('WsServ: New recv task created for channel {}.'.format(channel.cid))
 
-    def perform(self, cells, timeout=0.2):
-        self.put(cells, timeout=timeout)
-        if len(cells) > 0:
-            timeout = 0
-        timeout = timeout / self.qsize
+        #    # If send is done, restart it.
+        #    if tasks[3].done() or tasks[3].cancelled():
+        #        tasks[3] = asyncio.create_task(self._send(ws, channel))
+        #        logging.debug('WsServ: New send task created for channel {}.'.format(channel.cid))
 
-        packs = []
-        for _ in range(self.qsize):
-            try:
-                packs += self.get(timeout=timeout)
-            except expired:
-                if len(packs) > 0:
-                    break
+        # The channel is destroyed, and the connection needs to be closed.
 
-        return [str(base64.b64encode(cell), 'utf8') for cell in packs]
+        # Cancel tasks which are still pending.
+        for task in tasks:
+            if not (task.cancelled() or task.done()):
+                task.cancel()
+
+        # Delete the channel and close the websocket.
+        self.channel_manager.delete_channel(channel)
+        ws.close()
+        await ws.wait_closed()
+
+        logging.debug('WsServ: End handler for channel {}.'.format(channel.cid))

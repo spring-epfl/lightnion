@@ -2,4 +2,5 @@ cryptography
 websockets
 requests
 asyncio
-flask
+quart
+Quart-CORS

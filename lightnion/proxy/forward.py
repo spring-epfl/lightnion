@@ -2,23 +2,41 @@ import threading
 import traceback
 import logging
 import base64
-import flask
+import quart
+from quart_cors import cors
 import queue
+import string
 import time
+
+from datetime import datetime, timedelta
 
 import websockets
 import asyncio
+import sys
+import signal
 
 import lightnion as lnn
 import lightnion.proxy
+import lightnion.path_selection
 
 debug = True
-tick_rate = 0.01 # (sleeps when nothing to do)
-async_rate = 0.01 # (async.sleep while websocket-ing)
 
-class clerk(threading.Thread):
-    def __init__(self, slave_node, control_port, auth_dir=None):
-        super().__init__()
+formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s', datefmt='%H:%M:%S')
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(formatter)
+
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
+logger.addHandler(handler)
+
+logger = logging.getLogger("asyncio")
+logger.setLevel(logging.WARNING)
+logger.addHandler(handler)
+
+
+class clerk():
+    def __init__(self, slave_node, control_port, dir_port, auth_dir=None):
+        #super().__init__()
         logging.info('Bootstrapping clerk.')
         self.crypto = lnn.proxy.parts.crypto()
         self.dead = False
@@ -28,249 +46,317 @@ class clerk(threading.Thread):
         if auth_dir is not None:
             try:
                 self.auth = lnn.proxy.auth.getpkey(auth_dir)
+                logging.debug('Auth dir is set.')
             except FileNotFoundError:
                 lnn.proxy.auth.genpkey(auth_dir)
                 self.auth = lnn.proxy.auth.getpkey(auth_dir)
-            logging.debug('Note: authentication suffix is {}'.format(
-                self.auth.suffix))
+                logging.debug('Auth dir got a file not found')
+            logging.debug('Note: authentication suffix is {}'.format(self.auth.suffix))
+        else:
+            logging.debug('Auth dir is None.')
+
+        self.consensus = None
+        self.descriptors = None
+
+        self.consensus_raw = None
+        self.descriptors_raw = None
+        self.mic_consensus_raw = None
+        self.mic_descriptors_raw = None
+
+        self.consm = None
+        self.descm = None        
+        self.signing_keys = None
+
+        self.timer_consensus = None
+
+        self.guard_node = None
 
         self.control_port = control_port
+        self.dir_port = dir_port
         self.slave_node = slave_node
 
-        self.producer           = lnn.proxy.jobs.producer(self)
-        self.slave              = lnn.proxy.jobs.slave(self)
-        self.consensus_getter   = lnn.proxy.jobs.consensus(self)
-        self.guard              = lnn.proxy.jobs.guard(self)
-        self.create             = lnn.proxy.jobs.create(self)
-        self.delete             = lnn.proxy.jobs.delete(self)
+        self.link = None
+        self.channel_manager = None
+        self.websocket_manager = None
 
-        self.jobs = [
-            self.slave,
-            self.producer,
-            self.consensus_getter,
-            self.guard,
-            self.create,
-            self.delete]
+    def prepare(self):
+        guard = self.get_guard()
 
-        self.channels = dict()
+        self.link = lnn.proxy.link.Link(guard)
+        self.channel_manager = lnn.proxy.jobs.ChannelManager()
+        self.websocket_manager = lnn.proxy.jobs.WebsocketManager()
 
-    def die(self, e):
-        if isinstance(e, str):
+        self.link.set_channel_manager(self.channel_manager)
+        self.channel_manager.set_link(self.link)
+        self.websocket_manager.set_channel_manager(self.channel_manager)
+
+    def retrieve_consensus(self):
+        """Retrieve relays data with direct HTTP connection and schedule its future retrival."""
+
+        # We tolerate that the system clock can be up to a few seconds too early.
+        refresh_tolerance_delay = 2.0
+
+        # retrieve consensus and descriptors
+        cons,sg_keys = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
+        desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
+        
+        self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
+        self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+
+        self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
+        self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons, flavor='unflavored')
+
+        self.mic_consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='microdesc')
+        self.mic_descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+
+        print(len(cons['routers']))
+        print(len(desc))
+        print(len(self.descm))
+
+        self.consensus = cons
+        self.signing_keys = sg_keys
+        self.descriptors = desc
+
+
+        try:
+            # Compute delay until retrival of the next consensus.
+            fresh_until = datetime.utcfromtimestamp(self.consensus['headers']['fresh-until']['stamp'])
+            now = datetime.utcnow()
+            delay = (fresh_until - now).total_seconds() + refresh_tolerance_delay
+            
+            self.timer_consensus = threading.Timer(delay, clerk.retrieve_consensus, [self])
+            self.timer_consensus.start()
+
+        except Exception as e:
             logging.error(e)
-            e = RuntimeError(e)
+            raise e
 
-        self.dead = True
-        raise e
 
-    def channel_from_uid(self, uid):
-        circuit_id = self.crypto.decrypt_token(uid, self.maintoken)
-        if circuit_id is None:
-            logging.debug('Got an invalid token: {}'.format(uid))
-            raise RuntimeError('Invalid token.')
+    def wait_for_consensus(self):
+        """Ensure a consensus is present in the clerk, and fetch a new one if it is not.
+        """
+        if self.consensus is None:
+            if self.timer_consensus is None:
+                self.retrieve_consensus()
+        while self.consensus is None:
+            logging.info('Wait for consensus...')
+            time.sleep(1)
 
-        if circuit_id not in self.channels:
-            logging.debug('Got an unknown circuit: {}'.format(circuit_id))
-            raise RuntimeError('Unknown circuit: {}'.format(circuit_id))
 
-        channel = self.channels[circuit_id]
-        channel.used = time.time()
-        channel.circuit.used = time.time()
-        return channel
+    def get_descriptor_unflavoured(self, router):
+        """Retrieve a descriptor.
+        :param router: Router from which we want the descriptor.
+        :return: the descriptor of the given router.
+        """
 
-    def main(self):
-        channels = [channel for _, channel in self.channels.items()]
-        for job in self.jobs + channels:
-            if not job.isalive():
-                job.reset()
+        descriptor = self.descriptors[router['digest']]
 
-        bored = True
-        for job in self.jobs + channels:
-            if job.isfresh():
-                continue
+        return descriptor
 
-            for _ in range(lnn.proxy.jobs.refresh_batches):
-                if job.refresh():
-                    bored = False
-                    continue
-                break
 
-        if bored:
-            time.sleep(tick_rate)
+    def get_guard(self):
+        """Generate a guard
+        :return: guard node
+        """
 
-    def run(self):
-        while not self.dead:
-            try:
-                self.main()
-            except BaseException as e:
-                logging.warning('Exception:', e)
-                if debug:
-                    traceback.print_exc()
+        self.wait_for_consensus()
 
-    def __enter__(self):
-        self.start()
-        return self
+        if self.guard_node is None:
+            guard = lnn.path_selection.select_guard_from_consensus(self.consensus, self.descriptors)
+            #nickname = guard['router']['nickname']
+            #fingerprint = guard['fingerprint']
+            #entry = [fingerprint, nickname]
+            #guard = lnn.proxy.path.convert(entry, consensus=self.consensus, expect='list')[0]
 
-    def __exit__(self, *kargs):
-        self.dead = True
-        self.join()
+            logging.info('New guard relay selected.')
+            logging.debug(guard)
+            self.guard_node = guard
 
-async def channel_input(websocket, channel):
-    cell = None
-    while True:
-        try:
-            if cell is None:
-                cell = await websocket.recv()
-            channel.put([cell], timeout=async_rate/2)
-            cell = None
+        return self.guard_node
 
-            await asyncio.sleep(0)
-            continue
-        except lnn.proxy.jobs.expired:
-            pass
 
-        await asyncio.sleep(async_rate / 2)
-
-async def channel_output(websocket, channel):
-    cells = None
-    while True:
-        try:
-            if cells is None:
-                try:
-                    cells = channel.get(timeout=0)
-                except lnn.proxy.jobs.expired:
-                    channel.put([], timeout=async_rate/4)
-                    cells = channel.get(timeout=async_rate/4)
-            for cell in cells:
-                await websocket.send(cell)
-
-            channel.used = time.time()
-            cells = None
-
-            await asyncio.sleep(0)
-            continue
-        except lnn.proxy.jobs.expired:
-            pass
-
-        await asyncio.sleep(async_rate / 2)
-
-def channel_handler(clerk):
-    async def _handler(websocket, path):
-        if not path.startswith(url + '/channels/'):
-            return
-
-        path = path[len(url + '/channels/'):]
-        if len(path) > 50:
-            return
-        channel = clerk.channel_from_uid(path)
-
-        for task in [channel_input, channel_output]:
-            channel.tasks.append(
-                asyncio.ensure_future(task(websocket, channel)))
-
-        done, pending = await asyncio.wait(channel.tasks,
-            return_when=asyncio.FIRST_COMPLETED)
-
-        for task in pending:
-            task.cancel()
-    return _handler
-
-class sockets(threading.Thread):
-    def __init__(self, clerk):
-        super().__init__()
-        self.handler = channel_handler(clerk)
-
-    def run(self):
-        logging.getLogger(websockets.__name__).setLevel(logging.ERROR)
-        asyncio.set_event_loop(asyncio.new_event_loop())
-
-        server = websockets.serve(self.handler, '0.0.0.0', 8765,
-            compression=None)
-        asyncio.get_event_loop().run_until_complete(server)
-        asyncio.get_event_loop().run_forever()
-
-app = flask.Flask(__name__)
+app = quart.Quart(__name__)
+cors(app, expose_headers='Access-Control-Allow-Origin')
 url = lnn.proxy.base_url
 
-@app.route(url + '/consensus')
-def get_consensus():
+@app.route(url + '/descriptors')
+def get_descriptors():
     try:
-        return flask.jsonify(app.clerk.consensus_getter.perform()), 200
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
+        app.clerk.wait_for_consensus()
+        desc = quart.jsonify(app.clerk.descriptors)
+        return desc, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/consensus')
+async def get_consensus():
+    """
+    Retrieve consensus.
+    """
+    try:
+        app.clerk.wait_for_consensus()
+        cons = quart.jsonify(app.clerk.consensus)
+        return cons, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/descriptors-raw/<flavor>')
+def get_descriptors_raw(flavor):
+    try:
+        app.clerk.wait_for_consensus()
+
+        desc = app.clerk.mic_descriptors_raw
+        if flavor == 'unflavored':
+            desc = app.clerk.descriptors_raw
+        
+        return desc, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/consensus-raw/<flavor>')
+async def get_consensus_raw(flavor):
+    """
+    Retrieve raw consensus.
+    """
+    try:
+        app.clerk.wait_for_consensus()
+        cons = app.clerk.mic_consensus_raw
+        if flavor == 'unflavored':
+            cons =app.clerk.consensus_raw
+
+        return cons, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
+@app.route(url + '/signing-keys')
+async def get_signing_keys():
+    """
+    Retrieve signing keys to verify consensus.
+    """
+    try:
+        app.clerk.wait_for_consensus()
+        keys = quart.jsonify(app.clerk.signing_keys)
+        return keys, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
 
 @app.route(url + '/guard')
-def get_guard():
+async def get_guard():
+    """
+    Retrieve guard descriptor.
+    """
     try:
-        return flask.jsonify(app.clerk.guard.perform()), 200
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
+        guard = app.clerk.link.guard
+        res = quart.jsonify(guard)
+        return res, 200
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
+
 
 @app.route(url + '/channels', methods=['POST'])
-def create_channel():
-    if not flask.request.json or not 'ntor' in flask.request.json:
-        flask.abort(400)
-    data = flask.request.json['ntor']
+async def create_channel():
+    """
+    Create a channel.
+    """
+    payload = await quart.request.get_json()
+    #if not payload or not 'ntor' in payload:
+    #    quart.abort(400)
+
+    logging.info('Create new channel.')
+    #ntor = payload['ntor']
 
     auth = None
-    if 'auth' in flask.request.json:
-        auth = flask.request.json['auth']
+    if 'auth' in payload:
+        auth = payload['auth']
         if app.clerk.auth is None:
-            flask.abort(400)
+            quart.abort(400)
+
+    select_path = False
+    if 'select_path' in payload:
+        if payload['select_path'] == "true":
+            select_path = True
+
+    if not select_path:
+        app.clerk.wait_for_consensus()
 
     try:
-        data = app.clerk.create.perform(data)
+        #data = app.clerk.create.perform(data)
+        ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors, select_path)
         if auth is not None:
-            data = app.clerk.auth.perform(auth, data)
+            # TODO the proxy pack the ntor key in a tor cell, this can be done client side.
+            ckt_info = app.clerk.auth.perform(auth,ckt_info)
 
-        return flask.jsonify(data), 201 # Created
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
+        response = quart.jsonify(ckt_info)
+        return response, 201 # Created
 
-@app.route(url + '/channels/<uid>', methods=['POST'])
-def write_channel(uid):
-    if not flask.request.json or 'cells' not in flask.request.json:
-        flask.abort(400)
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(503)
 
-    try:
-        channel = app.clerk.channel_from_uid(uid)
-    except RuntimeError:
-        flask.abort(404)
-
-    if len(flask.request.json['cells']) > lnn.proxy.jobs.request_max_cells:
-        flask.abort(400)
-
-    cells = [base64.b64decode(cell) for cell in flask.request.json['cells']]
-    if any([len(cell) > lnn.constants.full_cell_len for cell in cells]):
-        flask.abort(400)
-
-    try:
-        return flask.jsonify(dict(cells=channel.perform(cells))), 201
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
 
 @app.route(url + '/channels/<uid>', methods=['DELETE'])
-def delete_channel(uid):
+async def delete_channel(uid):
+    """
+    Delete a channel.
+    :param uid: channel identifier
+    """
     try:
-        channel = app.clerk.channel_from_uid(uid)
-    except RuntimeError:
-        flask.abort(404)
+        channel = app.clerk.channel_manager.get_channel_by_token(uid)
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(404)
 
-    circuit = channel.circuit
     try:
-        return flask.jsonify(app.clerk.delete.perform(circuit)), 202 # Deleted
-    except lnn.proxy.jobs.expired:
-        flask.abort(503)
+        await app.clerk.channel_manager.destroy_circuit_from_client(channel)
+        await app.clerk.channel_manager.destroy_circuit_from_link(channel)
+    except Exception as e:
+        logging.exception(e)
+        quart.abort(500)
 
-def main(port, slave_node, control_port, purge_cache,
-    static_files=None, auth_dir=None):
+    return quart.jsonify({}), 202 # Deleted
+
+
+def main(port, slave_node, control_port, dir_port, purge_cache, static_files=None, auth_dir=None):
+    """
+    Entry point
+    """
+
     if purge_cache:
         lnn.cache.purge()
 
-    if static_files is not None:
-        from werkzeug import SharedDataMiddleware
-        app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
+    #if static_files is not None:
+    #    from werkzeug import SharedDataMiddleware
+    #    app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
-    with clerk(slave_node, control_port, auth_dir) as app.clerk:
-        logging.info('Bootstrapping HTTP server.')
-        sockets(app.clerk).start()
-        app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=False)
+    app.clerk = clerk(slave_node, control_port, dir_port, auth_dir)
+    logging.info('Bootstrapping HTTP server.')
+
+    logging.getLogger(websockets.__name__).setLevel(logging.INFO)
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+    app.clerk.prepare()
+
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(None)
+
+    loop.create_task(app.clerk.link.connection)
+    loop.create_task(app.clerk.websocket_manager.serve(loop))
+
+    def signal_handler(signum, frame):
+        """
+        Handler to stop coroutines.
+        """
+        logging.debug('Signal handler called.')
+        app.clerk.websocket_manager.stop()
+        loop.stop()
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)

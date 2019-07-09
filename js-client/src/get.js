@@ -77,3 +77,81 @@ lnn.get.consensus = function(endpoint, success, error)
     rq.open("GET", endpoint.urls.consensus, true)
     rq.send()
 }
+
+/**
+ * Perform GET /descriptors 
+ */
+lnn.get.descriptors = function(endpoint, success, error){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.descriptors = JSON.parse(rq.responseText)
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.descriptors, true)
+    rq.send()
+}
+
+lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'microdesc')
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 200)
+        {
+            endpoint.consensus_raw =  rq.responseText
+            if (success !== undefined)
+                success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error(endpoint, rq.status)
+        }
+    }
+    rq.open("GET", endpoint.urls.consensus+ "-raw/" + flavor, true)
+    rq.send()
+}
+
+/**
+ * Perform GET /descriptors 
+ */
+lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'microdesc'){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.descriptors_raw = rq.responseText
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.descriptors+ "-raw/" + flavor, true)
+    rq.send()
+}
+
+lnn.get.signing_keys = function(endpoint, success, error){
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function(){
+        if(rq.readyState == 4 && rq.status == 200){
+            endpoint.signing_keys = JSON.parse(rq.responseText)
+            
+            if(success !== undefined) success(endpoint)
+        }
+        else if (rq.readyState == 4 && error !== undefined){
+            error(endpoint, rq.status)
+        }
+    }
+
+    rq.open("GET", endpoint.urls.signing_keys, true)
+    rq.send()
+}
+

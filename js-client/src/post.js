@@ -11,7 +11,6 @@ lnn.post.create = function(endpoint, success, error)
             {
                 info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
             }
-
             endpoint.id = info["id"]
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
             endpoint.path = info["path"]
@@ -59,6 +58,118 @@ lnn.post.create = function(endpoint, success, error)
     rq.open("POST", endpoint.urls.channels, true)
     rq.setRequestHeader("Content-type", "application/json")
     rq.send(payload)
+}
+
+
+lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_ports)
+{
+    if(select_path === undefined) {
+        select_path = false
+    }
+
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 201)
+        {
+            var info = JSON.parse(rq.responseText)
+            if (endpoint.auth != null)
+            {
+                info = lnn.ntor.auth(endpoint, info["auth"], info["data"])
+            }
+
+            endpoint.id = info["id"]
+            endpoint.url = endpoint.urls.channels + "/" + info["id"]
+            
+
+            if (endpoint.fast)
+            {
+                endpoint.guard = info["guard"]
+            }
+
+            if(!select_path)
+                endpoint.path = info["path"]
+            else {
+                endpoint.consensus = lnn.consensusParser.parse(endpoint.consensus_raw)
+                endpoint.descriptors = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
+                lnn.parser.descriptors.validate(endpoint.descriptors,endpoint.consensus)
+
+
+                endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true, tcp_ports)
+                console.log(endpoint.guard)
+                console.log(endpoint.path)
+            }
+
+            if (success !== undefined)
+                success(endpoint, info)
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error(endpoint, rq.status)
+        }
+    }
+
+    var payload = {}
+    /**
+    if (endpoint.fast)
+        payload = lnn.ntor.fast(endpoint)
+    else
+        payload = lnn.ntor.hand(endpoint)
+
+    payload = {ntor: payload}*/
+    if (endpoint.auth != null)
+    {
+        payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)
+    }
+    payload["select_path"] = select_path.toString()
+    payload = JSON.stringify(payload)
+
+    rq.open("POST", endpoint.urls.channels, true)
+    rq.setRequestHeader("Content-type", "application/json")
+    rq.send(payload)
+}
+
+lnn.post.handshake = function(endpoint, info, success, error)
+{
+    //var handshake = info['handshake']
+    var normal_handler = endpoint.io.handler
+
+    var handler = function(endpoint, material)
+    {
+        endpoint.io.handler = normal_handler
+        //var material = endpoint.io.recv()
+
+        material = lnn.ntor.shake(endpoint, material.slice(7, 7+64), false)
+
+        if (material == null)
+            throw "Invalid guard handshake."
+
+
+        material = lnn.ntor.slice(material)
+        endpoint.material = material
+
+        endpoint.forward = lnn.onion.forward(endpoint)
+        endpoint.backward = lnn.onion.backward(endpoint)
+
+        if (success !== undefined)
+            success(endpoint)
+    }
+
+    endpoint.io.handler = handler
+    
+    var handshake = new Uint8Array(lnn.relay.full_len)
+    var payload = lnn.ntor.hand(endpoint,endpoint.guard,false)
+
+
+    var view = new DataView(handshake.buffer)
+    view.setUint32(0, 2147483648 /* fake circuit_id */, false)
+    view.setUint8(4, 10 /* CREATE2 CELL */, false)
+    view.setUint16(5, 2 /* ntor handshake */, false)
+    view.setUint16(7, payload.length, false)
+    handshake.set(payload,9)
+
+
+    endpoint.io.send(handshake)
 }
 
 lnn.post.channel = function(endpoint, success, error)
@@ -126,11 +237,11 @@ lnn.post.extend = function(endpoint, descriptor, success, error)
     var extend_success = success
     var normal_handler = endpoint.io.handler
 
-    var handler = function(endpoint)
+    var handler = function(endpoint, data)
     {
         endpoint.io.handler = normal_handler
 
-        var cell = lnn.onion.peel(endpoint, endpoint.io.recv())
+        var cell = lnn.onion.peel(endpoint, data)
         if (cell == null || cell.cmd != "extended2")
         {
             if (extend_error !== undefined)
@@ -159,3 +270,25 @@ lnn.post.extend = function(endpoint, descriptor, success, error)
     endpoint.io.handler = handler
     endpoint.io.send(cell)
 }
+
+
+lnn.post.close = function(endpoint, success, error)
+{
+    var rq = new XMLHttpRequest()
+    rq.onreadystatechange = function()
+    {
+        if (rq.readyState == 4 && rq.status == 202)
+        {
+            if (success !== undefined)
+                success("Circuit closed")
+        }
+        else if (rq.readyState == 4 && error !== undefined)
+        {
+            error("Error in closing circuit")
+        }
+    }
+
+    rq.open("DELETE", endpoint.url, true)
+    rq.send()
+}
+

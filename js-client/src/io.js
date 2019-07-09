@@ -56,9 +56,15 @@ lnn.io.socket = function(endpoint, handler, success, error)
         success: success,
         error: error,
         cell: null,
+	cell_recv: 0,
+	//cell_sent: 0,
         send: function(cell)
         {
             io.outcoming.push(cell)
+
+            //io.cell_sent += 1
+            //var cell_repr = Array.from(cell.slice(0,20)).map(function(x) {return x.toString(16).padStart(2, '0')}).join('')
+            //console.log("cell ", io.cell_sent.toString(), " sent to wbskt ", cell_repr)
         },
         recv: function()
         {
@@ -66,6 +72,11 @@ lnn.io.socket = function(endpoint, handler, success, error)
                 return undefined
 
             io.cell = io.incoming.shift()
+
+            io.cell_recv += 1
+            var cell_repr = Array.from(io.cell.slice(0,20)).map(function(x) {return x.toString(16).padStart(2, '0')}).join('')
+            console.log("cell recv by wbskt ", cell_repr)
+
             return io.cell
         },
         start: function() { }
@@ -86,6 +97,10 @@ lnn.io.socket = function(endpoint, handler, success, error)
             if (io.closed)
                 throw "Unable to send, connection closed."
             io.socket.send(cell.buffer)
+
+            //io.cell_sent += 1
+            //var cell_repr = Array.from(cell.slice(0,20)).map(function(x) {return x.toString(16).padStart(2, '0')}).join('')
+            //console.log("cell ", io.cell_sent.toString(), " sent to wbskt ", cell_repr)
         }
     }
     socket.onerror = function(event)
@@ -96,8 +111,15 @@ lnn.io.socket = function(endpoint, handler, success, error)
     socket.onmessage = function(event)
     {
         io.event = event
-        io.incoming.push(new Uint8Array(event.data))
-        io.handler(endpoint)
+
+	var data = new Uint8Array(event.data)
+
+	var cell_repr = Array.from(data.slice(0,20)).map(function(x) {return x.toString(16).padStart(2, '0')}).join('')
+	console.log("cell recv by wbskt ", cell_repr)
+
+        // io.incoming.push(data)
+	io.cell = data
+        io.handler(endpoint, data)
     }
     socket.onclose = function(event)
     {

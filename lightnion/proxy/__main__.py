@@ -10,6 +10,18 @@ default_auth = '.lightnion-auth.d'
 log_format = "%(levelname)s: %(message)s"
 log_levels = {None: logging.ERROR, 1: logging.WARNING, 2: logging.INFO}
 
+def _validate_port(port_s):
+    try:
+        port = int(port_s)
+    except Exception:
+        raise RuntimeError('Invalid port (%s).' % port_s)
+
+    if port < 1 or port > 65536:
+        raise RuntimeError('Invalid port (%d).' % port)
+
+    return port
+
+
 def _validate_host(addr):
     if not (addr.count(':') == 1):
         raise RuntimeError('Invalid [ip:port] format: {}'.format(addr))
@@ -35,6 +47,9 @@ if __name__ == '__main__':
     parser.add_argument('-c', required=False, default='8000',
         metavar='control_port', help='Control port for path selection.'
         + ' (default: 8000)')
+    parser.add_argument('-d', required=False, default='7000',
+        metavar='dir_port', help='Dir port for consensus retrieval.'
+        + ' (default: 7000)')
     parser.add_argument('--purge-cache', action='store_true',
         help='If specified, purge cache before starting.')
     parser.add_argument('-v', action='count',
@@ -73,9 +88,12 @@ if __name__ == '__main__':
             'No authentication for slave, using {} is unsafe!'.format(argv.s))
     _, argv.c = _validate_host('{}:{}'.format(argv.s[0], argv.c))
 
+    argv.d = _validate_port(argv.d)
+
     lightnion.proxy.forward.main(
         port=argv.p,
         slave_node=argv.s,
+        dir_port=argv.d,
         control_port=argv.c,
         purge_cache=argv.purge_cache,
         static_files=static if len(static) > 0 else None,

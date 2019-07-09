@@ -132,12 +132,64 @@ lnn.onion.backward = function(endpoint)
                 throw "Invalid size for cell, fatal."
 
             var body = cell.slice(5)
+            
             for (var idx = 0; idx < backward.layers.length; idx++)
             {
                 body.set(backward.layers[idx].ctr.process(body), 0)
+                
+                cell.set(body, 5)
+            
+                var recognized = cell.slice(6, 8)
+                if (recognized[0] == recognized[1] && recognized[0] == 0)
+                {
+                    var digest = cell.slice(10, 14)
+                    var expect = backward.layers[idx].digest(cell)
+
+                    var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
+
+                    if(expect[0] == digest[0] &&
+                        expect[1] == digest[1] &&
+                        expect[2] == digest[2] &&
+                        expect[3] == digest[3] ) {
+                        if (length <= lnn.relay.data_len)
+                        {
+                            console.log("Warning: Cell sent by intermediate \
+                                tor node, after " + (idx+1) + " hop(s)")
+                            return cell
+                        }   
+                    }
+                }
             }
+            
             cell.set(backward.ctr.process(body), 5)
+            var digest = cell.slice(10, 14)
+            cell.set(new Uint8Array(4), 10)
+
+            var recognized = cell.slice(6, 8)
+            if (!(recognized[0] == recognized[1] && recognized[0] == 0))
+            {
+                throw "Invalid cell recognized field."
+            }
+
+            var expect = backward.digest(cell)
+            if (!(true
+                && digest[0] == expect[0]
+                && digest[1] == expect[1]
+                && digest[2] == expect[2]
+                && digest[3] == expect[3]))
+            {
+                throw "Invalid cell digest."
+            }
+            
+            var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
+            if (length > lnn.relay.data_len)
+            {
+                throw "Invalid cell data length."
+            }
+
             return cell
+
+            
         },
         digest: function(cell)
         {
@@ -162,34 +214,15 @@ lnn.onion.build = function(endpoint, cmd, stream_id, data)
 lnn.onion.peel = function(endpoint, cell)
 {
     var cell = endpoint.backward.decrypt(cell)
-    var digest = cell.slice(10, 14)
-    cell.set(new Uint8Array(4), 10)
-
-    var recognized = cell.slice(6, 8)
-    if (!(recognized[0] == recognized[1] && recognized[0] == 0))
-    {
-        throw "Invalid cell recognized field."
-    }
-
-    var expect = endpoint.backward.digest(cell)
-    if (!(true
-        && digest[0] == expect[0]
-        && digest[1] == expect[1]
-        && digest[2] == expect[2]
-        && digest[3] == expect[3]))
-    {
-        throw "Invalid cell digest."
-    }
+    
+    
 
     var length = new DataView(cell.slice(14, 16).buffer).getUint16(0, false)
-    if (length > lnn.relay.data_len)
-    {
-        throw "Invalid cell data length."
-    }
 
     var id = new DataView(cell.slice(8, 10).buffer).getUint16(0, false)
     var cmd = lnn.relay.cmd[cell.slice(5, 6)[0]]
     var data = cell.slice(16, 16 + length)
     var relay = {cmd: cmd, stream_id: id, data: data}
+    
     return relay
 }

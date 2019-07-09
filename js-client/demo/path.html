@@ -1,0 +1,69 @@
+<html>
+
+<head>
+    <script src="lightnion.bundle.js"></script>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+  <p id="status"></p>
+  <p id="guard">Guard: waiting...</p>
+  <p id="middle">Middle: waiting...</p>
+  <p id="exit">Exit: waiting...</p>
+  <script>
+    lnn.open('localhost', 4990,
+      end => {
+        if (end.state != lnn.state.success) return
+        document.getElementById('status').textContent = "Chanel opened"
+
+        let ft = Date.now()
+        lnn.get.consensus_raw(end,
+          end => {
+            document.getElementById('status').textContent = "Consensus downloaded"
+            lnn.get.signing_keys(end, end => {
+
+                lnn.get.descriptors_raw(end, end => {
+                  let startv = Date.now()
+                  console.log("Total download took : " + (startv - ft))
+                  
+                  var verif = lnn.signature.verify(end.consensus_raw, end.signing_keys, 0.5)
+                  let endv = Date.now()
+                  console.log("Verificatio status: " + verif)
+                  console.log("Verificatio took: " + (endv - startv))
+                  
+                  let start = Date.now()
+                  cons = lnn.consensusParser.parse(end.consensus_raw)
+                  let mid = Date.now()
+                  des = lnn.parser.descriptors.parse(end.descriptors_raw)
+                  let endd = Date.now()
+                  lnn.parser.descriptors.validate(des,cons)
+                  let end2 = Date.now()
+
+                  console.log("cons. parsing took: " + (mid - start))
+                  console.log("des. parsing took: " + (endd - mid))
+                  console.log("des. validation took: " + (end2 - endd))
+
+                 
+                  let stp2 = Date.now()
+                  let [ middle2, exit2] = lnn.path.select_end_path(cons,des,end.guard, true,[80,443])
+                  let enp2 = Date.now()
+                  console.log("path sel2 took: " + (enp2 - stp2))
+
+                  document.getElementById('exit').textContent = "Exit: " + exit2['router'].nickname
+                  document.getElementById('guard').textContent = "Guard: " + end.guard['router'].nickname
+                  document.getElementById('middle').textContent = "Middle: " + middle2['router'].nickname
+
+
+                }, error)
+            
+            },error)
+          }, error)
+      }, error)
+
+    function error(endpoint) {
+      //document.getElementById('status').textContent = "Something went wrong"
+    }
+  </script>
+</body>
+
+</html>

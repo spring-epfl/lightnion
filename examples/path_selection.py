@@ -5,7 +5,7 @@ if __name__ == "__main__":
 
     #download the consensus
     lnn.cache.purge()
-    link = lnn.link.initiate(port=5000)
+    link = lnn.link.initiate(port=5000) #9050 for real tor 
     state = lnn.create.fast(link)
     state, cons = lnn.consensus.download(state, flavor='unflavored')
 

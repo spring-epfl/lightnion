@@ -59,7 +59,7 @@ python examples/path.py 127.0.0.1 5000 7 0 8001 # 67 loc – create 7 paths
 # run the proxy, run with real Tor
 cd lightnion
 python -m lightnion.proxy --help # help!
-python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000
+python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000 -d 9051
 # -vvv is very very verbose mode
 # -s is the slave node, here the local real one
 # -c is the control port for path unholy selection
@@ -183,6 +183,23 @@ $BROWSER http://localhost:4990/curl.html # 157l – press return several times
 # - press enter, you'll see your (exit node) IP address!
 # - press enter, you'll see your (exit node) local weather report!
 # - refresh the page (you may have a new exit)
+
+# high level APIs for get and post request
+#1. create a endpoint and use it for multiple streams: 
+#	- endpoint.http_request(url, method, data,...)
+#2. Create circuit seperately for one stream:
+#   - lnn.http_request(url, method, data,...)
+
+$BROWSER http://localhost:4990/get-post.html 
+# get or post request with data (form or json)
+
+
+$BROWSER http://localhost:4990/path.html 
+# Benchmarking example for 
+# - signature verification
+# - consensus and descriptor parsing
+# - path selection
+# at client. 
 
 
 $BROWSER http://localhost:4990/tls.html # 121l – unholy TLS, return two times

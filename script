@@ -1,0 +1,9 @@
+import lightnion as lnn
+
+lnn.cache.purge()
+link = lnn.link.initiate(port=5000)
+state = lnn.create.fast(link)
+state, cons = lnn.consensus.download(state, flavor='unflavored')
+
+with open("cons", "w") as file:
+	file.write(cons)

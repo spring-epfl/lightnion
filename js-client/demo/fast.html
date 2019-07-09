@@ -1,6 +1,7 @@
 <html>
 <head>
     <script src="lightnion.bundle.js"></script>
+
     <meta charset="UTF-8">
 </head>
 <body>
@@ -8,26 +9,23 @@
     <pre id='fast'>Fast: </pre>
 
     <script>
-        function ms(endpoint)
+        var start_normal = performance.now()
+        function ms(endpoint,start)
         {
-            return (performance.now() - endpoint.start).toString() + 'ms'
+            return (performance.now() - start).toString() + 'ms'
         }
 
         lnn.open('localhost', 4990, function(endpoint)
             {
-                if (endpoint.state == lnn.state.started)
-                    endpoint.start = performance.now()
-
                 if (endpoint.state == lnn.state.success)
-                    document.getElementById('open').innerHTML += ms(endpoint)
+                    document.getElementById('open').innerHTML += ms(endpoint,start_normal)
             })
+
+        var start_fast = performance.now()
         lnn.fast('localhost', 4990, function(endpoint)
             {
-                if (endpoint.state == lnn.state.started)
-                    endpoint.start = performance.now()
-
                 if (endpoint.state == lnn.state.success)
-                    document.getElementById('fast').innerHTML += ms(endpoint)
+                    document.getElementById('fast').innerHTML += ms(endpoint,start_fast)
             })
     </script>
 </body>

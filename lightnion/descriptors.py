@@ -1,5 +1,7 @@
 import base64
 import hashlib
+import logging
+import urllib.request
 
 import lightnion as lnn
 from lightnion import consensus
@@ -367,8 +369,111 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     if len(query) != 0:
         yield query
 
-def download(state,
-        cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
+
+def validate_descriptors(descriptors, digests, flavor='unflavored', fail_on_missing=False):
+    """Check that the descriptors are valid.
+    :param descriptors: Descriptors to check.
+    :param digests: Digests of the descriptors.
+    :param flavor: Flavor of the descriptor.
+    :param fail_on_missing: If an exception should be raised if a descriptor is missing.
+    """
+    
+    if flavor == 'microdesc':
+        obtained = [d['micro-digest'] for d in descriptors]
+    else:
+        obtained = [base64.b64decode(d['digest'] + '====').hex() for d in descriptors]
+
+    invalid = []
+    for digest in digests:
+        if digest in obtained:
+            obtained.remove(digest)
+        else:
+            invalid.append(digest)
+
+    if not len(obtained) == 0:
+        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format( sorted(invalid), sorted(obtained)))
+
+    if fail_on_missing and len(invalid) > 0:
+        raise RuntimeError('Missing {} digests in answer: {}'.format( len(invalid), invalid))
+
+
+def download_direct(host, port, cons, flavor='unflavored'):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param cons: consensus for which nodes a descriptor need to be retrieved.
+    """
+
+    if flavor == 'microdesc':
+        endpoint = '/tor/micro/d/'
+        separator = '-'
+        digests = [router['micro-digest'] for router in cons['routers']]
+
+    else:
+        endpoint = '/tor/server/d/'
+        separator = '+'
+        digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
+
+    descriptors = []
+
+    # Retrieve descriptors not in the cache
+    for query in batch_query(digests, endpoint, separator):
+        uri = 'http://%s:%d%s' % (host, port, query)
+        res = urllib.request.urlopen(uri)
+
+        if res is None or res.getcode() != 200:
+            raise RuntimeError('Unable to fetch descriptors.')
+
+        new_batch, remaining = parse(res.read(), flavor=flavor)
+        if new_batch is None or remaining is None or len(remaining) > 0:
+            raise RuntimeError('Unable to parse descriptors.')
+
+        if (len(new_batch['descriptors']) == 0):
+            raise RuntimeError('No descriptor listed. http={}.'.format(new_batch['http']))
+
+        if new_batch is not None:
+            descriptors += new_batch['descriptors']
+
+        validate_descriptors(descriptors, digests, flavor  = flavor)
+
+    if flavor == 'microdesc':
+        return {d['micro-digest']: d for d in descriptors}
+    else:
+        return {d['digest']: d for d in descriptors}
+
+def download_raw(host, port, cons, flavor='unflavored'):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param cons: consensus for which nodes a descriptor need to be retrieved.
+    """
+
+    if flavor == 'microdesc':
+        endpoint = '/tor/micro/d/'
+        separator = '-'
+        digests = [router['micro-digest'] for router in cons['routers']]
+
+    else:
+        endpoint = '/tor/server/d/'
+        separator = '+'
+        digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
+
+
+    # Retrieve descriptors not in the cache
+    desc = b""
+    for query in batch_query(digests, endpoint, separator):
+        uri = 'http://%s:%d%s' % (host, port, query)
+        res = urllib.request.urlopen(uri)
+
+        if res is None or res.getcode() != 200:
+            raise RuntimeError('Unable to fetch descriptors.')
+
+        desc += res.read()
+    
+    return desc        
+def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
+    logging.warning('Use DEPRECATED method descriptor.download()!')
+
     if cons is None:
         state, cons = consensus.download(state, flavor=flavor, cache=cache)
         if cons is None:
@@ -410,7 +515,6 @@ def download(state,
                 pass
         partial_digests = [d for d in digests if d not in cached_digests]
 
-    # retrieve descriptors via digests
     for query in batch_query(partial_digests, endpoint, separator):
         state, answer = lnn.hop.directory_query(state, query)
 
@@ -456,6 +560,7 @@ def download(state,
 
     return state, descriptors
 
+
 def download_authority(state):
     state, answer = lnn.hop.directory_query(state, '/tor/server/authority')
     if answer is None or len(answer) == 0:
@@ -468,3 +573,24 @@ def download_authority(state):
         raise RuntimeError('Unable to parse authority descriptor.')
 
     return state, result['descriptors'][0]
+
+
+def download_authority_direct(host, port):
+    """Retrieve authority.
+    :param host: host from which to retrieve the authority.
+    :param port: port from which to retrieve the authority.
+    :return: Authority.
+    """
+    uri = 'http://%s:%d/tor/server/authority' % (host, port)
+
+    res = urllib.request.urlopen(uri)
+
+    if res is None or res.getcode() != 200:
+        return None
+
+    result, remain = parse(res.read(), flavor='unflavored')
+
+    if not (len(remain) == 0 and result is not None and len(result['descriptors']) == 1):
+        raise RuntimeError('Unable to parse authority descriptor.')
+
+    return result['descriptors'][0]
