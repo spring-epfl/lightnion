@@ -19,6 +19,8 @@ import lightnion as lnn
 import lightnion.proxy
 import lightnion.path_selection
 
+from tools.keys import get_raw_signing_keys
+
 debug = True
 
 formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s', datefmt='%H:%M:%S')
@@ -66,6 +68,7 @@ class clerk():
         self.consm = None
         self.descm = None        
         self.signing_keys = None
+        self.signing_keys_raw = None
 
         self.timer_consensus = None
 
@@ -102,6 +105,7 @@ class clerk():
         
         self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
         self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+        self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(self.slave_node[0],self.dir_port))
 
         self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
         self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons, flavor='unflavored')
@@ -239,7 +243,7 @@ async def get_signing_keys():
     """
     try:
         app.clerk.wait_for_consensus()
-        keys = quart.jsonify(app.clerk.signing_keys)
+        keys = app.clerk.signing_keys_raw
         return keys, 200
     except Exception as e:
         logging.exception(e)

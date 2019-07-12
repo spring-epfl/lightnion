@@ -1,8 +1,7 @@
 <html>
 
 <head>
-    <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
-    <script src="lightnion.bundle.js"></script>
+  <script src="lightnion.bundle.js"></script>
     <meta charset="UTF-8">
 </head>
 
@@ -56,7 +55,7 @@
 
         function verify_listener() {
             read_text_file("keys.json", k => {
-                let keys = JSON.parse(k)
+                let keys = (k)
                 console.log("------------------Verification-------------------")
                 for (let i = 0; i < rep; i++) {
 
