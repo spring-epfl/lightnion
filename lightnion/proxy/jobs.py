@@ -312,13 +312,13 @@ class WebsocketManager:
         :param port: port on which the websocket is listening.
         """
         self.server = await websockets.serve(self._handler, self.host, self.port, loop=loop, compression=None)
-        await self.server.wait_closed()
-        logging.debug('WsServ: Websocket server closed.')
 
 
-    def stop(self):
+    async def stop(self):
         if self.server is not None:
             self.server.close()
+        await self.server.wait_closed()
+        logging.debug('WsServ: Websocket server closed.')
 
 
     def set_channel_manager(self, channel_manager):
