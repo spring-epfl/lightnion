@@ -1,25 +1,26 @@
-import threading
-import traceback
-import logging
+import asyncio
 import base64
-import quart
-from quart_cors import cors
-import queue
+import logging
+import signal
 import string
+import sys
+import threading
 import time
 
 from datetime import datetime, timedelta
 
+import quart
 import websockets
-import asyncio
-import sys
-import signal
+
+from quart_cors import cors
 
 import lightnion as lnn
-import lightnion.proxy
 import lightnion.path_selection
+import lightnion.proxy
 
-from tools.keys import get_raw_signing_keys
+from tools.keys import get_signing_keys_info
+
+#from tools.keys import get_raw_signing_keys
 
 debug = True
 
@@ -37,7 +38,7 @@ logger.addHandler(handler)
 
 
 class clerk():
-    def __init__(self, slave_node, control_port, dir_port, auth_dir=None):
+    def __init__(self, slave_node, control_port, dir_port, compute_path, auth_dir=None):
         #super().__init__()
         logging.info('Bootstrapping clerk.')
         self.crypto = lnn.proxy.parts.crypto()
@@ -57,6 +58,7 @@ class clerk():
         else:
             logging.debug('Auth dir is None.')
 
+        self.retrieved_consensus = False
         self.consensus = None
         self.descriptors = None
 
@@ -65,10 +67,10 @@ class clerk():
         self.mic_consensus_raw = None
         self.mic_descriptors_raw = None
 
-        self.consm = None
-        self.descm = None        
+        #self.consm = None
+        #self.descm = None
         self.signing_keys = None
-        self.signing_keys_raw = None
+        #self.signing_keys_raw = None
 
         self.timer_consensus = None
 
@@ -77,10 +79,12 @@ class clerk():
         self.control_port = control_port
         self.dir_port = dir_port
         self.slave_node = slave_node
+        self.compute_path = compute_path
 
         self.link = None
         self.channel_manager = None
         self.websocket_manager = None
+
 
     def prepare(self):
         guard = self.get_guard()
@@ -93,43 +97,59 @@ class clerk():
         self.channel_manager.set_link(self.link)
         self.websocket_manager.set_channel_manager(self.channel_manager)
 
+
     def retrieve_consensus(self):
         """Retrieve relays data with direct HTTP connection and schedule its future retrival."""
 
         # We tolerate that the system clock can be up to a few seconds too early.
         refresh_tolerance_delay = 2.0
+        min_delay = 120.0 # 2 minutes
+        max_time_until_invalid = 900.0 # 15 minutes
+
+        host = self.slave_node[0]
+        port = self.dir_port
+
 
         # retrieve consensus and descriptors
-        cons,sg_keys = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor='unflavored')
-        desc = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, cons)
-        
-        self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
-        self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
-        self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(self.slave_node[0],self.dir_port))
+        if self.compute_path:
+            cons,sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
+            desc = lnn.descriptors.download_direct(host, port, cons)
+            self.consensus = cons
+            self.signing_keys = sg_keys
+            self.descriptors = desc
 
-        self.consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='unflavored')
-        self.descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, cons, flavor='unflavored')
+            #self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
+            #self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
 
-        self.mic_consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='microdesc')
-        self.mic_descriptors_raw = lnn.descriptors.download_raw(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+        self.consensus_raw = lnn.consensus.download_raw(host, port, flavor='unflavored')
+        digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
+        self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
 
-        print(len(cons['routers']))
-        print(len(desc))
-        print(len(self.descm))
+        keys = get_signing_keys_info('{}:{}'.format(host, port))
+        self.signing_keys = keys
+        #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
-        self.consensus = cons
-        self.signing_keys = sg_keys
-        self.descriptors = desc
-
+        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
+        digests = lnn.consensus.extract_nodes_digests_micro(self.mic_consensus_raw)
+        self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(host, port, digests)
 
         try:
             # Compute delay until retrival of the next consensus.
-            fresh_until = datetime.utcfromtimestamp(self.consensus['headers']['fresh-until']['stamp'])
+            fresh_until = lnn.consensus.extract_date(self.consensus_raw, 'fresh-until')
             now = datetime.utcnow()
             delay = (fresh_until - now).total_seconds() + refresh_tolerance_delay
-            
+
+            if delay < min_delay:
+                valid_until = lnn.consensus.extract_date(self.consensus_raw, 'valid-until')
+                delay = (valid_until - now).total_seconds() - max_time_until_invalid
+
+            delay = max(delay, min_delay)
+
+            logging.debug('Delay until fetching next concensus: %f', delay)
+
             self.timer_consensus = threading.Timer(delay, clerk.retrieve_consensus, [self])
             self.timer_consensus.start()
+            self.retrieved_consensus = True
 
         except Exception as e:
             logging.error(e)
@@ -139,10 +159,11 @@ class clerk():
     def wait_for_consensus(self):
         """Ensure a consensus is present in the clerk, and fetch a new one if it is not.
         """
-        if self.consensus is None:
+        if not self.retrieved_consensus:
             if self.timer_consensus is None:
                 self.retrieve_consensus()
-        while self.consensus is None:
+
+        while not self.retrieved_consensus:
             logging.info('Wait for consensus...')
             time.sleep(1)
 
@@ -166,7 +187,13 @@ class clerk():
         self.wait_for_consensus()
 
         if self.guard_node is None:
-            guard = lnn.path_selection.select_guard_from_consensus(self.consensus, self.descriptors)
+            # Use local node as the guard.
+            #guard = lnn.path_selection.select_guard_from_consensus(self.consensus, self.descriptors)
+            host = self.slave_node[0]
+            port = self.dir_port
+
+            guard = lnn.descriptors.download_relay_descriptor(host, port)
+
             #nickname = guard['router']['nickname']
             #fingerprint = guard['fingerprint']
             #entry = [fingerprint, nickname]
@@ -214,7 +241,7 @@ def get_descriptors_raw(flavor):
         desc = app.clerk.mic_descriptors_raw
         if flavor == 'unflavored':
             desc = app.clerk.descriptors_raw
-        
+
         return desc, 200
     except Exception as e:
         logging.exception(e)
@@ -243,7 +270,7 @@ async def get_signing_keys():
     """
     try:
         app.clerk.wait_for_consensus()
-        keys = app.clerk.signing_keys_raw
+        keys = app.clerk.signing_keys
         return keys, 200
     except Exception as e:
         logging.exception(e)
@@ -326,19 +353,16 @@ async def delete_channel(uid):
     return quart.jsonify({}), 202 # Deleted
 
 
-def main(port, slave_node, control_port, dir_port, purge_cache, static_files=None, auth_dir=None):
+def main(port, slave_node, control_port, dir_port, compute_path, auth_dir=None):
     """
     Entry point
     """
-
-    if purge_cache:
-        lnn.cache.purge()
 
     #if static_files is not None:
     #    from werkzeug import SharedDataMiddleware
     #    app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
-    app.clerk = clerk(slave_node, control_port, dir_port, auth_dir)
+    app.clerk = clerk(slave_node, control_port, dir_port, compute_path, auth_dir)
     logging.info('Bootstrapping HTTP server.')
 
     logging.getLogger(websockets.__name__).setLevel(logging.INFO)
