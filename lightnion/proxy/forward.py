@@ -20,6 +20,8 @@ import lightnion.proxy
 
 from tools.keys import get_signing_keys_info
 
+#from tools.keys import get_raw_signing_keys
+
 debug = True
 
 formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s', datefmt='%H:%M:%S')
@@ -68,6 +70,7 @@ class clerk():
         #self.consm = None
         #self.descm = None
         self.signing_keys = None
+        #self.signing_keys_raw = None
 
         self.timer_consensus = None
 
@@ -106,6 +109,7 @@ class clerk():
         host = self.slave_node[0]
         port = self.dir_port
 
+
         # retrieve consensus and descriptors
         if self.compute_path:
             cons,sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
@@ -120,12 +124,14 @@ class clerk():
         self.consensus_raw = lnn.consensus.download_raw(host, port, flavor='unflavored')
         digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
         self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
+
         keys = get_signing_keys_info('{}:{}'.format(host, port))
         self.signing_keys = keys
+        #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
-        self.mic_consensus_raw = lnn.consensus.download_raw(self.slave_node[0], self.dir_port, flavor='microdesc')
+        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
         digests = lnn.consensus.extract_nodes_digests_micro(self.mic_consensus_raw)
-        self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(self.slave_node[0], self.dir_port, digests)
+        self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(host, port, digests)
 
         try:
             # Compute delay until retrival of the next consensus.
@@ -264,7 +270,7 @@ async def get_signing_keys():
     """
     try:
         app.clerk.wait_for_consensus()
-        keys = quart.jsonify(app.clerk.signing_keys)
+        keys = app.clerk.signing_keys
         return keys, 200
     except Exception as e:
         logging.exception(e)

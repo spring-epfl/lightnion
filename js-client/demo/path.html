@@ -14,12 +14,12 @@
     lnn.open('localhost', 4990,
       end => {
         if (end.state != lnn.state.success) return
-        document.getElementById('status').textContent = "Chanel opened"
+        document.getElementById('status').innerHTML += "Chanel opened<br>"
 
         let ft = Date.now()
         lnn.get.consensus_raw(end,
           end => {
-            document.getElementById('status').textContent = "Consensus downloaded"
+            document.getElementById('status').innerHTML += "Consensus downloaded"
             lnn.get.signing_keys(end, end => {
 
                 lnn.get.descriptors_raw(end, end => {
@@ -58,8 +58,11 @@
             
             },error)
           }, error)
-      }, error)
+      }, error,undefined,undefined,undefined,undefined,undefined,info)
 
+    function info(msg) {
+        document.getElementById('status').innerHTML += msg + "<br>"
+    }
     function error(endpoint) {
       //document.getElementById('status').textContent = "Something went wrong"
     }

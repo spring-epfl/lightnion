@@ -27,7 +27,7 @@ lnn.auth = function(host, port, suffix, success, error, io, select_path)
         ntor: nacl.box.keyPair()}, select_path)
 }
 
-lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp_ports)
+lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp_ports, info)
 {
     var endpoint = lnn.endpoint(host, port)
     if (io === undefined)
@@ -42,6 +42,9 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
         select_path = true
     if(tcp_ports === undefined )
         tcp_ports = [80,443]
+    if(info === undefined)
+        info = function() { }
+
 
     endpoint.fast = fast
     endpoint.auth = auth
@@ -52,8 +55,8 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
         {
             endpoint.state = lnn.state.guarded
             
-
-            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
+            info("Guard  chosen")
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports, info)
         },
 	startWebSocket: function(endpoint, info) {
 	    console.log('called startWebSocket cb')
@@ -75,7 +78,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
 	    console.log('called create cb')
             endpoint.state = lnn.state.created
             
-
+            info("Extending to middle node")
             lnn.post.extend(endpoint, endpoint.path[0], cb.extend, error)
         },
         extend: function(endpoint)
@@ -83,13 +86,14 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
 	    console.log('called extend cb')
             endpoint.state = lnn.state.extpath
             
-
+            info("Extending to exit node")
             lnn.post.extend(endpoint, endpoint.path[1], cb.success, error)
         },
         success: function(endpoint)
         {
 	    console.log('called success cb')
             endpoint.state = lnn.state.success
+            info("circuit created")
             success(endpoint)
             endpoint.io.success = function() { }
         }
@@ -108,10 +112,12 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
                     throw "signature verification failed."
                 }
                 console.log("signature verification success")
+                info("Consensus downloaded and verified")
                 lnn.get.descriptors_raw(endpoint,function()
                 {
+                    info("descriptors downloaded")
                     if (endpoint.fast)
-                        lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
+                        lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports, info)
                     else
                         lnn.get.guard(endpoint, cb.guard, error)
 
@@ -132,7 +138,7 @@ lnn.open = function(host, port, success, error, io, fast, auth, select_path, tcp
     {
         // fast channel: one-request channel creation (no guard pinning)
         if (endpoint.fast)
-            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
+            lnn.post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports, info)
         else
             lnn.get.guard(endpoint, cb.guard, error)
     }
