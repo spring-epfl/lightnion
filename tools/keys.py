@@ -6,8 +6,8 @@ import json as js
 import re
 
 # Those are the IP's addresses of the 9 authorities
-ips = ['171.25.193.9:443', '86.59.21.38', '199.58.81.140',  '204.13.164.118',
-       '131.188.40.189', '128.31.0.34:9131',  '154.35.175.225']
+ips = ['171.25.193.9:443', '86.59.21.38', '199.58.81.140',  '204.13.164.118','66.111.2.131:9030',
+       '131.188.40.189', '128.31.0.34:9131',  '154.35.175.225','193.23.244.244','194.109.206.212']
 
 
 def download_signing_keys(ip):
@@ -75,6 +75,23 @@ def get_signing_keys_info(ip = None, path = "./tools/authority_signing_keys.json
 
     return to_json(keys_dict, path)
 
+def get_raw_signing_keys(ip = None):
+    """
+    Get the information of the authority router keys and save it to a json file.
+
+
+    :param path: where we want to save the json
+    """
+    if ip is None:
+        ip = random.choice(ips)
+    
+    url = "http://{}/tor/keys/all".format(ip)
+    rq = requests.get(url)
+
+    if rq.status_code == 200:
+        return rq.text
+    else:
+        return None
 
 def get_chutney_keys_info(saving_path="./tools/chutney_authority_signing_keys.json"):
     """

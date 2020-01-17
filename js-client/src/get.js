@@ -137,12 +137,12 @@ lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'microdesc'
     rq.open("GET", endpoint.urls.descriptors+ "-raw/" + flavor, true)
     rq.send()
 }
-
+//fetch raw signing keys(tor/keys/all)
 lnn.get.signing_keys = function(endpoint, success, error){
     var rq = new XMLHttpRequest()
     rq.onreadystatechange = function(){
         if(rq.readyState == 4 && rq.status == 200){
-            endpoint.signing_keys = JSON.parse(rq.responseText)
+            endpoint.signing_keys = rq.responseText
             
             if(success !== undefined) success(endpoint)
         }

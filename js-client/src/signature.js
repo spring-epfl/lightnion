@@ -27,6 +27,8 @@ lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') 
         throw 'The minimal percentage must be between 0 (not included) and 1'
     }
 
+    keys = lnn.signature.process_raw_keys(keys)
+
     let nbr_verified = 0
     let total = 0
 
@@ -43,10 +45,11 @@ lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') 
     for (let fingerprint in sig_and_keys_digests) {
         total++
         
-        let key = keys[fingerprint]
+        let key_digest = sig_and_keys_digests[fingerprint]["signing-key-digest"]
+        let key = keys[fingerprint][key_digest]
+
         let e = bigInt(key["exponent"])
         let n = bigInt(key["modulus"])
-        let key_digest = sig_and_keys_digests[fingerprint]["signing-key-digest"]
 
         if (key === undefined || !lnn.signature.verify_key(key["pem"], key_digest)) continue
 
@@ -57,8 +60,130 @@ lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') 
 
         nbr_verified = (recovered_hash === undefined || recovered_hash !== hash) ? nbr_verified : nbr_verified + 1
     }
-
+    console.log(nbr_verified + " " + total)
     return nbr_verified > minimal * total
+}
+
+lnn.signature.process_raw_keys = function(raw_keys) {
+    var keys = {}
+    var real_tor = true //keep false for chutney!!
+
+    raw_keys = raw_keys.split('\n')
+    for(i = 0; i < raw_keys.length; i++) {
+        if(raw_keys[i] == "") continue
+
+        if(!raw_keys[i].startsWith("dir-key-certificate-version")) continue
+
+        var sti = i
+        while(!raw_keys[i].startsWith("fingerprint")) i++
+
+        var fingerprint = raw_keys[i].split(" ")[1]
+        
+        while(!raw_keys[i].startsWith("dir-identity-key"))
+            i++
+        i++
+        var auth_id_key = ""
+        while(raw_keys[i] != "-----END RSA PUBLIC KEY-----") {
+            auth_id_key += raw_keys[i] + "\n"
+            i++
+        }
+        auth_id_key += "-----END RSA PUBLIC KEY-----"
+        i++
+
+        if(!raw_keys[i].startsWith("dir-signing-key")) {
+            throw 'Unexpected key certificate document format'
+        }
+        i++
+        var signing_key = ""
+        while(raw_keys[i] != "-----END RSA PUBLIC KEY-----") {
+            signing_key += raw_keys[i] + "\n"
+            i++
+        }
+        signing_key += "-----END RSA PUBLIC KEY-----"
+        i++
+
+        if(!raw_keys[i].startsWith("dir-key-crosscert")) {
+            throw 'Unexpected key certificate document format'
+        }
+        i++
+        var cross_cert = ""
+        while(raw_keys[i] != "-----END ID SIGNATURE-----" && raw_keys[i] != "-----END SIGNATURE-----") {
+            cross_cert += raw_keys[i] + "\n"
+            i++
+        }
+        cross_cert += raw_keys[i]
+        i++
+
+        if(!raw_keys[i].startsWith("dir-key-certification")) {
+            throw 'Unexpected key certificate document format'
+        }
+        var eni = i
+
+        i++ //skip dir-key-certification
+        i++ //skip begin signature
+        var cert = ""
+        while(raw_keys[i] != "-----END SIGNATURE-----") {
+            cert += raw_keys[i]
+            i++
+        }
+    
+        if(!lnn.signature.verify_key(auth_id_key,fingerprint)) {
+            throw 'authority identity key' + fingerprint + ' digest verification failed'
+        }
+        
+        if(real_tor) {
+            if(lnn.root_keys[fingerprint] === undefined) {
+                throw 'Root key not found ' + fingerprint
+            }
+        }
+
+        var auth_key_pki = forge.pki.publicKeyFromPem(auth_id_key);
+        var auth_mod = auth_key_pki.n.toString()
+        var auth_exp = auth_key_pki.e.toString()
+
+        if(real_tor) {
+            if(lnn.root_keys[fingerprint]["pem"] != auth_id_key || 
+                lnn.root_keys[fingerprint]["modulus"] != auth_mod || 
+                lnn.root_keys[fingerprint]["exponent"] != auth_exp 
+                )  {
+                throw 'Root key ' + fingerprint + ' digest mismatch'
+            }
+        }
+
+
+        var raw_key_doc = ""
+        for(j = sti; j < eni; j++) raw_key_doc += raw_keys[j] + "\n"
+        raw_key_doc += "dir-key-certification\n"
+        
+        var hash_key_doc = sjcl.hash.sha1.hash(raw_key_doc)
+        hash_key_doc = sjcl.codec.hex.fromBits(hash_key_doc)
+
+
+        var e = bigInt(auth_exp)
+        var n = bigInt(auth_mod)
+
+        var sig_big_int = lnn.signature.get_signature_big_int(cert)
+        var padded_hash = lnn.signature.get_hash(sig_big_int, e, n)
+        var recovered_hash = lnn.signature.get_hash_from_rsa_cipher(padded_hash) 
+
+
+        if(recovered_hash === undefined || recovered_hash !== hash_key_doc) {
+            throw( 'Signature document invalid, root key verification failed' )
+        }
+
+        var sg_digest = lnn.signature.compute_digest(signing_key)
+        var signing_key_pki = forge.pki.publicKeyFromPem(signing_key);
+
+        if(keys[fingerprint] === undefined) 
+            keys[fingerprint] = {}
+        keys[fingerprint][sg_digest] = {
+            "pem":signing_key,
+            "modulus":signing_key_pki.n.toString(),
+            "exponent":signing_key_pki.e.toString()
+        }
+
+    }
+    return keys
 }
 
 /**
@@ -95,6 +220,18 @@ lnn.signature.verify_key = function (key, key_digest) {
     let hash = sjcl.hash.sha1.hash(raw_key)
     hash = sjcl.codec.hex.fromBits(hash)
     return hash.toUpperCase() === key_digest.toUpperCase()
+}
+
+lnn.signature.compute_digest = function (key) {
+    let raw_key = key.split('\n')
+    let b_index = raw_key.indexOf("-----BEGIN RSA PUBLIC KEY-----")
+    let e_index = raw_key.indexOf("-----END RSA PUBLIC KEY-----")
+
+    raw_key = raw_key.splice(b_index + 1, e_index - b_index - 1).join("")
+    raw_key = sjcl.codec.base64.toBits(raw_key)
+    let hash = sjcl.hash.sha1.hash(raw_key)
+    hash = sjcl.codec.hex.fromBits(hash)
+    return hash.toUpperCase()
 }
 
 
