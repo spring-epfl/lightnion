@@ -61,7 +61,7 @@ lnn.post.create = function(endpoint, success, error)
 }
 
 
-lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_ports)
+lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_ports, inform)
 {
     if(select_path === undefined) {
         select_path = false
@@ -92,12 +92,15 @@ lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_port
             else {
                 endpoint.consensus = lnn.consensusParser.parse(endpoint.consensus_raw)
                 endpoint.descriptors = lnn.parser.descriptors.parse(endpoint.descriptors_raw)
-                lnn.parser.descriptors.validate(endpoint.descriptors,endpoint.consensus)
+                inform("consensus and descriptors parsed")
 
+                lnn.parser.descriptors.validate(endpoint.descriptors,endpoint.consensus)
+                inform("descriptors validated")
 
                 endpoint.path = lnn.path.select_end_path(endpoint.consensus, endpoint.descriptors, endpoint.guard, true, tcp_ports)
                 console.log(endpoint.guard)
                 console.log(endpoint.path)
+                inform("Path chosen")
             }
 
             if (success !== undefined)
@@ -117,6 +120,7 @@ lnn.post.circuit_info = function(endpoint, success, error, select_path, tcp_port
         payload = lnn.ntor.hand(endpoint)
 
     payload = {ntor: payload}*/
+
     if (endpoint.auth != null)
     {
         payload["auth"] = lnn.enc.base64(endpoint.auth.ntor.publicKey)

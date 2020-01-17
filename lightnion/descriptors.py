@@ -325,7 +325,8 @@ def consume_descriptors(descriptors, flavor='microdesc'):
         fields[-1][keyword] = content
     return descriptors, fields
 
-def parse(descriptors, flavor='microdesc'):
+
+def parse_descriptors(descriptors, flavor='microdesc'):
     fields = dict(flavor=flavor)
     nbdesc = descriptors.count(b'onion-key\n-----BEGIN')
 
@@ -351,6 +352,7 @@ def parse(descriptors, flavor='microdesc'):
         descriptors = b''
     return fields, descriptors
 
+
 def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     # About batches:
     #    https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392
@@ -370,31 +372,39 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
         yield query
 
 
-def validate_descriptors(descriptors, digests, flavor='unflavored', fail_on_missing=False):
-    """Check that the descriptors are valid.
-    :param descriptors: Descriptors to check.
-    :param digests: Digests of the descriptors.
+def filter_descriptors(descriptors, digests, flavor='unflavored'):
+    """Filter out the invalid descriptors.
+    :param descriptors: Descriptors to be filtered.
+    :param digests: Digests from the consensus.
     :param flavor: Flavor of the descriptor.
-    :param fail_on_missing: If an exception should be raised if a descriptor is missing.
     """
-    
+
+    descriptor_digests = set()
+    descriptors_d = dict()
+
+    # Content depends on descriptor flavour.
     if flavor == 'microdesc':
-        obtained = [d['micro-digest'] for d in descriptors]
+        for descriptor in descriptors:
+            fingerprint = descriptor['micro-digest']
+            descriptor_digests.add(fingerprint)
+            descriptors_d[fingerprint] = descriptor
     else:
-        obtained = [base64.b64decode(d['digest'] + '====').hex() for d in descriptors]
+        for descriptor in descriptors:
+            fingerprint = base64.b64decode(descriptor['digest'] + '====').hex()
+            descriptor_digests.add(fingerprint)
+            descriptors_d[fingerprint] = descriptor
 
-    invalid = []
-    for digest in digests:
-        if digest in obtained:
-            obtained.remove(digest)
-        else:
-            invalid.append(digest)
+    fingerprints_valid = descriptor_digests.intersection(digests)
+    descriptors_valid = [descriptors_d[fingerprint] for fingerprint in fingerprints_valid]
 
-    if not len(obtained) == 0:
-        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format( sorted(invalid), sorted(obtained)))
+    # For logging only.
+    desc_l = len(descriptors)
+    valid_l = len(descriptors_valid)
+    invalid_l = desc_l - valid_l
 
-    if fail_on_missing and len(invalid) > 0:
-        raise RuntimeError('Missing {} digests in answer: {}'.format( len(invalid), invalid))
+    logging.info('Filtered %d descriptors, %d valid, %d invalid.', desc_l, valid_l, invalid_l)
+
+    return descriptors_valid
 
 
 def download_direct(host, port, cons, flavor='unflavored'):
@@ -424,7 +434,8 @@ def download_direct(host, port, cons, flavor='unflavored'):
         if res is None or res.getcode() != 200:
             raise RuntimeError('Unable to fetch descriptors.')
 
-        new_batch, remaining = parse(res.read(), flavor=flavor)
+        # Rename parse to something sensible
+        new_batch, remaining = parse_descriptors(res.read(), flavor=flavor)
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
 
@@ -434,12 +445,28 @@ def download_direct(host, port, cons, flavor='unflavored'):
         if new_batch is not None:
             descriptors += new_batch['descriptors']
 
-        validate_descriptors(descriptors, digests, flavor  = flavor)
+    descriptors = filter_descriptors(descriptors, digests, flavor=flavor)
 
     if flavor == 'microdesc':
         return {d['micro-digest']: d for d in descriptors}
     else:
         return {d['digest']: d for d in descriptors}
+
+
+def download_relay_descriptor(host='127.0.0.1', port=9051):
+    """Retrieve a relay's own descriptor.
+    """
+
+    uri = 'http://{}:{}/tor/server/authority'.format(host, port)
+    res = urllib.request.urlopen(uri)
+
+    if res is None or res.getcode() != 200:
+        raise RuntimeError('Unable to fetch descriptors.')
+
+    descriptors, _ = parse_descriptors(res.read(), flavor='unflavored')
+
+    return descriptors['descriptors'][0]
+
 
 def download_raw(host, port, cons, flavor='unflavored'):
     """Retrieve  descriptor via a direct HTTP connection.
@@ -469,8 +496,53 @@ def download_raw(host, port, cons, flavor='unflavored'):
             raise RuntimeError('Unable to fetch descriptors.')
 
         desc += res.read()
-    
-    return desc        
+
+    return desc
+
+
+def download_raw_by_digests_unflavored(host, port, digests_bytes):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
+    """
+
+    digests = [digest.hex() for digest in digests_bytes]
+    endpoint = '/tor/server/d/'
+    separator = '+'
+
+    return _download_raw_by_digests(host, port, digests, endpoint, separator)
+
+
+def download_raw_by_digests_micro(host, port, digests_bytes):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
+    """
+
+    endpoint = '/tor/micro/d/'
+    separator = '-'
+    digests = digests_bytes
+    return _download_raw_by_digests(host, port, digests, endpoint, separator)
+
+
+def _download_raw_by_digests(host, port, digests, endpoint, separator):
+    """Retrieve  descriptor via a direct HTTP connection.
+    """
+    desc = b""
+    for query in batch_query(digests, endpoint, separator):
+        uri = 'http://{}:{}{}'.format(host, port, query)
+        res = urllib.request.urlopen(uri)
+
+        if res is None or res.getcode() != 200:
+            raise RuntimeError('Unable to fetch descriptors.')
+
+        desc += res.read()
+
+    return desc
+
+
 def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
     logging.warning('Use DEPRECATED method descriptor.download()!')
 
@@ -511,7 +583,7 @@ def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=F
                 descriptor = lnn.cache.descriptors.get(flavor, digest)
                 descriptors.append(descriptor)
                 cached_digests.append(digest)
-            except BaseException as e:
+            except BaseException:
                 pass
         partial_digests = [d for d in digests if d not in cached_digests]
 
@@ -521,7 +593,7 @@ def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=F
         if answer is None or len(answer) == 0:
             continue
 
-        new_batch, remaining = parse(answer, flavor=flavor)
+        new_batch, remaining = parse_descriptors(answer, flavor=flavor)
         if new_batch is None or remaining is None or len(remaining) > 0:
             raise RuntimeError('Unable to parse descriptors.')
 
@@ -566,7 +638,7 @@ def download_authority(state):
     if answer is None or len(answer) == 0:
         return state, None
 
-    result, remain = parse(answer, flavor='unflavored')
+    result, remain = parse_descriptors(answer, flavor='unflavored')
     if not (len(remain) == 0
         and result is not None
         and len(result['descriptors']) == 1):
@@ -588,7 +660,7 @@ def download_authority_direct(host, port):
     if res is None or res.getcode() != 200:
         return None
 
-    result, remain = parse(res.read(), flavor='unflavored')
+    result, remain = parse_descriptors(res.read(), flavor='unflavored')
 
     if not (len(remain) == 0 and result is not None and len(result['descriptors']) == 1):
         raise RuntimeError('Unable to parse authority descriptor.')

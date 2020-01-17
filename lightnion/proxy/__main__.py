@@ -50,13 +50,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', required=False, default='7000',
         metavar='dir_port', help='Dir port for consensus retrieval.'
         + ' (default: 7000)')
-    parser.add_argument('--purge-cache', action='store_true',
-        help='If specified, purge cache before starting.')
     parser.add_argument('-v', action='count',
                         help='Verbose output (up to -vvv)')
-    parser.add_argument('--static', required=False, default=[],
-        nargs='*', metavar='path:url', help='Serve given static directories.')
-
+    parser.add_argument('--compute-path', action='store_true',
+        help="Compute the path for the client.")
+    parser.add_argument('--purge-cache', action='store_true',
+        help='If specified, purge cache before starting.')
     parser.add_argument('--auth-enabled', action='store_true',
         help='Enable proxy authentication.')
     parser.add_argument('--auth-dirpkey', required=False, default=default_auth,
@@ -67,22 +66,11 @@ if __name__ == '__main__':
     logging.basicConfig(
         format=log_format, level=log_levels.get(argv.v, logging.DEBUG))
 
-    static = dict()
-    for arg in argv.static:
-        static_path, static_url = arg.split(':')
-        for entry in os.listdir(static_path):
-            full_path = os.path.join(static_path, entry)
-            if not os.path.isfile(full_path):
-                continue
-
-            full_url = os.path.join('/', static_url, entry)
-            logging.info('Serving static {} ({}).'.format(full_path, full_url))
-            static[full_url] = full_path
-
     # For now, we rely on having a trusted local Tor node that checks
     # signatures for us & everything else.
     #
     argv.s = _validate_host(argv.s)
+
     if argv.s[0] != '127.0.0.1':
         logging.error(
             'No authentication for slave, using {} is unsafe!'.format(argv.s))
@@ -95,6 +83,5 @@ if __name__ == '__main__':
         slave_node=argv.s,
         dir_port=argv.d,
         control_port=argv.c,
-        purge_cache=argv.purge_cache,
-        static_files=static if len(static) > 0 else None,
+        compute_path=argv.compute_path,
         auth_dir=argv.auth_dirpkey if argv.auth_enabled else None)

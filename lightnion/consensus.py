@@ -3,6 +3,7 @@ import datetime
 import binascii
 import time
 import os
+import re
 
 import urllib.request
 
@@ -241,7 +242,7 @@ def consume_http(consensus):
         header = header[:-1]
         try:
             header = str(header, 'utf8')
-        except:
+        except Exception:
             continue
 
         if header.startswith('HTTP/'):
@@ -343,10 +344,9 @@ def consume_headers(consensus, flavor='unflavored'):
                     'Consensus version >= 26 required: {}'.format(content))
 
         if keyword in ['valid-after', 'fresh-until', 'valid-until']:
-            date, time, when = parse_time(content)
-            content = dict(date=date, time=time, stamp=when.timestamp())
+            date, time_parsed, when = parse_time(content)
+            content = dict(date=date, time=time_parsed, stamp=when.timestamp())
 
-            import time
             if keyword == 'valid-after':
                 if not time.time() > content['stamp']:
                     raise RuntimeError('{} not yet valid! {}'.format(
@@ -385,7 +385,7 @@ def consume_headers(consensus, flavor='unflavored'):
             content = {'NumReveals': int(reveals), 'Value': value}
 
             if not content['NumReveals'] >= 0:
-                raise RuntimeError('{} must be >= 0 here:'.format(
+                raise RuntimeError('{} must be >= 0 here: {}'.format(
                     keyword, content))
 
         fields[keyword] = content
@@ -745,6 +745,47 @@ def parse(consensus, flavor='unflavored'):
     return fields, consensus
 
 
+def extract_date(consensus, field):
+    """
+    Retrieve the value from a date field as a datetime object.
+    """
+
+    pattern = re.compile('{} [^\n]+'.format(field))
+    found = pattern.search(consensus)
+
+    if found is None:
+        raise RuntimeError('Field {} not found in consensus.'.format(field))
+
+    date_s = consensus[found.start():found.end()]
+    date = datetime.datetime.strptime(date_s, '{} %Y-%m-%d %H:%M:%S'.format(field))
+    date.replace(tzinfo=datetime.timezone.utc)
+
+    return date
+
+
+def extract_nodes_digests_unflavored(consensus_raw):
+    """Retrieve a list of the digests of all routers in the consensus.
+    """
+
+    # We retrieve the third fields of the lines looking like that:
+    #r VSIFskylab AD14gl4Llgnuz/Xk4FKXF3cuU8c 3VZwLdY0Et7vqUbqDdXg3WGGHCw 2020-01-12 23:47:04 104.218.63.73 443 80
+    digests_raw = re.findall(r'^r [^ ]+ [^ ]+ ([^ ]+)', consensus_raw, re.MULTILINE)
+    digests_bytes = [b64decode(digest + '====') for digest in digests_raw]
+
+    return digests_bytes
+
+
+def extract_nodes_digests_micro(consensus_raw):
+    """Retrieve a list of the digests of all routers in the consensus.
+    """
+    # We retrieve the third fields of the lines looking like that:
+    #m v7E0VcMnwVepVUh+j193lrbqbWOg26g9hXOBwSYv32I
+    digests_raw = re.findall(r'^m ([^\n]+)', consensus_raw, re.MULTILINE)
+    digests_bytes = [digest for digest in digests_raw]
+
+    return digests_bytes
+
+
 def download(state, flavor='microdesc', cache=True):
     if flavor not in ['unflavored', 'microdesc']:
         raise NotImplementedError(
@@ -812,7 +853,7 @@ def download_direct(hostname, port, flavor='microdesc'):
     if consensus is None or remaining is None or not len(remaining) == 0:
         raise RuntimeError('Unable to parse downloaded consensus!')
 
-    return consensus,keys
+    return consensus, keys
 
 def download_raw(hostname, port, flavor='unflavored'):
     """Retrieve raw consensus via a direct HTTP connection.
@@ -829,7 +870,7 @@ def download_raw(hostname, port, flavor='unflavored'):
     uri = 'http://%s:%d/tor/status-vote/current/%s' % (hostname, port, endpoint)
 
     res = urllib.request.urlopen(uri)
-    cons = res.read()
+    cons = res.read().decode('utf-8')
 
     return cons
 

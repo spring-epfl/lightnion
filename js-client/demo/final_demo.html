@@ -54,7 +54,7 @@
 
         function verify_listener() {
             read_text_file("keys.json", k => {
-                let keys = JSON.parse(k)
+                let keys = (k)
 
                 if (lnn.signature.verify(cons_raw, keys, 0.5,'unflavored')) {
                     document.getElementById("log").textContent = "Consensus has been verified succesfully"
