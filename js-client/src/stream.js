@@ -409,11 +409,17 @@ lnn.stream.tcp = function(endPoint, host, port, handler)
         }
     }
 
+    // WL: Get new identifier for stream?
     var id = endPoint.stream.register(request)
 
+    // WL: Create a BEGIN package containing host and port of the server?
     var data = lnn.relay.begin(host, port)
-    var cell = lnn.onion.build(endPoint, "begin", id, data)
-    endPoint.io.send(cell)
+
+    // WL: Construct the cell around it?
+    var cell = lnn.onion.build(endpoint, "begin", id, data)
+
+    // WL: Send that sell to start the process?
+    endpoint.io.send(cell)
 
     handler(request)
     return request
