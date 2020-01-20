@@ -113,7 +113,7 @@ class ChannelManager:
         """
         Set a link to be used by the channel handler.
         :param link: Link to use.
-        :param rnd_gen: Method to generate a ransdom number to initialize the token generator.
+        :param rnd_gen: Method to generate a random number to initialize the token generator.
         """
         if self.link is not None:
             raise LinkAlreadyInitializedException()
@@ -127,7 +127,7 @@ class ChannelManager:
         """
         Reset the link used the channel handler.
         :param link: Link to use.
-        :param rnd_gen: Method to generate a ransdom number to initialize the token generator.
+        :param rnd_gen: Method to generate a random number to initialize the token generator.
         """
         if self.link is not None:
             for channel in self.channels.values():
@@ -140,7 +140,7 @@ class ChannelManager:
         self.maintoken = self._gen_main_token(rnd_gen)
 
 
-    def create_channel(self,  consensus, descriptors, select_path):
+    def create_channel(self, consensus, descriptors, select_path):
         """
         Create a new channel.
         :param ntor: First part of the ntor handshake provided by the client.
@@ -312,13 +312,13 @@ class WebsocketManager:
         :param port: port on which the websocket is listening.
         """
         self.server = await websockets.serve(self._handler, self.host, self.port, loop=loop, compression=None)
-        await self.server.wait_closed()
-        logging.debug('WsServ: Websocket server closed.')
 
 
-    def stop(self):
+    async def stop(self):
         if self.server is not None:
             self.server.close()
+        await self.server.wait_closed()
+        logging.debug('WsServ: Websocket server closed.')
 
 
     def set_channel_manager(self, channel_manager):
@@ -338,13 +338,22 @@ class WebsocketManager:
         """
 
         while not ws.closed:
-            cell = await ws.recv()
+            try:
+                cell = await ws.recv()
 
-            self.cell_recv += 1
-            logging.info('cell {} recv by wbskt: {}'.format(self.cell_recv, cell[:20].hex()))
-            logging.debug('WsServ: Recieved cell from channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
+                self.cell_recv += 1
+                logging.info('cell {} recv by wbskt: {}'.format(self.cell_recv, cell[:20].hex()))
+                logging.debug('WsServ: Recieved cell from channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
 
-            await self.channel_manager.link.schedule_to_send(cell, channel)
+                await self.channel_manager.link.schedule_to_send(cell, channel)
+
+            except websockets.exceptions.ConnectionClosedError:
+                logging.exception('Websocket connection closed.')
+                return
+
+            except websockets.exceptions.ConnectionClosedOK:
+                logging.info('Websocket connection closed.')
+                return
 
 
     async def _send(self, ws, channel):
@@ -355,15 +364,20 @@ class WebsocketManager:
         """
 
         while not ws.closed:
-            cell = await channel.to_send.get()
+            try:
+                cell = await channel.to_send.get()
 
-            cell = lnn.cell.pad(cell)
-            await ws.send(cell)
+                cell = lnn.cell.pad(cell)
+                await ws.send(cell)
 
-            self.cell_sent += 1
-            logging.info('cell {} sent to wbskt: {}'.format(self.cell_sent, cell[:20].hex()))
+                self.cell_sent += 1
+                logging.info('cell {} sent to wbskt: {}'.format(self.cell_sent, cell[:20].hex()))
 
-            logging.debug('WsServ: Sent data to channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
+                logging.debug('WsServ: Sent data to channel {}: {}... {} bytes.'.format(channel.cid, cell[:20], len(cell)))
+
+            except websockets.exceptions.ConnectionClosed as err:
+                logging.exception()
+                return
 
 
     async def _timeout(self, ws, channel):
@@ -459,7 +473,6 @@ class WebsocketManager:
 
         # Delete the channel and close the websocket.
         self.channel_manager.delete_channel(channel)
-        ws.close()
-        await ws.wait_closed()
+        await ws.close()
 
         logging.debug('WsServ: End handler for channel {}.'.format(channel.cid))

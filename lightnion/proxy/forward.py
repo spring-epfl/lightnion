@@ -353,6 +353,26 @@ async def delete_channel(uid):
     return quart.jsonify({}), 202 # Deleted
 
 
+async def loop_signal_handler(signum, loop):
+    """
+    Handler to stop coroutines.
+    """
+
+    logging.debug('Signal handler called.')
+    app.clerk.timer_consensus.cancel()
+    await app.shutdown()
+    await app.clerk.websocket_manager.stop()
+
+    tasks = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
+
+    for task in tasks:
+        task.cancel()
+
+    await asyncio.gather(*tasks)
+
+    loop.stop()
+
+
 def main(port, slave_node, control_port, dir_port, compute_path, auth_dir=None):
     """
     Entry point
@@ -371,20 +391,17 @@ def main(port, slave_node, control_port, dir_port, compute_path, auth_dir=None):
     app.clerk.prepare()
 
     loop = asyncio.get_event_loop()
+    for s in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(s, lambda s=s: asyncio.create_task(loop_signal_handler(s, loop)))
+
     loop.set_exception_handler(None)
 
-    loop.create_task(app.clerk.link.connection)
-    loop.create_task(app.clerk.websocket_manager.serve(loop))
+    try:
+        loop.create_task(app.clerk.link.connection)
+        loop.create_task(app.clerk.websocket_manager.serve(loop))
 
-    def signal_handler(signum, frame):
-        """
-        Handler to stop coroutines.
-        """
-        logging.debug('Signal handler called.')
-        app.clerk.websocket_manager.stop()
-        loop.stop()
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)
+        app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)
+    except Exception:
+        pass
+    finally:
+        loop.close()
