@@ -1,4 +1,10 @@
-lnn.signature = {}
+/**
+ * @module signature
+ */
+
+import bigInt from "big-integer";
+import { sjcl } from "../vendor/sjcl.js";
+import { lnn } from "./header.js";
 
 /**
  *  This function verifies the given raw consensus
@@ -20,7 +26,7 @@ lnn.signature = {}
  * @param {Number} minimal the minimal percentage of the signatures that must be verified in order to verify the consensus
  * @returns {Boolean} the result of the verification
  */
-lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') {
+export function verify(raw_cons, keys, minimal, flavor = 'microdesc') {
     if (minimal === undefined) {
         minimal = 0.5
     } else if (minimal <= 0 || minimal > 1) {
@@ -38,22 +44,22 @@ lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') 
     hash = sjcl.codec.hex.fromBits(hash)
 
     // Get the signatures and the signing keys
-    let sig_and_keys_digests = lnn.signature.get_sig_and_keys_digests(split_cons.splice(1))
+    let sig_and_keys_digests = get_sig_and_keys_digests(split_cons.splice(1))
 
     for (let fingerprint in sig_and_keys_digests) {
         total++
-        
+
         let key = keys[fingerprint]
         let e = bigInt(key["exponent"])
         let n = bigInt(key["modulus"])
         let key_digest = sig_and_keys_digests[fingerprint]["signing-key-digest"]
 
-        if (key === undefined || !lnn.signature.verify_key(key["pem"], key_digest)) continue
+        if (key === undefined || !verify_key(key["pem"], key_digest)) continue
 
         let signature = sig_and_keys_digests[fingerprint]["signature"]
-        let sig_big_int = lnn.signature.get_signature_big_int(signature)
-        let padded_hash = lnn.signature.get_hash(sig_big_int, e, n)
-        let recovered_hash = lnn.signature.get_hash_from_rsa_cipher(padded_hash)
+        let sig_big_int = get_signature_big_int(signature)
+        let padded_hash = get_hash(sig_big_int, e, n)
+        let recovered_hash = get_hash_from_rsa_cipher(padded_hash)
 
         nbr_verified = (recovered_hash === undefined || recovered_hash !== hash) ? nbr_verified : nbr_verified + 1
     }
@@ -69,7 +75,7 @@ lnn.signature.verify = function (raw_cons, keys, minimal, flavor = 'microdesc') 
  * @param {BigInteger} modulus the modulus of the key
  * @returns {String} the padded hash 
  */
-lnn.signature.get_hash = function (signature, exponent, modulus) {
+export function get_hash(signature, exponent, modulus) {
     let padded_hash = signature.modPow(exponent, modulus).toString(16)
     let size = modulus.toString(16).length
     let offset = size - padded_hash.length
@@ -85,7 +91,7 @@ lnn.signature.get_hash = function (signature, exponent, modulus) {
  * @param {string} key the key with the format pem
  * @param {string} key_digest the hex digest extracted from the consensus
  */
-lnn.signature.verify_key = function (key, key_digest) {
+export function verify_key(key, key_digest) {
     let raw_key = key.split('\n')
     let b_index = raw_key.indexOf("-----BEGIN RSA PUBLIC KEY-----")
     let e_index = raw_key.indexOf("-----END RSA PUBLIC KEY-----")
@@ -108,7 +114,7 @@ lnn.signature.verify_key = function (key, key_digest) {
  *          signature
  *      }
  */
-lnn.signature.get_sig_and_keys_digests = function (remaining) {
+export function get_sig_and_keys_digests(remaining) {
     let sign_and_digests = {}
     for (let r of remaining) {
         if (r !== '') {
@@ -128,13 +134,14 @@ lnn.signature.get_sig_and_keys_digests = function (remaining) {
     }
     return sign_and_digests
 }
+
 /**
  * 
  * This function transforms a signature in base64 into a bigInteger
  * @param {string} signature the signature encoded in base64
  * @returns {BigInteger} the integer corresponding to the signature
  */
-lnn.signature.get_signature_big_int = function (signature) {
+export function get_signature_big_int(signature) {
     let sig_hex = sjcl.codec.hex.fromBits(sjcl.codec.base64.toBits(signature))
     let sig = bigInt(sig_hex, 16)
     return sig
@@ -146,7 +153,7 @@ lnn.signature.get_signature_big_int = function (signature) {
  * @param {string} cipher the padded hash of the consensus
  * @returns {string} the hash of the consensus
  */
-lnn.signature.get_hash_from_rsa_cipher = function (padded_hash) {
+export function get_hash_from_rsa_cipher(padded_hash) {
 
     if (!padded_hash.startsWith("0001")) return undefined
     padded_hash = padded_hash.substring(4)

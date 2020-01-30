@@ -1,41 +1,46 @@
-lnn.relay = {}
-lnn.relay.payload_len = 509
-lnn.relay.data_len = lnn.relay.payload_len - 11
-lnn.relay.full_len = 5 + lnn.relay.payload_len
-lnn.relay.cmd = {
-        "begin"     : 1,   1: "begin",
-        "data"      : 2,   2: "data",
-        "end"       : 3,   3: "end",
-        "connected" : 4,   4: "connected",
-        "sendme"    : 5,   5: "sendme",
-        "extend"    : 6,   6: "extend",
-        "extended"  : 7,   7: "extended",
-        "truncate"  : 8,   8: "truncate",
-        "truncated" : 9,   9: "truncated",
-        "drop"      : 10, 10: "drop",
-        "resolve"   : 11, 11: "resolve",
-        "resolved"  : 12, 12: "resolved",
-        "begin_dir" : 13, 13: "begin_dir",
-        "extend2"   : 14, 14: "extend2",
-        "extended2" : 15, 15: "extended2"
-    }
+/**
+ * @module relay
+ */
 
-lnn.relay.pack = function(cmd, stream_id, data)
-{
+import { dec } from "./util.js";
+
+let relay = {}
+relay.payload_len = 509
+relay.data_len = relay.payload_len - 11
+relay.full_len = 5 + relay.payload_len
+relay.cmd = {
+    "begin": 1, 1: "begin",
+    "data": 2, 2: "data",
+    "end": 3, 3: "end",
+    "connected": 4, 4: "connected",
+    "sendme": 5, 5: "sendme",
+    "extend": 6, 6: "extend",
+    "extended": 7, 7: "extended",
+    "truncate": 8, 8: "truncate",
+    "truncated": 9, 9: "truncated",
+    "drop": 10, 10: "drop",
+    "resolve": 11, 11: "resolve",
+    "resolved": 12, 12: "resolved",
+    "begin_dir": 13, 13: "begin_dir",
+    "extend2": 14, 14: "extend2",
+    "extended2": 15, 15: "extended2"
+}
+
+relay.pack = function (cmd, stream_id, data) {
     if (data === undefined)
         data = new Uint8Array(0)
     if (stream_id === undefined)
         stream_id = 0
 
-    if (typeof(data) == "string")
-        data = lnn.dec.utf8(data)
+    if (typeof (data) == "string")
+        data = dec.utf8(data)
 
-    var cell = new Uint8Array(lnn.relay.full_len) /* padded with \x00 */
+    var cell = new Uint8Array(relay.full_len) /* padded with \x00 */
     var view = new DataView(cell.buffer)
 
     view.setUint32(0, 2147483648 /* fake circuit_id */, false)
     view.setUint8(4, 3 /* RELAY CELL */, false)
-    view.setUint8(5, lnn.relay.cmd[cmd], false)
+    view.setUint8(5, relay.cmd[cmd], false)
     view.setUint16(6, 0 /* recognized */, false)
     view.setUint16(8, stream_id, false)
     // (implicit 4-bytes zeroed digest at offset 10)
@@ -45,18 +50,17 @@ lnn.relay.pack = function(cmd, stream_id, data)
     return cell
 }
 
-lnn.relay.extend = function(handshake, host, port, identity, eidentity)
-{
+relay.extend = function (handshake, host, port, identity, eidentity) {
     // (assuming that host is an IPv4)
     var addr = new Uint8Array(host.split("."))
     if (addr.join(".") != host)
         throw "Invalid extend IPv4 address, fatal."
 
     port = parseInt(port)
-    if (typeof(identity) == "string")
-        identity = lnn.dec.base64(identity)
-    if (typeof(eidentity) == "string")
-        eidentity = lnn.dec.base64(eidentity + "=")
+    if (typeof (identity) == "string")
+        identity = dec.base64(identity)
+    if (typeof (eidentity) == "string")
+        eidentity = dec.base64(eidentity + "=")
 
     var nspec = 2
     if (eidentity !== undefined)
@@ -86,8 +90,7 @@ lnn.relay.extend = function(handshake, host, port, identity, eidentity)
     view.setUint8(off, identity.length, false); off += 1
     data.set(identity, off); off += identity.length
 
-    if (nspec == 3)
-    {
+    if (nspec == 3) {
         view.setUint8(off, 3 /* Ed25519 identity specifier */, false); off += 1
         view.setUint8(off, eidentity.length, false); off += 1
         data.set(eidentity, off); off += eidentity.length
@@ -100,9 +103,8 @@ lnn.relay.extend = function(handshake, host, port, identity, eidentity)
     return data
 }
 
-lnn.relay.begin = function(host, port)
-{
-    valid = false
+relay.begin = function (host, port) {
+    let valid = false
     if (host.match("(\\d\+\\.){3}\\d\+"))
         valid = true
     if (host.match("^\\[[\\d:]*\\]$"))
@@ -116,11 +118,13 @@ lnn.relay.begin = function(host, port)
 
     if (!valid)
         throw "Invalid host provided?"
-    var address = lnn.dec.utf8(host + ":" + port)
+    var address = dec.utf8(host + ":" + port)
 
     var data = new Uint8Array(address.length + 1 + 4) // (1o null, 4o flags)
     data.set(address, 0)
-    data[address.length+1+3] = 5 // flags IPv6 okay+preferred and IPv4 okay
+    data[address.length + 1 + 3] = 5 // flags IPv6 okay+preferred and IPv4 okay
 
     return data
 }
+
+export { relay }

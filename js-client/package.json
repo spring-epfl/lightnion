@@ -1,0 +1,27 @@
+{
+  "name": "lightnion-js",
+  "version": "1.0.0",
+  "description": "The Lightnion Javascript client.",
+  "main": "src/lnn.js",
+  "dependencies": {
+    "big-integer": "^1.6.48",
+    "browser-or-node": "^1.2.1",
+    "tweetnacl": "^1.0.2",
+    "tweetnacl-util": "^0.15.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "jsdoc": "^3.6.3",
+    "rollup": "^1.30.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-legacy": "^1.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.2.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
+  },
+  "author": "SPRING Lab, EPFL",
+  "license": "BSD-3-Clause"
+}

@@ -1,53 +1,64 @@
-include config.mk
+.PHONY: all install build lint clean help submodules
 
-all: lightnion.min.js lightnion.bundle.js
+CP = cp
+CD = cd
+NPM = npm
+GIT = git
+JSDOC = ./node_modules/jsdoc/jsdoc.js
 
-lightnion.js: $(SOURCES)
-	cat $(SOURCES) > $@
+VENDOR = ./vendor
+SJCL = $(VENDOR)/sjcl
+SJCL-GIT = $(SJCL)/.git
+SJCL-BUILD = $(VENDOR)/sjcl.js
 
-lightnion.min.js: lightnion.js
-	cd sjcl && sed -i 's/ADVANCED/SIMPLE/g' compress/compress_with_closure.sh
-	$(COMPRESSOR) $< > $@
+DIST = ./dist
+LIGHTNION-BUNDLE = lightnion.bundle.js
+LIGHTNION-BUNDLE-DIST = $(DIST)/lightnion.bundle.js
+JSDOC-DIST = jsdoc/
 
-lightnion.bundle.js: lightnion.min.js $(BUNDLES)
+all: $(LIGHTNION-BUNDLE)
 
-sjcl.js:
-	cp sjcl.patch sjcl
-	cd sjcl && git apply sjcl.patch && make
-	cd sjcl && cp sjcl.js ..
-	cd sjcl && git reset --hard && rm sjcl.patch
+install:
+	npm install
 
-cleanup-bundle:
-	rm -f ./lightnion.bundle.js
+# build project
+build: LIGHTNION-BUNDLE-DIST LIGHTNION-BUNDLE
 
-lightnion-bundle:
-	cat lightnion.min.js >> ./lightnion.bundle.js
+# build javascript documentation
+doc: jsdoc/index.html
 
-lightnion-bundle-license:
-	echo -e '\n\n--\n\nLICENSE lightnion\n\n--\n\n' >> $(BUNDLELICENSE)
-	cat ../LICENSE >> $(BUNDLELICENSE)
+# # run javascript linter
+# lint:
+# 	./node_modules/.bin/eslint src
 
-sjcl-bundle: sjcl.js
-	cat sjcl.js >> ./lightnion.bundle.js
-
-sjcl-bundle-license:	
-	echo -e '\n\n--\n\nLICENSE sjcl\n\n--\n\n' >> $(BUNDLELICENSE)
-	cat sjcl/LICENSE.txt >> $(BUNDLELICENSE)
-
-tweetnacl-bundle:
-	cat tweetnacl-js/nacl-fast.min.js >> ./lightnion.bundle.js
-	cat tweetnacl-util-js/nacl-util.min.js >> ./lightnion.bundle.js
-
-tweetnacl-bundle-license:
-	echo -e '\n\n--\n\nLICENSE tweetnacl-js\n\n--\n\n' >> $(BUNDLELICENSE)
-	cat tweetnacl-js/LICENSE >> $(BUNDLELICENSE)
-	echo -e '\n\n--\n\nLICENSE tweetnacl-util-js\n\n--\n\n' >> $(BUNDLELICENSE)
-	cat tweetnacl-util-js/LICENSE >> ./LICENSE.bundle.txt
-
+# clean built files
 clean:
-	rm -f sjcl.js
+	$(RM) $(LIGHTNION-BUNDLE)
+	$(RM) $(DIST)/*
+	$(RM) -r $(JSDOC-DIST)
 
+# clean built files and dependencies
 mr_proper: clean
-	rm -f $(BUNDLELICENSE)
-	rm -f lightnion.js lightnion.min.js
-	rm -f lightnion.bundle.js lightnion.bundle.min.js
+	$(RM) $(SJCL-BUILD)
+
+# show this help
+help:
+	@awk '/^#/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:alnum:]_-]+:/{print substr($$1,1,index($$1,":")),c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
+
+$(LIGHTNION-BUNDLE): $(LIGHTNION-BUNDLE-DIST)
+	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
+
+$(LIGHTNION-BUNDLE-DIST): $(SJCL-BUILD)
+	npm run build
+
+$(SJCL-GIT):
+	git submodule update --init --recursive
+
+$(SJCL-BUILD): $(SJCL-GIT)
+	cd $(SJCL) && ./configure --with-codecBytes --with-sha1
+	cd $(SJCL) && make && cp sjcl.js ../
+	# modify sjcl to export
+	echo "export { sjcl };" >> $(SJCL-BUILD)
+
+jsdoc/index.html:
+	$(JSDOC) -r -d $(JSDOC-DIST) src/

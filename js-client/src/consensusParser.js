@@ -1,24 +1,29 @@
-lnn.consensusParser = {} 
-lnn.consensusParser.parse = function(rawText,flavor = 'microdesc') {
-    if (typeof rawText !== 'string') throw `Error: the consensus must be given as a string`
-    lnn.consensusParser.lines = rawText.split('\n')
-    lnn.consensusParser.words = lnn.consensusParser.lines[0].split(' ')
-    lnn.consensusParser.consensus = {}
-    lnn.consensusParser.validFlags = ['Authority', 'BadExit', 'Exit', 'Fast', 'Guard', 'HSDir', 'NoEdConsensus', 'Stable', 'StaleDesc', 'Running', 'Valid', 'V2Dir']
-    lnn.consensusParser.index = 0
-    lnn.consensusParser.totalLines = lnn.consensusParser.lines.length
+/**
+ * @module consensusParser
+ */
 
-    if(flavor != 'unflavored' && flavor != 'microdesc') {
+let consensusParser = {};
+
+consensusParser.parse = function (rawText, flavor = 'microdesc') {
+    if (typeof rawText !== 'string') throw `Error: the consensus must be given as a string`
+    consensusParser.lines = rawText.split('\n')
+    consensusParser.words = consensusParser.lines[0].split(' ')
+    consensusParser.consensus = {}
+    consensusParser.validFlags = ['Authority', 'BadExit', 'Exit', 'Fast', 'Guard', 'HSDir', 'NoEdConsensus', 'Stable', 'StaleDesc', 'Running', 'Valid', 'V2Dir']
+    consensusParser.index = 0
+    consensusParser.totalLines = consensusParser.lines.length
+
+    if (flavor != 'unflavored' && flavor != 'microdesc') {
         throw 'Error: Unexpected flavor'
     }
-    lnn.consensusParser.consensus['flavor'] = flavor
+    consensusParser.consensus['flavor'] = flavor
 
-    lnn.consensusParser.consumeHeaders()
-    lnn.consensusParser.consumeAuthority()
-    lnn.consensusParser.consumeRouters()
-    lnn.consensusParser.consumeFooter()
+    consensusParser.consumeHeaders()
+    consensusParser.consumeAuthority()
+    consensusParser.consumeRouters()
+    consensusParser.consumeFooter()
 
-    return lnn.consensusParser.consensus
+    return consensusParser.consensus
 }
 
 //----------------------------------HEADERS PARSER--------------------------------
@@ -26,129 +31,129 @@ lnn.consensusParser.parse = function(rawText,flavor = 'microdesc') {
 /**
  * Function that parses the headers
  */
-lnn.consensusParser.consumeHeaders = function() {
-    lnn.consensusParser.consumeNetworkStatusVersion()
-    lnn.consensusParser.consumeVoteStatus()
-    lnn.consensusParser.consumeConsensusMethod()
-    lnn.consensusParser.consumeDate('valid-after')
-    lnn.consensusParser.consumeDate('fresh-until')
-    lnn.consensusParser.consumeDate('valid-until')
-    lnn.consensusParser.consumeVotingDelay()
-    lnn.consensusParser.tryConsumeVersions('client-versions')
-    lnn.consensusParser.tryConsumeVersions('server-versions')
+consensusParser.consumeHeaders = function () {
+    consensusParser.consumeNetworkStatusVersion()
+    consensusParser.consumeVoteStatus()
+    consensusParser.consumeConsensusMethod()
+    consensusParser.consumeDate('valid-after')
+    consensusParser.consumeDate('fresh-until')
+    consensusParser.consumeDate('valid-until')
+    consensusParser.consumeVotingDelay()
+    consensusParser.tryConsumeVersions('client-versions')
+    consensusParser.tryConsumeVersions('server-versions')
 
-    while (lnn.consensusParser.words[0] === 'package') {
-        lnn.consensusParser.consumePackage()
+    while (consensusParser.words[0] === 'package') {
+        consensusParser.consumePackage()
     }
 
-    lnn.consensusParser.consumeKnownFlags()
-    lnn.consensusParser.tryConsumeProtocols('recommended-client-protocols')
-    lnn.consensusParser.tryConsumeProtocols('recommended-relay-protocols')
-    lnn.consensusParser.tryConsumeProtocols('required-client-protocols')
-    lnn.consensusParser.tryConsumeProtocols('required-relay-protocols')
-    lnn.consensusParser.tryConsumeParams()
-    lnn.consensusParser.tryConsumeShareRand('shared-rand-previous-value')
-    lnn.consensusParser.tryConsumeShareRand('shared-rand-current-value')
+    consensusParser.consumeKnownFlags()
+    consensusParser.tryConsumeProtocols('recommended-client-protocols')
+    consensusParser.tryConsumeProtocols('recommended-relay-protocols')
+    consensusParser.tryConsumeProtocols('required-client-protocols')
+    consensusParser.tryConsumeProtocols('required-relay-protocols')
+    consensusParser.tryConsumeParams()
+    consensusParser.tryConsumeShareRand('shared-rand-previous-value')
+    consensusParser.tryConsumeShareRand('shared-rand-current-value')
 
 }
 
 /**
  * Parse the field network-status-version
  */
-lnn.consensusParser.consumeNetworkStatusVersion = function() {
+consensusParser.consumeNetworkStatusVersion = function () {
     let expectedLength = 2
-    if(lnn.consensusParser.consensus.flavor == 'microdesc') {
+    if (consensusParser.consensus.flavor == 'microdesc') {
         expectedLength = 3
-        if(lnn.consensusParser.words[2] != 'microdesc')
+        if (consensusParser.words[2] != 'microdesc')
             throw 'Error: Flavor mismatch in header.'
     }
 
-    let version = lnn.consensusParser.tryParseKeyValueInteger('network-status-version',expectedLength)
-    lnn.consensusParser.consensus['headers'] = {
+    let version = consensusParser.tryParseKeyValueInteger('network-status-version', expectedLength)
+    consensusParser.consensus['headers'] = {
         'network-status-version': {
             'version': version,
-            'flavor': lnn.consensusParser.consensus.flavor
+            'flavor': consensusParser.consensus.flavor
         }
     }
 
-    lnn.consensusParser.nextLine()
+    consensusParser.nextLine()
 }
 
 /**
  * Parse the field vote-status
  * @throws WrongParameterException if status is not consensus
  */
-lnn.consensusParser.consumeVoteStatus = function() {
-    let status = lnn.consensusParser.tryParseKeyValueString('vote-status')
+consensusParser.consumeVoteStatus = function () {
+    let status = consensusParser.tryParseKeyValueString('vote-status')
     if (status !== 'consensus') throw `WrongParameterException: vote-status must be consensus`
-    lnn.consensusParser.consensus['headers']['vote-status'] = status
-    lnn.consensusParser.nextLine()
+    consensusParser.consensus['headers']['vote-status'] = status
+    consensusParser.nextLine()
 }
 
 /**
  * Parse the field consensus-method
  */
-lnn.consensusParser.consumeConsensusMethod = function() {
-    lnn.consensusParser.consensus['headers']['consensus-method'] = lnn.consensusParser.tryParseKeyValueInteger('consensus-method')
-    lnn.consensusParser.nextLine()
+consensusParser.consumeConsensusMethod = function () {
+    consensusParser.consensus['headers']['consensus-method'] = consensusParser.tryParseKeyValueInteger('consensus-method')
+    consensusParser.nextLine()
 }
 
 /**
  * Parse the fields valid-after, fresh-until and valid-until
  * @param {strin} word 
  */
-lnn.consensusParser.consumeDate = function(word) {
-    lnn.consensusParser.consensus['headers'][word] = lnn.consensusParser.tryParseDate(word)
-    lnn.consensusParser.nextLine()
+consensusParser.consumeDate = function (word) {
+    consensusParser.consensus['headers'][word] = consensusParser.tryParseDate(word)
+    consensusParser.nextLine()
 }
 
 /**
  * Parse the field voting-delay
- * @throws NotEqualException if lnn.consensusParser.words[0] != word
- * @throws WrongParameterException if lnn.consensusParser.words[1] or lnn.consensusParser.words[2] is not a number
- * @throws WrongFormatException if lnn.consensusParser.words.length is not 3
+ * @throws NotEqualException if consensusParser.words[0] != word
+ * @throws WrongParameterException if consensusParser.words[1] or consensusParser.words[2] is not a number
+ * @throws WrongFormatException if consensusParser.words.length is not 3
  */
-lnn.consensusParser.consumeVotingDelay = function() {
-    lnn.consensusParser.checkFormat(3, 'voting-delay')
-    if (isNaN(lnn.consensusParser.words[1])) throw `WrongParameterException: ${words[1]} is not a number`
-    if (isNaN(lnn.consensusParser.words[2])) throw `WrongParameterException: ${words[2]} is not a number`
+consensusParser.consumeVotingDelay = function () {
+    consensusParser.checkFormat(3, 'voting-delay')
+    if (isNaN(consensusParser.words[1])) throw `WrongParameterException: ${words[1]} is not a number`
+    if (isNaN(consensusParser.words[2])) throw `WrongParameterException: ${words[2]} is not a number`
 
-    lnn.consensusParser.consensus['headers']['voting-delay'] = {
-        'vote': Number(lnn.consensusParser.words[1]),
-        'dist': Number(lnn.consensusParser.words[2])
+    consensusParser.consensus['headers']['voting-delay'] = {
+        'vote': Number(consensusParser.words[1]),
+        'dist': Number(consensusParser.words[2])
     }
 
-    lnn.consensusParser.nextLine()
+    consensusParser.nextLine()
 }
 
 /**
  * Try to parse the fields client-versions or server-versions if they are present
  * @param {string} word either client-versions or server-versions
  */
-lnn.consensusParser.tryConsumeVersions = function(word) {
+consensusParser.tryConsumeVersions = function (word) {
 
-    if (lnn.consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
-    if (lnn.consensusParser.words[0] === word) {
-        lnn.consensusParser.consensus['headers'][word] = lnn.consensusParser.tryParseCommaSeparatedList(word)
-        lnn.consensusParser.nextLine()
+    if (consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
+    if (consensusParser.words[0] === word) {
+        consensusParser.consensus['headers'][word] = consensusParser.tryParseCommaSeparatedList(word)
+        consensusParser.nextLine()
     }
 }
 
 /**
  * Parses the field package
- * @throws WrongFormatException if lnn.consensusParser.words.length is smaller than 5
+ * @throws WrongFormatException if consensusParser.words.length is smaller than 5
  */
-lnn.consensusParser.consumePackage = function() {
+consensusParser.consumePackage = function () {
 
-    if (lnn.consensusParser.words.length < 5) throw `WrongFormatException: at least 5 fields are expected`
-    if (lnn.consensusParser.consensus['headers']['package'] === undefined) lnn.consensusParser.consensus['headers']['package'] = []
+    if (consensusParser.words.length < 5) throw `WrongFormatException: at least 5 fields are expected`
+    if (consensusParser.consensus['headers']['package'] === undefined) consensusParser.consensus['headers']['package'] = []
 
     let pack = {
-        'name': lnn.consensusParser.words[1],
-        'version': lnn.consensusParser.words[2],
-        'url': lnn.consensusParser.words[3]
+        'name': consensusParser.words[1],
+        'version': consensusParser.words[2],
+        'url': consensusParser.words[3]
     }
-    let remaining = lnn.consensusParser.words.splice(4, lnn.consensusParser.words.length)
+    let remaining = consensusParser.words.splice(4, consensusParser.words.length)
     let digests = {}
 
     for (let digest of remaining) {
@@ -157,38 +162,38 @@ lnn.consensusParser.consumePackage = function() {
     }
 
     pack['digests'] = digests
-    lnn.consensusParser.consensus['headers']['package'].push(pack)
-    lnn.consensusParser.nextLine()
+    consensusParser.consensus['headers']['package'].push(pack)
+    consensusParser.nextLine()
 }
 
 /**
  * Parses the field package
  * @throws NotValidFlagException if one of the flags is not in the valid flag list
  */
-lnn.consensusParser.consumeKnownFlags = function() {
-    lnn.consensusParser.consensus['headers']['flags'] = lnn.consensusParser.tryParseFlags()
-    lnn.consensusParser.nextLine()
+consensusParser.consumeKnownFlags = function () {
+    consensusParser.consensus['headers']['flags'] = consensusParser.tryParseFlags()
+    consensusParser.nextLine()
 }
 
 /**
  * Try to parse the fields recommended-client-protocols, recommended-relay-protocols, required-client-protocols and required-client-protocols if they are present
  * @param {string} word either client-versions or server-versions
  */
-lnn.consensusParser.tryConsumeProtocols = function(word) {
-    if (lnn.consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
-    if (lnn.consensusParser.words[0] === word) {
-        lnn.consensusParser.consensus['headers'][word] = lnn.consensusParser.tryParseRanges(lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length))
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumeProtocols = function (word) {
+    if (consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
+    if (consensusParser.words[0] === word) {
+        consensusParser.consensus['headers'][word] = consensusParser.tryParseRanges(consensusParser.words.splice(1, consensusParser.words.length))
+        consensusParser.nextLine()
     }
 
 }
 /**
  * Try to parse the field params if it is present
  */
-lnn.consensusParser.tryConsumeParams = function() {
-    if (lnn.consensusParser.words[0] === 'params') {
-        lnn.consensusParser.consensus['headers']['params'] = lnn.consensusParser.tryParseParams()
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumeParams = function () {
+    if (consensusParser.words[0] === 'params') {
+        consensusParser.consensus['headers']['params'] = consensusParser.tryParseParams()
+        consensusParser.nextLine()
     }
 }
 
@@ -196,20 +201,20 @@ lnn.consensusParser.tryConsumeParams = function() {
  * Try to parse the fields shared-rand-previous-value and shared-rand-current-value if they are present
  * @param {string} word specify the field 
  */
-lnn.consensusParser.tryConsumeShareRand = function(word) {
-    if (lnn.consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
-    if (lnn.consensusParser.words[0] === word) {
-        let reveals = Number(lnn.consensusParser.words[1])
-        let value = lnn.consensusParser.words[2]
+consensusParser.tryConsumeShareRand = function (word) {
+    if (consensusParser.consensus['headers'][word] !== undefined) throw `AlreadyPresentException: ${word} can only appear once`
+    if (consensusParser.words[0] === word) {
+        let reveals = Number(consensusParser.words[1])
+        let value = consensusParser.words[2]
 
-        if (!lnn.consensusParser.isBase64(value)) throw `InvalidParameterException: value ${value} must be in hexadecimal`
+        if (!consensusParser.isBase64(value)) throw `InvalidParameterException: value ${value} must be in hexadecimal`
 
-        lnn.consensusParser.consensus['headers'][word] = {
+        consensusParser.consensus['headers'][word] = {
             'NumReveals': reveals,
             'Value': value
         }
 
-        lnn.consensusParser.nextLine()
+        consensusParser.nextLine()
     }
 }
 
@@ -219,12 +224,12 @@ lnn.consensusParser.tryConsumeShareRand = function(word) {
  * @throws InvalidIPException if address or IP are not valid IP addresses
  * @throws InvalidPortException if dirport or orport are not valid ports
  */
-lnn.consensusParser.consumeAuthority = function() {
-    if (lnn.consensusParser.words[0] !== 'dir-source') throw `WrongFieldException: there must be at least one dir-source`
-    lnn.consensusParser.consensus['dir-sources'] = []
+consensusParser.consumeAuthority = function () {
+    if (consensusParser.words[0] !== 'dir-source') throw `WrongFieldException: there must be at least one dir-source`
+    consensusParser.consensus['dir-sources'] = []
 
-    while (lnn.consensusParser.words[0] === 'dir-source') {
-        lnn.consensusParser.consumeDirSource()
+    while (consensusParser.words[0] === 'dir-source') {
+        consensusParser.consumeDirSource()
     }
 }
 
@@ -234,36 +239,36 @@ lnn.consensusParser.consumeAuthority = function() {
  * @throws InvalidPortException if dirport or orport are not valid
  * @throws InvalidParameterException if the vote-digest is not in hexadecimal
  */
-lnn.consensusParser.consumeDirSource = function() {
+consensusParser.consumeDirSource = function () {
     let dirSource = {}
-    lnn.consensusParser.checkFormat(7, 'dir-source')
+    consensusParser.checkFormat(7, 'dir-source')
 
-    dirSource['nickname'] = lnn.consensusParser.words[1]
+    dirSource['nickname'] = consensusParser.words[1]
 
-    if (!lnn.consensusParser.isHex(lnn.consensusParser.words[2])) throw `InvalidParameterException: vote-digest ${lnn.consensusParser.words[2]} must be in hexadecimal`
-    dirSource['identity'] = lnn.consensusParser.words[2].toUpperCase()
+    if (!consensusParser.isHex(consensusParser.words[2])) throw `InvalidParameterException: vote-digest ${consensusParser.words[2]} must be in hexadecimal`
+    dirSource['identity'] = consensusParser.words[2].toUpperCase()
 
-    dirSource['hostname'] = lnn.consensusParser.words[3]
+    dirSource['hostname'] = consensusParser.words[3]
 
-    if (!lnn.consensusParser.isValidIP(lnn.consensusParser.words[4])) throw `InvalidIPException: ${lnn.consensusParser.words[4]} is not a valid IP`
+    if (!consensusParser.isValidIP(consensusParser.words[4])) throw `InvalidIPException: ${consensusParser.words[4]} is not a valid IP`
 
-    dirSource['address'] = lnn.consensusParser.words[4]
+    dirSource['address'] = consensusParser.words[4]
 
-    if (!lnn.consensusParser.isValidPort(Number(lnn.consensusParser.words[5])) || !lnn.consensusParser.isValidPort(Number(lnn.consensusParser.words[6]))) throw `InvalidPortException`
+    if (!consensusParser.isValidPort(Number(consensusParser.words[5])) || !consensusParser.isValidPort(Number(consensusParser.words[6]))) throw `InvalidPortException`
 
-    dirSource['dirport'] = Number(lnn.consensusParser.words[5])
-    dirSource['orport'] = Number(lnn.consensusParser.words[6])
+    dirSource['dirport'] = Number(consensusParser.words[5])
+    dirSource['orport'] = Number(consensusParser.words[6])
 
-    lnn.consensusParser.nextLine()
-    dirSource['contact'] = lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length).join(' ')
-    lnn.consensusParser.nextLine()
-    let digest = lnn.consensusParser.tryParseKeyValueString('vote-digest').toUpperCase()
+    consensusParser.nextLine()
+    dirSource['contact'] = consensusParser.words.splice(1, consensusParser.words.length).join(' ')
+    consensusParser.nextLine()
+    let digest = consensusParser.tryParseKeyValueString('vote-digest').toUpperCase()
 
-    if (!lnn.consensusParser.isHex(digest)) throw `InvalidParameterException: vote-digest ${digest} must be in hexadecimal`
+    if (!consensusParser.isHex(digest)) throw `InvalidParameterException: vote-digest ${digest} must be in hexadecimal`
 
     dirSource['vote-digest'] = digest
-    lnn.consensusParser.consensus['dir-sources'].push(dirSource)
-    lnn.consensusParser.nextLine()
+    consensusParser.consensus['dir-sources'].push(dirSource)
+    consensusParser.nextLine()
 
 
 }
@@ -273,30 +278,30 @@ lnn.consensusParser.consumeDirSource = function() {
  * Consume each router status entry
  * @throws WrongFieldException if there is no router entry
  */
-lnn.consensusParser.consumeRouters = function() {
-    if (lnn.consensusParser.words[0] !== 'r') throw `WrongFieldException: there must be at least one router`
-    lnn.consensusParser.consensus['routers'] = []
+consensusParser.consumeRouters = function () {
+    if (consensusParser.words[0] !== 'r') throw `WrongFieldException: there must be at least one router`
+    consensusParser.consensus['routers'] = []
 
-    while (lnn.consensusParser.words[0] === 'r') {
+    while (consensusParser.words[0] === 'r') {
         let router = {}
-        lnn.consensusParser.consumeRfield(router)
+        consensusParser.consumeRfield(router)
 
-        if (lnn.consensusParser.words[0] === 'a') router['a'] = []
-        while (lnn.consensusParser.words[0] === 'a') {
-            lnn.consensusParser.consumeAfield(router)
+        if (consensusParser.words[0] === 'a') router['a'] = []
+        while (consensusParser.words[0] === 'a') {
+            consensusParser.consumeAfield(router)
         }
 
-        if(lnn.consensusParser.consensus.flavor == 'microdesc') {
-            lnn.consensusParser.consumeMfield(router)
+        if (consensusParser.consensus.flavor == 'microdesc') {
+            consensusParser.consumeMfield(router)
         }
 
-        lnn.consensusParser.consumeSfield(router)
-        lnn.consensusParser.tryConsumeVfield(router)
-        lnn.consensusParser.tryConsumePrField(router)
-        lnn.consensusParser.tryConsumeWfield(router)
-        lnn.consensusParser.tryConsumePfield(router)
+        consensusParser.consumeSfield(router)
+        consensusParser.tryConsumeVfield(router)
+        consensusParser.tryConsumePrField(router)
+        consensusParser.tryConsumeWfield(router)
+        consensusParser.tryConsumePfield(router)
 
-        lnn.consensusParser.consensus['routers'].push(router)
+        consensusParser.consensus['routers'].push(router)
     }
 
 }
@@ -306,39 +311,39 @@ lnn.consensusParser.consumeRouters = function() {
  * @param {} router 
  * @throws InvalidParameterException if the fields are not valid
  */
-lnn.consensusParser.consumeRfield = function(router) {
+consensusParser.consumeRfield = function (router) {
     let len = 9
-    if(lnn.consensusParser.consensus.flavor == 'microdesc') len = 8
-    lnn.consensusParser.checkFormat(len, 'r')
+    if (consensusParser.consensus.flavor == 'microdesc') len = 8
+    consensusParser.checkFormat(len, 'r')
 
-    router['nickname'] = lnn.consensusParser.words[1]
+    router['nickname'] = consensusParser.words[1]
 
-    if (!lnn.consensusParser.isBase64(lnn.consensusParser.words[2] + "=")) throw `InvalidParameterException: identity ${lnn.consensusParser.words[2]} must be in base64`
-    router['identity'] = lnn.consensusParser.words[2]
-    
+    if (!consensusParser.isBase64(consensusParser.words[2] + "=")) throw `InvalidParameterException: identity ${consensusParser.words[2]} must be in base64`
+    router['identity'] = consensusParser.words[2]
+
     let nxt = 3
-    if(lnn.consensusParser.consensus.flavor == 'unflavored') {
-        if (!lnn.consensusParser.isBase64(lnn.consensusParser.words[3] + "=")) throw `InvalidParameterException: digest ${lnn.consensusParser.words[3]} must be in base64`
-        router['digest'] = lnn.consensusParser.words[3]
+    if (consensusParser.consensus.flavor == 'unflavored') {
+        if (!consensusParser.isBase64(consensusParser.words[3] + "=")) throw `InvalidParameterException: digest ${consensusParser.words[3]} must be in base64`
+        router['digest'] = consensusParser.words[3]
         nxt += 1
     }
 
-    if (!lnn.consensusParser.isValidDate(lnn.consensusParser.words[nxt])) throw `InvalidParameterException: date ${lnn.consensusParser.words[nxt]} must have the format YYYY-MM-DD`
-    router['date'] = lnn.consensusParser.words[nxt]
+    if (!consensusParser.isValidDate(consensusParser.words[nxt])) throw `InvalidParameterException: date ${consensusParser.words[nxt]} must have the format YYYY-MM-DD`
+    router['date'] = consensusParser.words[nxt]
 
-    if (!lnn.consensusParser.isValidTime(lnn.consensusParser.words[nxt + 1])) throw `InvalidParameterException: time ${lnn.consensusParser.words[nxt + 1]} must have the format HH:MM:SS`
-    router['time'] = lnn.consensusParser.words[nxt + 1]
+    if (!consensusParser.isValidTime(consensusParser.words[nxt + 1])) throw `InvalidParameterException: time ${consensusParser.words[nxt + 1]} must have the format HH:MM:SS`
+    router['time'] = consensusParser.words[nxt + 1]
 
-    if (!lnn.consensusParser.isValidIP(lnn.consensusParser.words[nxt + 2])) throw `InvalidParameterException: IP ${lnn.consensusParser.words[nxt + 2]} must be a valid IP address`
-    router['address'] = lnn.consensusParser.words[nxt + 2]
+    if (!consensusParser.isValidIP(consensusParser.words[nxt + 2])) throw `InvalidParameterException: IP ${consensusParser.words[nxt + 2]} must be a valid IP address`
+    router['address'] = consensusParser.words[nxt + 2]
 
-    if (!lnn.consensusParser.isValidPort(Number(lnn.consensusParser.words[nxt + 3]))) throw `InvalidParameterException: ORPort ${lnn.consensusParser.words[nxt + 3]} must be a valid port`
-    router['orport'] = Number(lnn.consensusParser.words[nxt + 3])
+    if (!consensusParser.isValidPort(Number(consensusParser.words[nxt + 3]))) throw `InvalidParameterException: ORPort ${consensusParser.words[nxt + 3]} must be a valid port`
+    router['orport'] = Number(consensusParser.words[nxt + 3])
 
-    if (!lnn.consensusParser.isValidPort(Number(lnn.consensusParser.words[nxt + 4]))) throw `InvalidParameterException: DirPort ${lnn.consensusParser.words[nxt + 4]} must be a valid port`
-    router['dirport'] = Number(lnn.consensusParser.words[nxt + 4])
+    if (!consensusParser.isValidPort(Number(consensusParser.words[nxt + 4]))) throw `InvalidParameterException: DirPort ${consensusParser.words[nxt + 4]} must be a valid port`
+    router['dirport'] = Number(consensusParser.words[nxt + 4])
 
-    lnn.consensusParser.nextLine()
+    consensusParser.nextLine()
 }
 
 /**
@@ -346,19 +351,19 @@ lnn.consensusParser.consumeRfield = function(router) {
  * @param {} router 
  * @throws InvalidParameterException if the fields are not valid
  */
-lnn.consensusParser.consumeAfield = function(router) {
-    let i = lnn.consensusParser.words[1].indexOf("]")
-    let address = lnn.consensusParser.words[1].slice(1, i)
-    if (!lnn.consensusParser.isValidIP(address)) throw `InvalidParameterException: IP ${address} must be a valid IP address`
+consensusParser.consumeAfield = function (router) {
+    let i = consensusParser.words[1].indexOf("]")
+    let address = consensusParser.words[1].slice(1, i)
+    if (!consensusParser.isValidIP(address)) throw `InvalidParameterException: IP ${address} must be a valid IP address`
 
     let guessedType = 'IPv6'
-    if (lnn.consensusParser.isIPv4(address)) {
+    if (consensusParser.isIPv4(address)) {
         guessedType = 'IPv4'
     }
 
-    let port = Number(lnn.consensusParser.words[1].slice(address.length + 3, lnn.consensusParser.words[1].length))
+    let port = Number(consensusParser.words[1].slice(address.length + 3, consensusParser.words[1].length))
 
-    if (!lnn.consensusParser.isValidPort(port)) throw `InvalidParameterException: port ${port} must be a valid port`
+    if (!consensusParser.isValidPort(port)) throw `InvalidParameterException: port ${port} must be a valid port`
 
     router['a'].push({
         'ip': address,
@@ -366,7 +371,7 @@ lnn.consensusParser.consumeAfield = function(router) {
         'type': guessedType
     })
 
-    lnn.consensusParser.nextLine()
+    consensusParser.nextLine()
 
 }
 
@@ -374,59 +379,59 @@ lnn.consensusParser.consumeAfield = function(router) {
  * Parses the field 's' of the router status entry
  * @param {} router 
  */
-lnn.consensusParser.consumeSfield = function(router) {
-    router['flags'] = lnn.consensusParser.tryParseFlags()
-    lnn.consensusParser.nextLine()
+consensusParser.consumeSfield = function (router) {
+    router['flags'] = consensusParser.tryParseFlags()
+    consensusParser.nextLine()
 }
 
 /**
  * Tries to parse the field 'v' of the router status entry
  * @param {} router 
  */
-lnn.consensusParser.tryConsumeVfield = function(router) {
-    if (lnn.consensusParser.words[0] === 'v') {
-        lnn.consensusParser.checkFormat(3, 'v')
-        router['version'] = lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length).join(' ')
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumeVfield = function (router) {
+    if (consensusParser.words[0] === 'v') {
+        consensusParser.checkFormat(3, 'v')
+        router['version'] = consensusParser.words.splice(1, consensusParser.words.length).join(' ')
+        consensusParser.nextLine()
     }
 }
 /**
  * Tries to parse the field 'v' of the router status entry
  * @param {} router 
  */
-lnn.consensusParser.tryConsumePrField = function(router) {
-    if (lnn.consensusParser.words[0] === 'pr') {
-        router['protocols'] = lnn.consensusParser.tryParseRanges(lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length))
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumePrField = function (router) {
+    if (consensusParser.words[0] === 'pr') {
+        router['protocols'] = consensusParser.tryParseRanges(consensusParser.words.splice(1, consensusParser.words.length))
+        consensusParser.nextLine()
     }
 }
 /**
  * Tries to parse the field 'w' of the router status entry
  * @param {} router 
  */
-lnn.consensusParser.tryConsumeWfield = function(router) {
-    if (lnn.consensusParser.words[0] === 'w') {
-        router['w'] = lnn.consensusParser.tryParseParams()
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumeWfield = function (router) {
+    if (consensusParser.words[0] === 'w') {
+        router['w'] = consensusParser.tryParseParams()
+        consensusParser.nextLine()
     }
 }
 /**
  * Tries to parse the field 'p' of the router status entry
  * @param {} router 
  */
-lnn.consensusParser.tryConsumePfield = function(router) {
-    if (lnn.consensusParser.words[0] === 'p') {
-        lnn.consensusParser.checkFormat(3, 'p')
-        if (lnn.consensusParser.words[1] !== 'accept' && lnn.consensusParser.words[1] !== 'reject') throw `WrongParameterException: ${lnn.consensusParser.words[1]} must be either accept or reject`
+consensusParser.tryConsumePfield = function (router) {
+    if (consensusParser.words[0] === 'p') {
+        consensusParser.checkFormat(3, 'p')
+        if (consensusParser.words[1] !== 'accept' && consensusParser.words[1] !== 'reject') throw `WrongParameterException: ${consensusParser.words[1]} must be either accept or reject`
 
 
-        let portList = lnn.consensusParser.parse_range_once(lnn.consensusParser.words[2])
+        let portList = consensusParser.parse_range_once(consensusParser.words[2])
 
         router['exit-policy'] = {
-            'type': lnn.consensusParser.words[1],
+            'type': consensusParser.words[1],
             'PortList': portList
         }
-        lnn.consensusParser.nextLine()
+        consensusParser.nextLine()
     }
 }
 
@@ -434,13 +439,13 @@ lnn.consensusParser.tryConsumePfield = function(router) {
  * Parses the field 'm' of the router status entry (for microdesc flavor)
  * @param {} router 
  */
-lnn.consensusParser.consumeMfield = function(router) {
-    lnn.consensusParser.checkFormat(2, 'm')
-    
-    if (!lnn.consensusParser.isBase64(lnn.consensusParser.words[1] + "=")) throw `InvalidParameterException: digest ${lnn.consensusParser.words[1]} must be in base64`
-        router['micro-digest'] = lnn.consensusParser.words[1]
-    
-    lnn.consensusParser.nextLine()
+consensusParser.consumeMfield = function (router) {
+    consensusParser.checkFormat(2, 'm')
+
+    if (!consensusParser.isBase64(consensusParser.words[1] + "=")) throw `InvalidParameterException: digest ${consensusParser.words[1]} must be in base64`
+    router['micro-digest'] = consensusParser.words[1]
+
+    consensusParser.nextLine()
 }
 
 
@@ -450,17 +455,17 @@ lnn.consensusParser.consumeMfield = function(router) {
  * Consume the footer
  * @throws WrongFieldException if there is no footer or no signature
  */
-lnn.consensusParser.consumeFooter = function() {
-    if (lnn.consensusParser.words[0] !== 'directory-footer') throw `WrongFieldException: there must be a footer`
-    lnn.consensusParser.nextLine()
-    lnn.consensusParser.consensus['footer'] = {}
-    lnn.consensusParser.tryConsumeBandwidthWeights()
+consensusParser.consumeFooter = function () {
+    if (consensusParser.words[0] !== 'directory-footer') throw `WrongFieldException: there must be a footer`
+    consensusParser.nextLine()
+    consensusParser.consensus['footer'] = {}
+    consensusParser.tryConsumeBandwidthWeights()
 
-    if (lnn.consensusParser.words[0] !== 'directory-signature') throw `WrongFieldException: there must be at least one signature`
-    lnn.consensusParser.consensus['footer']['directory-signatures'] = []
+    if (consensusParser.words[0] !== 'directory-signature') throw `WrongFieldException: there must be at least one signature`
+    consensusParser.consensus['footer']['directory-signatures'] = []
 
-    while (lnn.consensusParser.words[0] === 'directory-signature') {
-        lnn.consensusParser.consensus['footer']['directory-signatures'].push(lnn.consensusParser.consumeSignature());
+    while (consensusParser.words[0] === 'directory-signature') {
+        consensusParser.consensus['footer']['directory-signatures'].push(consensusParser.consumeSignature());
     }
 
 }
@@ -468,10 +473,10 @@ lnn.consensusParser.consumeFooter = function() {
 /**
  * Tries to consume the bandwidth weights
  */
-lnn.consensusParser.tryConsumeBandwidthWeights = function() {
-    if (lnn.consensusParser.words[0] === 'bandwidth-weights') {
-        lnn.consensusParser.consensus['footer']['bandwidth-weights'] = lnn.consensusParser.tryParseParams()
-        lnn.consensusParser.nextLine()
+consensusParser.tryConsumeBandwidthWeights = function () {
+    if (consensusParser.words[0] === 'bandwidth-weights') {
+        consensusParser.consensus['footer']['bandwidth-weights'] = consensusParser.tryParseParams()
+        consensusParser.nextLine()
     }
 }
 
@@ -480,31 +485,31 @@ lnn.consensusParser.tryConsumeBandwidthWeights = function() {
  * @throws WrongFieldException if the first field is not directory-signature
  * @throws InvalidParameterException if either the identity or the signing-key-digest are not in hexadecimal
  */
-lnn.consensusParser.consumeSignature = function() {
-    if (lnn.consensusParser.words[0] !== 'directory-signature') throw `WrongFieldException: next field must be directory-signature`
-    let length = lnn.consensusParser.words.length
+consensusParser.consumeSignature = function () {
+    if (consensusParser.words[0] !== 'directory-signature') throw `WrongFieldException: next field must be directory-signature`
+    let length = consensusParser.words.length
 
     let algo
     let remaining
     if (length === 4) {
-        algo = lnn.consensusParser.words[1]
-        remaining = lnn.consensusParser.words.splice(2, length)
+        algo = consensusParser.words[1]
+        remaining = consensusParser.words.splice(2, length)
     } else if (length === 3) {
         algo = 'sha1'
-        remaining = lnn.consensusParser.words.splice(1, length)
+        remaining = consensusParser.words.splice(1, length)
     }
     else throw `WrongParameterException: directory-signature has 3 or 4 arguments`
 
     let identity = remaining[0]
-    if (!lnn.consensusParser.isHex(identity)) throw `InvalidParameterException: the identity ${identity} must be in hexadecimal`
+    if (!consensusParser.isHex(identity)) throw `InvalidParameterException: the identity ${identity} must be in hexadecimal`
 
     let digest = remaining[1]
-    if (!lnn.consensusParser.isHex(digest)) throw `InvalidParameterException: the signing-key-digest ${digest} must be in hexadecimal`
+    if (!consensusParser.isHex(digest)) throw `InvalidParameterException: the signing-key-digest ${digest} must be in hexadecimal`
 
-    lnn.consensusParser.nextLine()
+    consensusParser.nextLine()
 
-    let signature = lnn.consensusParser.parseSignature()
-    if (lnn.consensusParser.index < lnn.consensusParser.totalLines - 1) lnn.consensusParser.nextLine()
+    let signature = consensusParser.parseSignature()
+    if (consensusParser.index < consensusParser.totalLines - 1) consensusParser.nextLine()
 
     return {
         'Algorithm': algo,
@@ -518,69 +523,69 @@ lnn.consensusParser.consumeSignature = function() {
 /**
 * Parses lines with the format "field value" where value is an integer and field must be equal to word and return value. 
 * @param {string} word indicates to which field we are adding the newly parsed line
-* @throws NotEqualException if lnn.consensusParser.words[0] != word
-* @throws WrongParameterException if lnn.consensusParser.words[1] is not a number
-* @throws WrongFormatException if lnn.consensusParser.words.length is not 2
+* @throws NotEqualException if consensusParser.words[0] != word
+* @throws WrongParameterException if consensusParser.words[1] is not a number
+* @throws WrongFormatException if consensusParser.words.length is not 2
 */
-lnn.consensusParser.tryParseKeyValueInteger = function(word,expectedLength = 2) {
-    lnn.consensusParser.checkFormat(expectedLength, word)
-    if (isNaN(lnn.consensusParser.words[1])) throw `WrongParameterException: ${lnn.consensusParser.words[1]} is not a number`
+consensusParser.tryParseKeyValueInteger = function (word, expectedLength = 2) {
+    consensusParser.checkFormat(expectedLength, word)
+    if (isNaN(consensusParser.words[1])) throw `WrongParameterException: ${consensusParser.words[1]} is not a number`
 
-    return Math.floor(lnn.consensusParser.words[1])
+    return Math.floor(consensusParser.words[1])
 }
 
 /**
  * Parses lines with the format "field value" where value is a string and field must be equal to word and return value. 
  * @param {string} word indicates to which field we are adding the newly parsed line
- * @throws NotEqualException if lnn.consensusParser.words[0] != word
- * @throws WrongFormatException if lnn.consensusParser.words.length is not 2
+ * @throws NotEqualException if consensusParser.words[0] != word
+ * @throws WrongFormatException if consensusParser.words.length is not 2
  */
-lnn.consensusParser.tryParseKeyValueString = function(word) {
-    lnn.consensusParser.checkFormat(2, word)
-    return lnn.consensusParser.words[1]
+consensusParser.tryParseKeyValueString = function (word) {
+    consensusParser.checkFormat(2, word)
+    return consensusParser.words[1]
 }
 
 /**
  * Parses lines with the format "field YYYY-MM-DD HH:MM:SS" where field must be equal to word and return a date object
  * @param {string} word indicates to which field we are adding the newly parsed line
- * @throws NotEqualException if lnn.consensusParser.words[0] != word
- * @throws WrongFormatException if lnn.consensusParser.words.length is not 2
+ * @throws NotEqualException if consensusParser.words[0] != word
+ * @throws WrongFormatException if consensusParser.words.length is not 2
  * @throws NonValidDateException if the date is not valid
  * @throws NonValidTimeException if the time is not valid
  */
-lnn.consensusParser.tryParseDate = function(word) {
-    lnn.consensusParser.checkFormat(3, word)
-    if (!lnn.consensusParser.isValidDate(lnn.consensusParser.words[1])) throw `NonValidDateException: ${lnn.consensusParser.words[1]} is not a valid date`
-    if (!lnn.consensusParser.isValidTime(lnn.consensusParser.words[2])) throw `NonValidTimeException: ${lnn.consensusParser.words[2]} is not a valid time`
+consensusParser.tryParseDate = function (word) {
+    consensusParser.checkFormat(3, word)
+    if (!consensusParser.isValidDate(consensusParser.words[1])) throw `NonValidDateException: ${consensusParser.words[1]} is not a valid date`
+    if (!consensusParser.isValidTime(consensusParser.words[2])) throw `NonValidTimeException: ${consensusParser.words[2]} is not a valid time`
 
     return {
-        "date": lnn.consensusParser.words[1],
-        "time": lnn.consensusParser.words[2]
+        "date": consensusParser.words[1],
+        "time": consensusParser.words[2]
     }
 }
 
 /**
  * Parses lines with the format "field list" where list is a comma separated list, returns the list as an array
  * @param {string} word indicates to which field we are adding the newly parsed line
- * @throws NotEqualException if lnn.consensusParser.words[0] != word
- * @throws WrongFormatException if lnn.consensusParser.words.length is not 2
+ * @throws NotEqualException if consensusParser.words[0] != word
+ * @throws WrongFormatException if consensusParser.words.length is not 2
  */
-lnn.consensusParser.tryParseCommaSeparatedList = function(word) {
-    lnn.consensusParser.checkFormat(2, word)
-    return lnn.consensusParser.words[1].split(",")
+consensusParser.tryParseCommaSeparatedList = function (word) {
+    consensusParser.checkFormat(2, word)
+    return consensusParser.words[1].split(",")
 }
 
 /**
 * Parse the ranges of the protocols
 * @param pairs Array of entries => Keyword=Values where values is the range
 */
-lnn.consensusParser.tryParseRanges = function(pairs) {
+consensusParser.tryParseRanges = function (pairs) {
     let content = {}
 
     for (let pair of pairs) {
         if (pair.includes("=")) {
             let tmp = pair.split("=")
-            content[tmp[0]] = lnn.consensusParser.parse_range_once(tmp[1])
+            content[tmp[0]] = consensusParser.parse_range_once(tmp[1])
         }
     }
 
@@ -591,7 +596,7 @@ lnn.consensusParser.tryParseRanges = function(pairs) {
 * Helper function to parse the ranges of the protocols
 * @param value the range we want to parse
 */
-lnn.consensusParser.parse_range_once = function(value) {
+consensusParser.parse_range_once = function (value) {
     value = value.split(',')
     let subvalues = []
 
@@ -616,11 +621,11 @@ lnn.consensusParser.parse_range_once = function(value) {
  * Parse the flags
  * @throws NotValidFlagException if one of the flags is not valid
  */
-lnn.consensusParser.tryParseFlags = function() {
-    let flags = lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length)
-    
+consensusParser.tryParseFlags = function () {
+    let flags = consensusParser.words.splice(1, consensusParser.words.length)
+
     for (let f of flags) {
-        if (!lnn.consensusParser.validFlags.includes(f)) throw `NotValidFlagException: ${f} is not a valid flag`
+        if (!consensusParser.validFlags.includes(f)) throw `NotValidFlagException: ${f} is not a valid flag`
     }
 
     return flags
@@ -630,13 +635,13 @@ lnn.consensusParser.tryParseFlags = function() {
  * Parse signature 
  * @throws WrongFormatException if the line does not start with ----BEGIN
  */
-lnn.consensusParser.parseSignature = function() {
-    if (lnn.consensusParser.words[0] !== '-----BEGIN') throw `WrongFormatException`
-    lnn.consensusParser.nextLine()
+consensusParser.parseSignature = function () {
+    if (consensusParser.words[0] !== '-----BEGIN') throw `WrongFormatException`
+    consensusParser.nextLine()
     let signature = ''
-    while (lnn.consensusParser.lines[lnn.consensusParser.index] !== "-----END SIGNATURE-----") {
-        signature += lnn.consensusParser.lines[lnn.consensusParser.index]
-        lnn.consensusParser.nextLine()
+    while (consensusParser.lines[consensusParser.index] !== "-----END SIGNATURE-----") {
+        signature += consensusParser.lines[consensusParser.index]
+        consensusParser.nextLine()
     }
     return signature
 }
@@ -645,9 +650,9 @@ lnn.consensusParser.parseSignature = function() {
 /**
  * parase parameters
  */
-lnn.consensusParser.tryParseParams = function() {
+consensusParser.tryParseParams = function () {
     let content = {}
-    for (let param of lnn.consensusParser.words.splice(1, lnn.consensusParser.words.length)) {
+    for (let param of consensusParser.words.splice(1, consensusParser.words.length)) {
         let tmp = param.split('=')
         content[tmp[0]] = Number(tmp[1])
     }
@@ -658,7 +663,7 @@ lnn.consensusParser.tryParseParams = function() {
 * Check if the string in date has the format YYYY-MM-DD
 * @param {string} time String representing the date
 */
-lnn.consensusParser.isValidDate = function(date) {
+consensusParser.isValidDate = function (date) {
     if (typeof date !== 'string') return false
     let regex = /^\d{4}[-](0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$/
     return regex.test(date)
@@ -667,7 +672,7 @@ lnn.consensusParser.isValidDate = function(date) {
 /**Check if the string time has the format HH:MM:SS
  * @param {string} time String representing the time
  */
-lnn.consensusParser.isValidTime = function(time) {
+consensusParser.isValidTime = function (time) {
     if (typeof time !== 'string') return false
     let regex = /^(0[0-9]|1[0-9]|2[0-3])[:][0-5][0-9][:][0-5][0-9]$/
     return regex.test(time)
@@ -677,7 +682,7 @@ lnn.consensusParser.isValidTime = function(time) {
  * Check if the IP address is valid (either IPv4 or IPv6)
  * @param {string} IP the address we want to check
  */
-lnn.consensusParser.isValidIP = function(IP) {
+consensusParser.isValidIP = function (IP) {
     let regex = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$|^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/
     return regex.test(IP)
 }
@@ -686,7 +691,7 @@ lnn.consensusParser.isValidIP = function(IP) {
  * Check if the IP is an IPv4 address
  * @param {string} IP 
  */
-lnn.consensusParser.isIPv4 = function(IP) {
+consensusParser.isIPv4 = function (IP) {
     let regex = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
     return regex.test(IP)
 }
@@ -695,7 +700,7 @@ lnn.consensusParser.isIPv4 = function(IP) {
  * Check if the given port is valid
  * @param {number} port
  */
-lnn.consensusParser.isValidPort = function(port) {
+consensusParser.isValidPort = function (port) {
     if (isNaN(port)) return false
     //TODO: < or <= ?
     return port >= 0 && port <= 65535
@@ -705,7 +710,7 @@ lnn.consensusParser.isValidPort = function(port) {
  * Check if the given string is in hexadecimal
  * @param {string} str 
  */
-lnn.consensusParser.isHex = function(str) {
+consensusParser.isHex = function (str) {
     let regex = /^[a-fA-F0-9]+$/
     return regex.test(str)
 }
@@ -714,18 +719,18 @@ lnn.consensusParser.isHex = function(str) {
  * Check if the given string is in base 64
  * @param {string} str 
  */
-lnn.consensusParser.isBase64 = function(str) {
+consensusParser.isBase64 = function (str) {
     let regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
     return regex.test(str)
 }
 
 /**
- * Updates lnn.consensusParser.index and lnn.consensusParser.words
+ * Updates consensusParser.index and consensusParser.words
  * @throws EndOfFileException if the end of the file has already been reached
  */
-lnn.consensusParser.nextLine = function() {
-    if (lnn.consensusParser.index >= lnn.consensusParser.totalLines) throw `EndOfFileException: there are no lines to parse`
-    lnn.consensusParser.words = lnn.consensusParser.lines[++lnn.consensusParser.index].split(" ")
+consensusParser.nextLine = function () {
+    if (consensusParser.index >= consensusParser.totalLines) throw `EndOfFileException: there are no lines to parse`
+    consensusParser.words = consensusParser.lines[++consensusParser.index].split(" ")
 }
 
 /**
@@ -733,8 +738,9 @@ lnn.consensusParser.nextLine = function() {
  * @param {number} expectedLength the expected length of words
  * @param {string} expectedWord the expected word[0]
  */
-lnn.consensusParser.checkFormat = function(expectedLength, expectedWord) {
-    if (lnn.consensusParser.words.length != expectedLength) throw `WrongFormatException: ${expectedLength} fields are expected`
-    if (lnn.consensusParser.words[0] != expectedWord) throw `NotEqualException:b ${expectedWord} is not equal to ${lnn.consensusParser.words[0]}`
+consensusParser.checkFormat = function (expectedLength, expectedWord) {
+    if (consensusParser.words.length != expectedLength) throw `WrongFormatException: ${expectedLength} fields are expected`
+    if (consensusParser.words[0] != expectedWord) throw `NotEqualException:b ${expectedWord} is not equal to ${consensusParser.words[0]}`
 }
 
+export { consensusParser };
