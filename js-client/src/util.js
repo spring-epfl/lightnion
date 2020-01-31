@@ -13,6 +13,10 @@ export class enc {
     static get bits() { return sjcl.codec.bytes.toBits; }
     static get utf8() { return naclutil.encodeUTF8; }
     static get base64() { return naclutil.encodeBase64; }
+
+    /**
+     * Return a function transforming an array of char codes to its string.
+     */
     static get bin() {
         return function (data) {
             var str = ""
@@ -34,6 +38,10 @@ export class dec {
     }
     static get utf8() { return naclutil.decodeUTF8; }
     static get base64() { return naclutil.decodeBase64; }
+
+    /**
+     * Return a function transforming a string to its array of char codes.
+     */
     static get bin() {
         return function (str) {
             var data = new Uint8Array(str.length)

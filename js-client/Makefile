@@ -1,4 +1,4 @@
-.PHONY: all install build lint clean help submodules
+.PHONY: all install build test doc lint clean help submodules
 
 CP = cp
 CD = cd
@@ -26,6 +26,10 @@ build: LIGHTNION-BUNDLE-DIST LIGHTNION-BUNDLE
 
 # build javascript documentation
 doc: jsdoc/index.html
+
+# run unit tests
+test:
+	@./node_modules/mocha/bin/mocha -r jsdom-global/register --require esm --recursive --exclude "src/export.js" src/
 
 # # run javascript linter
 # lint:

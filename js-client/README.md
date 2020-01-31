@@ -52,3 +52,7 @@ See `./demo/` for more examples.
 ## Requirements
 
 The bundle works on `firefox 61.0.2` and includes `sjcl+tweetnacl-js`.
+
+## Unit testing
+
+Run `make test`.
