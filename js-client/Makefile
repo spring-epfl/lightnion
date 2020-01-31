@@ -1,5 +1,8 @@
 .PHONY: all install build test doc lint clean help submodules
 
+# recursive wildcard
+rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
+
 CP = cp
 CD = cd
 NPM = npm
@@ -15,6 +18,8 @@ DIST = ./dist
 LIGHTNION-BUNDLE = lightnion.bundle.js
 LIGHTNION-BUNDLE-DIST = $(DIST)/lightnion.bundle.js
 JSDOC-DIST = jsdoc/
+
+SOURCES = $(call rwildcard,src/)
 
 all: $(LIGHTNION-BUNDLE)
 
@@ -52,7 +57,7 @@ help:
 $(LIGHTNION-BUNDLE): $(LIGHTNION-BUNDLE-DIST)
 	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
 
-$(LIGHTNION-BUNDLE-DIST): $(SJCL-BUILD)
+$(LIGHTNION-BUNDLE-DIST): $(SJCL-BUILD) $(SOURCES)
 	npm run build
 
 $(SJCL-GIT):
@@ -64,5 +69,5 @@ $(SJCL-BUILD): $(SJCL-GIT)
 	# modify sjcl to export
 	echo "export { sjcl };" >> $(SJCL-BUILD)
 
-jsdoc/index.html:
+jsdoc/index.html: $(SOURCES)
 	$(JSDOC) -r -d $(JSDOC-DIST) src/

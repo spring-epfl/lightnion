@@ -6,6 +6,8 @@
   "dependencies": {
     "big-integer": "^1.6.48",
     "browser-or-node": "^1.2.1",
+    "cross-blob": "^1.2.0",
+    "node-forge": "^0.9.1",
     "tweetnacl": "^1.0.2",
     "tweetnacl-util": "^0.15.1"
   },

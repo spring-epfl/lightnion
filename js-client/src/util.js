@@ -1,6 +1,7 @@
 /**
- * @module utils
  * Utility functions used in the lightnion js-client module.
+ * 
+ * @module utils
  */
 
 import { sjcl } from "../vendor/sjcl.js";

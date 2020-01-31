@@ -1,13 +1,5 @@
 /**
  * @module header
- * The Lightnion Javascript client, top-level namespace.
- */
-
-"use strict"
-
-/**
- * The Lightnion Javascript client, top-level namespace.
- *
  * @namespace
  * @see lnn.open
  * @see lnn.stream.tcp
@@ -36,6 +28,8 @@
  * }
  *
  */
+"use strict"
+
 let lnn = {}
 
 /**
