@@ -1,0 +1,65 @@
+<html>
+
+<head lang='en'>
+    <script src="lightnion.bundle.js"></script>
+    <meta charset="UTF-8">
+    <title>lightnion websocket redirect echo demo</title>
+</head>
+
+<body>
+    <h1>lightnion websocket redirect echo demo</h1>
+    <p>
+        Connects to a WebServer echo server "ws://echo.websocket.org", through Lightnion.
+    </p>
+
+    <form id="echo-form" action="javascript:void(0);">
+        <input id="echo-input" autocomplete="off" />
+        <button type="button" id="echo-button" onclick="sendMessage()">Send</button>
+    </form>
+
+
+    <ul id="messages"></ul>
+
+    <style>
+        #messages li:nth-child(odd) {
+            background: #eee;
+        }
+    </style>
+
+    <script>
+        // send message in input through websocket
+        function sendMessage() {
+            let msg = document.getElementById("echo-input").value;
+            document.getElementById("echo-input").value = "";
+            appendMessage("> " + msg, true);
+            window.ws.send(msg);
+        }
+
+        // add a message to the UI message list
+        function appendMessage(msg, client) {
+            let ul = document.getElementById("messages");
+            let li = document.createElement("li");
+            let text = document.createTextNode(msg);
+            li.appendChild(text);
+            li.setAttribute("class", client ? "client" : "server");
+            ul.appendChild(li);
+        }
+
+        // create websocket as normal, except replacing WebSocket by LWS,
+        // and specifying lightnion host and port if needed
+        let url = new URL("ws://echo.websocket.org");
+        console.log(lnn.websocket);
+        let ws = new lnn.websocket(url, protocols = [], lightnionHost = "localhost", lightnionPort = 4990);
+
+        ws.onmessage = (event) => {
+            console.log(event)
+            appendMessage("< " + event.data, false);
+        }
+
+        window.ws = ws;
+    </script>
+
+
+</body>
+
+</html>

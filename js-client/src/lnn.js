@@ -27,6 +27,7 @@ import * as relay from "./relay.js";
 import * as signature from "./signature";
 import * as stream from "./stream.js";
 import * as utils from "./util.js";
+import LightnionWebSocket from "./lightnion-websocket/lightnion-websocket.js";
 
 // header
 let lnn = header.lnn;
@@ -113,6 +114,9 @@ lnn.dec.bits = utils.dec.bits;
 lnn.dec.utf8 = utils.dec.utf8;
 lnn.dec.base64 = utils.dec.base64;
 lnn.dec.bin = utils.dec.bin;
+
+// websocket
+lnn.websocket = LightnionWebSocket;
 
 window.lnn = lnn;
 
