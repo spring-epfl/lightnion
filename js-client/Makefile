@@ -36,9 +36,9 @@ doc: jsdoc/index.html
 test:
 	@./node_modules/mocha/bin/mocha -r jsdom-global/register --require esm --recursive --exclude "src/export.js" src/
 
-# # run javascript linter
-# lint:
-# 	./node_modules/.bin/eslint src
+# run javascript linter
+lint:
+	./node_modules/.bin/eslint src
 
 # clean built files
 clean:
