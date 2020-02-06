@@ -51,7 +51,7 @@ The library is split in different folders under `src/lightnion-websocket/`:
 
 ### Integration Tests
 
-TODO
+See [here](../../integration-tests/lightnion-websocket/README.md)
 
 ### WebSocketClient socket interface
 

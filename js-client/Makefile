@@ -1,4 +1,4 @@
-.PHONY: all install build test doc lint clean help submodules
+.PHONY: all install build test doc lint clean help submodules integration
 
 # recursive wildcard
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -17,6 +17,8 @@ SJCL-BUILD = $(VENDOR)/sjcl.js
 DIST = ./dist
 LIGHTNION-BUNDLE = lightnion.bundle.js
 LIGHTNION-BUNDLE-DIST = $(DIST)/lightnion.bundle.js
+LIGHTNION-BUNDLE-INTEGRATION-TESTS = integration-tests/lightnion-websocket/public/lws.bundle.js
+
 JSDOC-DIST = jsdoc/
 
 SOURCES = $(call rwildcard,src/)
@@ -36,6 +38,10 @@ doc: jsdoc/index.html
 test:
 	@./node_modules/mocha/bin/mocha -r jsdom-global/register --require esm --recursive --exclude "src/export.js" src/
 
+# build project for integration testing
+integration: $(LIGHTNION-BUNDLE-INTEGRATION-TESTS)
+	cd integration-tests/lightnion-websocket/infra; sh setup.sh
+
 # run javascript linter
 lint:
 	./node_modules/.bin/eslint src
@@ -44,6 +50,7 @@ lint:
 clean:
 	$(RM) $(LIGHTNION-BUNDLE)
 	$(RM) $(DIST)/*
+	$(RM) $(LIGHTNION-BUNDLE-INTEGRATION-TESTS)
 	$(RM) -r $(JSDOC-DIST)
 
 # clean built files and dependencies
@@ -55,6 +62,9 @@ help:
 	@awk '/^#/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:alnum:]_-]+:/{print substr($$1,1,index($$1,":")),c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
 
 $(LIGHTNION-BUNDLE): $(LIGHTNION-BUNDLE-DIST)
+	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
+
+$(LIGHTNION-BUNDLE-INTEGRATION-TESTS): $(LIGHTNION-BUNDLE-DIST)
 	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
 
 $(LIGHTNION-BUNDLE-DIST): $(SJCL-BUILD) $(SOURCES)
