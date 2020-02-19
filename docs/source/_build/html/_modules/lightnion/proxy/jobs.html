@@ -1,0 +1,665 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.proxy.jobs &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.proxy.jobs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.proxy.jobs</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">websockets</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">parts</span><span class="p">,</span> <span class="n">base_url</span><span class="p">,</span> <span class="n">fake_circuit_id</span>
+<span class="kn">import</span> <span class="nn">lightnion.path_selection</span>
+<span class="kn">import</span> <span class="nn">lightnion.utils</span>
+
+
+<div class="viewcode-block" id="InvalidTokenException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.InvalidTokenException">[docs]</a><span class="k">class</span> <span class="nc">InvalidTokenException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;Value </span><span class="si">{}</span><span class="s1"> is not a valid token.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CircuitDoesNotExistException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.CircuitDoesNotExistException">[docs]</a><span class="k">class</span> <span class="nc">CircuitDoesNotExistException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;Circuit id </span><span class="si">{}</span><span class="s1"> does not exist.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ChannelDoesNotExistException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelDoesNotExistException">[docs]</a><span class="k">class</span> <span class="nc">ChannelDoesNotExistException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;Channel </span><span class="si">{}</span><span class="s1"> does not exist.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="LinkNotInitializedException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.LinkNotInitializedException">[docs]</a><span class="k">class</span> <span class="nc">LinkNotInitializedException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="LinkAlreadyInitializedException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.LinkAlreadyInitializedException">[docs]</a><span class="k">class</span> <span class="nc">LinkAlreadyInitializedException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="dummy_random_gen"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.dummy_random_gen">[docs]</a><span class="k">def</span> <span class="nf">dummy_random_gen</span><span class="p">():</span>
+    <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;Dummy random data.&#39;</span></div>
+
+
+<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Channel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Channel constructor.</span>
+<span class="sd">        :param token: Token identifyint the channel.</span>
+<span class="sd">        :param cid: Circuit id corresponding to the channel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cid</span> <span class="o">=</span> <span class="n">cid</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_send</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="mi">2048</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">destroyed</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager">[docs]</a><span class="k">class</span> <span class="nc">ChannelManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Channel manager</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Cryptographic tools to generate tokens.</span>
+    <span class="n">crypto</span> <span class="o">=</span> <span class="n">parts</span><span class="o">.</span><span class="n">crypto</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Channel manager constructor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># channels identified by a token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># link and main token set later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintoken</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span> <span class="nf">_cid_from_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract a circuit id from a token.</span>
+<span class="sd">        :param token: token from which the circuit id is extracted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">decrypt_token</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maintoken</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Invalid token: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">InvalidTokenException</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">cid</span>
+
+
+<div class="viewcode-block" id="ChannelManager.gen_token_from_cid"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.gen_token_from_cid">[docs]</a>    <span class="k">def</span> <span class="nf">gen_token_from_cid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Produce a token from a circuit id.</span>
+<span class="sd">        :param cid: circuit id used to generate the token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">compute_token</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">maintoken</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_gen_main_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rnd_gen</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate the main token used to produce channel tokens.</span>
+<span class="sd">        :param rnd_gen: method to generate a ransdom number to initialize the token generator.</span>
+<span class="sd">        :return: main token</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">LinkNotInitializedException</span><span class="p">()</span>
+
+        <span class="n">guard_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">guard</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">secret</span> <span class="o">=</span> <span class="n">rnd_gen</span><span class="p">()</span>
+        <span class="n">maintoken</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">guard_id</span> <span class="o">+</span> <span class="n">secret</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Main token generated: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">maintoken</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">maintoken</span>
+
+
+<div class="viewcode-block" id="ChannelManager.set_link"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.set_link">[docs]</a>    <span class="k">def</span> <span class="nf">set_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">rnd_gen</span><span class="o">=</span><span class="n">dummy_random_gen</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a link to be used by the channel handler.</span>
+<span class="sd">        :param link: Link to use.</span>
+<span class="sd">        :param rnd_gen: Method to generate a random number to initialize the token generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">LinkAlreadyInitializedException</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Link set.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintoken</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_main_token</span><span class="p">(</span><span class="n">rnd_gen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.reset_link"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.reset_link">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">reset_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">rnd_gen</span><span class="o">=</span><span class="n">dummy_random_gen</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset the link used the channel handler.</span>
+<span class="sd">        :param link: Link to use.</span>
+<span class="sd">        :param rnd_gen: Method to generate a random number to initialize the token generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">destroy_circuit_from_client</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+                <span class="c1">#await self.destroy_circuit_from_link(channel)</span>
+            <span class="c1"># Deletion per-se of existing channels handled in websocket after the cell was dispatched.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Link resetted.&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintoken</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gen_main_token</span><span class="p">(</span><span class="n">rnd_gen</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.create_channel"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.create_channel">[docs]</a>    <span class="k">def</span> <span class="nf">create_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">consensus</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">select_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new channel.</span>
+<span class="sd">        :param ntor: First part of the ntor handshake provided by the client.</span>
+<span class="sd">        :param consensus: The current consensus.</span>
+<span class="sd">        :param descriptors: A collection of the current descriptors.</span>
+<span class="sd">        :return: Response to be send to the client</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># TODO: Currently, the ntor is provided by the client to be packaged</span>
+        <span class="c1">#       in the proxy and send back to the client to be send again to</span>
+        <span class="c1">#       the websocket. This need to be simplified.</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">LinkNotInitializedException</span><span class="p">()</span>
+
+        <span class="c1">#ntor_bin = base64.b64decode(ntor)</span>
+
+        <span class="n">cid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">gen_cid</span><span class="p">()</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gen_token_from_cid</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
+
+        <span class="c1">#cell = lnn.create.ntor_raw2(cid, ntor_bin)</span>
+        <span class="c1">#cell = base64.b64encode(cell).decode(&#39;utf-8&#39;)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="n">Channel</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">cid</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">select_path</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">middle</span><span class="p">,</span> <span class="n">exit</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">path_selection</span><span class="o">.</span><span class="n">select_end_path_from_consensus</span><span class="p">(</span><span class="n">consensus</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">guard</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Middle </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">middle</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;nickname&#39;</span><span class="p">]))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Exit </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exit</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;nickname&#39;</span><span class="p">]))</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">middle</span><span class="p">,</span> <span class="n">exit</span><span class="p">],</span> <span class="s1">&#39;guard&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">guard</span><span class="p">}</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Channel </span><span class="si">{}</span><span class="s1"> with token </span><span class="si">{}</span><span class="s1"> created.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">token</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">response</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span> <span class="s1">&#39;guard&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">guard</span><span class="p">}</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Channel </span><span class="si">{}</span><span class="s1"> with token </span><span class="si">{}</span><span class="s1"> created.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">token</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="ChannelManager.delete_channel"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.delete_channel">[docs]</a>    <span class="k">def</span> <span class="nf">delete_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delete a given channel if it is managed by the channel manager, do nothing otherwise.</span>
+<span class="sd">        :param channel: Channel to be deleted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">cid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">]</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Channel </span><span class="si">{}</span><span class="s1"> with token </span><span class="si">{}</span><span class="s1"> deleted.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span> <span class="n">channel</span><span class="o">.</span><span class="n">token</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.destroy_circuit_from_client"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_client">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">destroy_circuit_from_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Destroy a circuit corresponding to a channel as if the order was comming from the client side.</span>
+<span class="sd">        :param channel: Channel handling the circuit to be destroyed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Send a cell to the link to delete the circuit in the relay.</span>
+        <span class="n">cid</span> <span class="o">=</span> <span class="n">channel</span><span class="o">.</span><span class="n">cid</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="n">reason</span><span class="o">.</span><span class="n">REQUESTED</span>
+
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">reason</span><span class="p">)</span>
+        <span class="n">cell_padded</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">to_send</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cell_padded</span><span class="p">)</span>
+
+        <span class="c1"># Destroy the channel.</span>
+        <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Prepare to delete circuit </span><span class="si">{}</span><span class="s1"> from client.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.destroy_circuit_from_link"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_link">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">destroy_circuit_from_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Destroy a circuit corresponding to a channel as if the order was comming from the link side.</span>
+<span class="sd">        :param channel: Channel handling the circuit to be destroyed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Destroy the channel.</span>
+        <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Prepare to delete channel </span><span class="si">{}</span><span class="s1"> from link.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.get_channel_by_token"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.get_channel_by_token">[docs]</a>    <span class="k">def</span> <span class="nf">get_channel_by_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a channel by its token.</span>
+<span class="sd">        :param token: Token identifying the channel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">cid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cid_from_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ChannelDoesNotExistException</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="ChannelManager.schedule_to_send"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.ChannelManager.schedule_to_send">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">schedule_to_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scedule the data to be send to the correct channel.</span>
+<span class="sd">        :param cell: cell to be send.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Begin adding data to sending queue of channel </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="n">cid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Channel </span><span class="si">{}</span><span class="s1"> does not exists.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+            <span class="k">return</span>
+            <span class="c1">#raise CircuitDoesNotExistException(cid)</span>
+
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Channel </span><span class="si">{}</span><span class="s1"> is destroyed.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+            <span class="k">return</span>
+            <span class="c1">#raise CircuitDoesNotExistException(cid)</span>
+
+        <span class="c1"># If the cell command to delete the circuit,</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">cmd</span> <span class="ow">is</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">DESTROY</span><span class="p">:</span>
+            <span class="n">cell_validation</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;ChanMgr: DESTROY cell received for channel </span><span class="si">{}</span><span class="s1">, reason: </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">cell_validation</span><span class="o">.</span><span class="n">reason</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_validation</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Invalid DESTROY in channel </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+                <span class="c1">#raise InvalidDestroyCellException()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">destroy_circuit_from_link</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+
+            <span class="k">return</span>
+
+        <span class="n">cell_padded</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+        <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">to_send</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cell_padded</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ChanMgr: Data added to sending queue of channel </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span></div></div>
+
+
+
+<div class="viewcode-block" id="WebsocketManager"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.WebsocketManager">[docs]</a><span class="k">class</span> <span class="nc">WebsocketManager</span><span class="p">:</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">base_url</span> <span class="o">+</span> <span class="s1">&#39;/channels/&#39;</span>
+    <span class="n">prefix_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8765</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Websocket server</span>
+<span class="sd">        :param host: host on which the websocket need to run.</span>
+<span class="sd">        :param port: port on which the websocket is listening.</span>
+<span class="sd">        :param timeout: timeout before closing the connection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Time witout activity until channel is deleted.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+
+        <span class="c1"># The channel manager is set later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># The websocket server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Websocket server prepared (</span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="WebsocketManager.serve"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.WebsocketManager.serve">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">serve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loop</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and start a websocket server, then wait for it to close.        </span>
+<span class="sd">        :param host: host on which the websocket need to run.</span>
+<span class="sd">        :param port: port on which the websocket is listening.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="k">await</span> <span class="n">websockets</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WebsocketManager.stop"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.WebsocketManager.stop">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Websocket server closed.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WebsocketManager.set_channel_manager"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.jobs.WebsocketManager.set_channel_manager">[docs]</a>    <span class="k">def</span> <span class="nf">set_channel_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_manager</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the channel manager to use for dispatching data.</span>
+<span class="sd">        :param channel_manager: The channel manager to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span> <span class="o">=</span> <span class="n">channel_manager</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Channel manager set.&#39;</span><span class="p">)</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_recv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler to receive a message from the client via the websocket.</span>
+<span class="sd">        :param ws: websocket used to communicate with the client.</span>
+<span class="sd">        :param channel: Channel correspondind to the client from which data is recieved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">ws</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;cell </span><span class="si">{}</span><span class="s1"> recv by wbskt: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Recieved cell from channel </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">)))</span>
+
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">schedule_to_send</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="n">websockets</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionClosedError</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Websocket connection closed.&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">except</span> <span class="n">websockets</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionClosedOK</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Websocket connection closed.&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler to send a message to the client via the websocket.</span>
+<span class="sd">        :param ws: The websocket used to communicate with the client.</span>
+<span class="sd">        :param channel: Channel from which data is sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">ws</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">to_send</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+                <span class="n">cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+                <span class="k">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;cell </span><span class="si">{}</span><span class="s1"> sent to wbskt: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Sent data to channel </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">)))</span>
+
+            <span class="k">except</span> <span class="n">websockets</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ConnectionClosed</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span>
+                <span class="k">return</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler to send termination cells in case of a timeout.</span>
+<span class="sd">        :param ws: The websocket used to communicate with the client.</span>
+<span class="sd">        :param channel: Channel from which data is sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Channel </span><span class="si">{}</span><span class="s1"> timed out.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span><span class="o">.</span><span class="n">destroy_circuit_from_client</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler to destroy the specific circuit.</span>
+<span class="sd">        :param ws: The websocket used to communicate with the client.</span>
+<span class="sd">        :param channel: Channel from which data is sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Just await for the channel to be destroyed.</span>
+        <span class="k">await</span> <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler to process a IO on the websocket or on the link.</span>
+<span class="sd">        :param ws: The websocket used to communicate with the client.</span>
+<span class="sd">        :param path: Path used by the client.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">WebsocketManager</span><span class="o">.</span><span class="n">prefix</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;WsServ: Attempted to connect to websocket with an invalid prefix </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="n">token</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">WebsocketManager</span><span class="o">.</span><span class="n">prefix_len</span><span class="p">:]</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: Begin handler for channel id by token </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span><span class="o">.</span><span class="n">get_channel_by_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;WsServ: Attempted to connect to websocket with an invalid token </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_destroy</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">)),</span>
+            <span class="c1">#asyncio.create_task(self._timeout(ws, channel)),</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_recv</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">)),</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="n">channel</span><span class="p">))</span>
+        <span class="p">]</span>
+
+        <span class="n">done</span><span class="p">,</span> <span class="n">pending</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
+
+        <span class="c1">#while not ws.closed:</span>
+        <span class="c1">#    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)</span>
+
+        <span class="c1">#    # Conditions to continue or stop listening.</span>
+
+        <span class="c1">#    # Circuit destroyed -&gt; close websocket.</span>
+        <span class="c1">#    if tasks[0].done():</span>
+        <span class="c1">#        logging.debug(&#39;WsServ: Channel {} destroyed.&#39;.format(channel.cid))</span>
+        <span class="c1">#        break</span>
+
+        <span class="c1">#    # Long timeout -&gt; close websocket.</span>
+        <span class="c1">#    if tasks[1].done():</span>
+        <span class="c1">#        logging.debug(&#39;WsServ: Ws handler timed out for channel {}.&#39;.format(channel.cid))</span>
+        <span class="c1">#        break</span>
+        <span class="c1">#    else:</span>
+        <span class="c1">#        # Channel has not timed out, so the timeout is resetted.</span>
+        <span class="c1">#        tasks[1].cancel()</span>
+        <span class="c1">#        tasks[1] = asyncio.create_task(self._timeout(ws, channel))</span>
+        <span class="c1">#        logging.debug(&#39;WsServ: Reset timeout handler for channel {}.&#39;.format(channel.cid))</span>
+
+        <span class="c1">#    # If recv is done, restart it.</span>
+        <span class="c1">#    if tasks[2].done() or tasks[2].cancelled():</span>
+        <span class="c1">#        tasks[2] = asyncio.create_task(self._recv(ws, channel))</span>
+        <span class="c1">#        logging.debug(&#39;WsServ: New recv task created for channel {}.&#39;.format(channel.cid))</span>
+
+        <span class="c1">#    # If send is done, restart it.</span>
+        <span class="c1">#    if tasks[3].done() or tasks[3].cancelled():</span>
+        <span class="c1">#        tasks[3] = asyncio.create_task(self._send(ws, channel))</span>
+        <span class="c1">#        logging.debug(&#39;WsServ: New send task created for channel {}.&#39;.format(channel.cid))</span>
+
+        <span class="c1"># The channel is destroyed, and the connection needs to be closed.</span>
+
+        <span class="c1"># Cancel tasks which are still pending.</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">()</span> <span class="ow">or</span> <span class="n">task</span><span class="o">.</span><span class="n">done</span><span class="p">()):</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="c1"># Delete the channel and close the websocket.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span><span class="o">.</span><span class="n">delete_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;WsServ: End handler for channel </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

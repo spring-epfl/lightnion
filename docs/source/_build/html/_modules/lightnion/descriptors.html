@@ -1,0 +1,855 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.descriptors &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.descriptors</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.descriptors</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">urllib.request</span>
+
+<span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+<span class="kn">from</span> <span class="nn">lightnion</span> <span class="k">import</span> <span class="n">consensus</span>
+
+<div class="viewcode-block" id="compute_descriptor_digest"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.compute_descriptor_digest">[docs]</a><span class="k">def</span> <span class="nf">compute_descriptor_digest</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (details of the parser – private API)</span>
+
+<span class="sd">        Plugs into our consumer to compute extra &quot;digest&quot; fields that expose</span>
+<span class="sd">        the (micro-)descriptor&#39;s (micro-)digest, enabling us to easily fetch</span>
+<span class="sd">        associated entries within a consensus.</span>
+
+<span class="sd">        :param list fields: &quot;fields&quot; accumulator used by the consumer</span>
+<span class="sd">        :param bytes descriptors: remaining input to be parsed by the consumer</span>
+<span class="sd">        :param bytes entry: last line being parsed by the consumer</span>
+<span class="sd">        :param str flavor: flavor used by the consumer</span>
+
+<span class="sd">        :returns: updated (or not) fields accumulator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;unflavored&#39;</span><span class="p">:</span>
+        <span class="n">digest_name</span> <span class="o">=</span> <span class="s1">&#39;digest&#39;</span>
+        <span class="n">pivot_field</span> <span class="o">=</span> <span class="s1">&#39;router&#39;</span>
+        <span class="n">starts_hash</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;router &#39;</span>
+        <span class="n">ends_hasher</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;router-signature&#39;</span>
+        <span class="n">base_offset</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">base_legacy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">shalgorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span>
+        <span class="c1"># https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L602</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">digest_name</span> <span class="o">=</span> <span class="s1">&#39;micro-digest&#39;</span>
+        <span class="n">pivot_field</span> <span class="o">=</span> <span class="s1">&#39;onion-key&#39;</span>
+        <span class="n">starts_hash</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;onion-key&#39;</span>
+        <span class="n">ends_hasher</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;id &#39;</span>
+        <span class="n">base_offset</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">43</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1"># &#39;ed25519 [identity]\n&#39;</span>
+        <span class="n">base_legacy</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">27</span> <span class="o">+</span> <span class="mi">1</span> <span class="c1"># &#39;rsa1024 [identity]\n&#39;</span>
+        <span class="n">shalgorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span>
+        <span class="c1"># https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3202</span>
+
+    <span class="c1"># 1. check if we&#39;re starting to parse a fresh entry before computing digest</span>
+    <span class="k">if</span> <span class="n">digest_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">entry</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">starts_hash</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pivot_field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">pivot_field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">())</span>
+
+        <span class="c1"># 1.5 (extra sanity checks: double-check that we have what we need)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">starts_hash</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Expecting </span><span class="si">{}</span><span class="s1"> to start the payload: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">starts_hash</span><span class="p">,</span> <span class="n">entry</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ends_hasher</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Expecting </span><span class="si">{}</span><span class="s1"> within: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ends_hasher</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># 2. compute the offset to the ends what goes into the hash</span>
+            <span class="n">sigoffset</span> <span class="o">=</span> <span class="n">descriptors</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ends_hasher</span><span class="p">)</span>
+
+            <span class="c1"># TODO: better support?</span>
+            <span class="n">sigoffset</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ends_hasher</span><span class="p">)</span> <span class="o">+</span> <span class="n">base_offset</span>
+            <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39;rsa1024&#39;</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">[:</span><span class="n">sigoffset</span><span class="p">]:</span>
+                <span class="n">sigoffset</span> <span class="o">-=</span> <span class="n">base_offset</span>
+                <span class="n">sigoffset</span> <span class="o">+=</span> <span class="n">base_legacy</span>
+
+            <span class="c1"># 3. rebuild the original (including its first line being parsed)</span>
+            <span class="n">full_desc</span> <span class="o">=</span> <span class="n">entry</span> <span class="o">+</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">descriptors</span><span class="p">[:</span><span class="n">sigoffset</span><span class="p">]</span>
+
+            <span class="c1"># 4. compute the base64-encoded hash with the right algorithm</span>
+            <span class="n">digest</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">shalgorithm</span><span class="p">(</span><span class="n">full_desc</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span>
+
+            <span class="c1"># 5. strips the trailing &#39;=&#39; as specified</span>
+            <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">digest_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">digest</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;=&#39;</span><span class="p">),</span> <span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">digest_name</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Was unable to generate proper sum.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+<div class="viewcode-block" id="consume_descriptors"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.consume_descriptors">[docs]</a><span class="k">def</span> <span class="nf">consume_descriptors</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;microdesc&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">flavor</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;microdesc&#39;</span><span class="p">,</span> <span class="s1">&#39;unflavored&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s1">&#39;Consensus flavor &quot;</span><span class="si">{}</span><span class="s1">&quot; not supported.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">flavor</span><span class="p">))</span>
+
+    <span class="c1"># TODO: check if family in microdesc are appropriate</span>
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="n">whitelist</span> <span class="o">=</span> <span class="p">[</span><span class="sa">b</span><span class="s1">&#39;onion-key&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;ntor-onion-key&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;p6&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;family&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">whitelist</span> <span class="o">=</span> <span class="p">[</span><span class="sa">b</span><span class="s1">&#39;router&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;identity-ed25519&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;master-key-ed25519&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;platform&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;proto&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;published&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;fingerprint&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;uptime&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;extra-info-digest&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;qkk&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;caches-extra-info&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;onion-key&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;signing-key&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;onion-key-crosscert&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;ntor-onion-key-crosscert&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;hidden-service-dir&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;contact&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;ntor-onion-key&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;reject&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;accept&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;tunnelled-dir-server&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;router-sig-ed25519&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;router-signature&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;ipv6-policy&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;family&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;protocols&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;or-address&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;allow-single-hop-exits&#39;</span><span class="p">,</span>
+            <span class="sa">b</span><span class="s1">&#39;hibernating&#39;</span><span class="p">]</span>
+    <span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;p&#39;</span><span class="p">:</span> <span class="s1">&#39;policy&#39;</span><span class="p">,</span> <span class="s1">&#39;p6&#39;</span><span class="p">:</span> <span class="s1">&#39;ipv6-policy&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;identity&#39;</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">end_of_field</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+        <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">+=</span> <span class="sa">b</span><span class="s1">&#39; &#39;</span>
+        <span class="n">keyword</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">whitelist</span>
+
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">()]</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">descriptors</span><span class="p">,</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">end_of_field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">descriptors</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="k">break</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">compute_descriptor_digest</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+
+        <span class="n">valid</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">+=</span> <span class="sa">b</span><span class="s1">&#39; &#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">keyword</span><span class="p">,</span> <span class="n">content</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;router&#39;</span><span class="p">:</span>
+            <span class="n">nick</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">orport</span><span class="p">,</span> <span class="n">socksport</span><span class="p">,</span> <span class="n">dirport</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">nickname</span><span class="o">=</span><span class="n">nick</span><span class="p">,</span>
+                <span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span>
+                <span class="n">orport</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">orport</span><span class="p">),</span>
+                <span class="n">socksport</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">socksport</span><span class="p">),</span>
+                <span class="n">dirport</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">dirport</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;platform&#39;</span><span class="p">,</span> <span class="s1">&#39;contact&#39;</span><span class="p">]:</span>
+            <span class="k">pass</span> <span class="c1"># nothing to process</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;reject&#39;</span><span class="p">,</span> <span class="s1">&#39;accept&#39;</span><span class="p">]:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;exitpattern&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;policy&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">base</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;policy&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">base</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;exitpattern&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown policy: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+            <span class="k">if</span> <span class="s1">&#39;rules&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+                <span class="n">base</span><span class="p">[</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="n">base</span><span class="p">[</span><span class="s1">&#39;rules&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">keyword</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">content</span><span class="p">))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;policy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;or-address&#39;</span><span class="p">:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="s1">&#39;or-address&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">base</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;or-address&#39;</span><span class="p">]</span>
+
+            <span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">guess</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_address</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;ip&#39;</span><span class="p">:</span> <span class="n">address</span><span class="p">,</span> <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span> <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">guess</span><span class="p">}]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;ignored&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="n">base</span> <span class="o">+=</span> <span class="n">content</span>
+            <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;or-address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;family&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;proto&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_ranges</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="c1"># The spec says &#39;New code should neither […] nor parse this line&#39;</span>
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;protocols&#39;</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;allow-single-hop-exits&#39;</span><span class="p">,</span> <span class="s1">&#39;hibernating&#39;</span><span class="p">]:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;published&#39;</span><span class="p">:</span>
+            <span class="n">date</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">when</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_time</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">stamp</span><span class="o">=</span><span class="n">when</span><span class="o">.</span><span class="n">timestamp</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;fingerprint&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_fingerprint</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="c1"># Enrich &#39;router&#39; with &#39;identity&#39; fingerprint for convenience</span>
+            <span class="k">if</span> <span class="s1">&#39;router&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">identity</span> <span class="o">=</span> <span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+                <span class="n">identity</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">identity</span><span class="p">),</span> <span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
+                <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;identity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">identity</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;uptime&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;bandwidth&#39;</span><span class="p">:</span>
+            <span class="n">avg</span><span class="p">,</span> <span class="n">burst</span><span class="p">,</span> <span class="n">observed</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">avg</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg</span><span class="p">),</span> <span class="n">burst</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">burst</span><span class="p">),</span> <span class="n">observed</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">observed</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;extra-info-digest&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="n">sha1</span><span class="p">,</span> <span class="n">sha256</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">sha256</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="n">sha256</span><span class="p">)</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sha1</span><span class="o">=</span><span class="n">sha1</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="n">sha256</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">sha1</span><span class="o">=</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;caches-extra-info&#39;</span><span class="p">,</span> <span class="s1">&#39;hidden-service-dir&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tunnelled-dir-server&#39;</span><span class="p">]:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;onion-key&#39;</span><span class="p">,</span> <span class="s1">&#39;signing-key&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">content</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Trailing content with </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">keyword</span><span class="p">,</span> <span class="n">content</span><span class="p">))</span>
+
+            <span class="n">descriptors</span><span class="p">,</span> <span class="n">pubkey</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap_signature</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span>
+                <span class="n">fix</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;RSA PUBLIC KEY&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pubkey</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pubkey</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;onion-key-crosscert&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">content</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Trailing content with </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">keyword</span><span class="p">,</span> <span class="n">content</span><span class="p">))</span>
+
+            <span class="n">descriptors</span><span class="p">,</span> <span class="n">crosscrt</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap_signature</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span>
+                <span class="n">fix</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;CROSSCERT&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">crosscrt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">crosscrt</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;ntor-onion-key-crosscert&#39;</span><span class="p">:</span>
+            <span class="n">bit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="n">descriptors</span><span class="p">,</span> <span class="n">edcert</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap_signature</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span>
+                <span class="n">fix</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;ED25519 CERT&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">edcert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">edcert</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">bit</span><span class="o">=</span><span class="n">bit</span><span class="p">,</span> <span class="n">cert</span><span class="o">=</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;ntor-onion-key&#39;</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="s1">&#39;p6&#39;</span><span class="p">,</span> <span class="s1">&#39;ipv6-policy&#39;</span><span class="p">]:</span>
+            <span class="n">policy_type</span><span class="p">,</span> <span class="n">portlist</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">policy_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;accept&#39;</span><span class="p">,</span> <span class="s1">&#39;reject&#39;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown policy: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">policy_type</span><span class="p">))</span>
+
+            <span class="n">portlist</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_range_once</span><span class="p">(</span><span class="n">portlist</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">policy_type</span><span class="p">,</span> <span class="s1">&#39;PortList&#39;</span><span class="p">:</span> <span class="n">portlist</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span>
+            <span class="n">id_type</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">id_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;rsa1024&#39;</span><span class="p">,</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown id key type: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">id_type</span><span class="p">))</span>
+
+            <span class="n">content</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">id_type</span><span class="p">,</span>
+                <span class="s1">&#39;master-key&#39;</span><span class="p">:</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="n">data</span><span class="p">)}</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;router-sig-ed25519&#39;</span><span class="p">,</span> <span class="s1">&#39;router-signature&#39;</span><span class="p">]:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;router-signatures&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">base</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;router-signatures&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;router-sig-ed25519&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;router-signatures&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Ed25519 must be first!&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Need identity with </span><span class="si">{}</span><span class="s1"> here: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">keyword</span><span class="p">,</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;cert&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;identity&#39;</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Need cert. in identity: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">base</span><span class="p">[</span><span class="s1">&#39;ed25519&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;router-signature&#39;</span><span class="p">:</span>
+                <span class="n">descriptors</span><span class="p">,</span> <span class="n">sig</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap_signature</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span>
+                    <span class="n">fix</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;SIGNATURE&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">sig</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">content</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+                <span class="n">base</span><span class="p">[</span><span class="s1">&#39;rsa&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content</span>
+
+            <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;router-signatures&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;identity-ed25519&#39;</span><span class="p">,</span> <span class="s1">&#39;master-key-ed25519&#39;</span><span class="p">]:</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">base</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;identity&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s1">&#39;type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+                <span class="n">base</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ed25519&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">base</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid key type </span><span class="si">{}</span><span class="s1"> here:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;identity-ed25519&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;cert&#39;</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Extra cert. here: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+
+                <span class="n">descriptors</span><span class="p">,</span> <span class="n">edcert</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">scrap_signature</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span>
+                    <span class="n">fix</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;ED25519 CERT&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">edcert</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">base</span><span class="p">[</span><span class="s1">&#39;cert&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">edcert</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">keyword</span> <span class="o">==</span> <span class="s1">&#39;master-key-ed25519&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;master-key&#39;</span> <span class="ow">in</span> <span class="n">base</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Extra master key: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+
+                <span class="n">base</span><span class="p">[</span><span class="s1">&#39;master-key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">parse_base64</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="c1"># TODO: validation if both master-key &amp; identity are present</span>
+            <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;identity&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base</span>
+            <span class="k">continue</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">aliases</span><span class="p">:</span>
+            <span class="n">keyword</span> <span class="o">=</span> <span class="n">aliases</span><span class="p">[</span><span class="n">keyword</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">())</span>
+
+        <span class="n">fields</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">keyword</span><span class="p">]</span> <span class="o">=</span> <span class="n">content</span>
+    <span class="k">return</span> <span class="n">descriptors</span><span class="p">,</span> <span class="n">fields</span></div>
+
+
+<div class="viewcode-block" id="parse_descriptors"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.parse_descriptors">[docs]</a><span class="k">def</span> <span class="nf">parse_descriptors</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;microdesc&#39;</span><span class="p">):</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">flavor</span><span class="o">=</span><span class="n">flavor</span><span class="p">)</span>
+    <span class="n">nbdesc</span> <span class="o">=</span> <span class="n">descriptors</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;onion-key</span><span class="se">\n</span><span class="s1">-----BEGIN&#39;</span><span class="p">)</span>
+
+    <span class="n">descriptors</span><span class="p">,</span> <span class="n">http</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">consume_http</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">http</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">http</span>
+
+    <span class="n">descriptors</span><span class="p">,</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">consume_descriptors</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">entries</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">entries</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="n">nbdesc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s1">&#39;Unexpected or corrupted descriptor? (</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1"> found)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">]),</span> <span class="n">nbdesc</span><span class="p">))</span>
+
+    <span class="c1"># Add flavor for convenience</span>
+    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])):</span>
+        <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">][</span><span class="n">idx</span><span class="p">][</span><span class="s1">&#39;flavor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flavor</span>
+
+    <span class="k">if</span> <span class="n">descriptors</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">:</span>
+        <span class="n">descriptors</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">fields</span><span class="p">,</span> <span class="n">descriptors</span></div>
+
+
+<div class="viewcode-block" id="batch_query"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.batch_query">[docs]</a><span class="k">def</span> <span class="nf">batch_query</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">fixed_max_length</span><span class="o">=</span><span class="mi">4096</span><span class="o">-</span><span class="mi">128</span><span class="p">):</span>
+    <span class="c1"># About batches:</span>
+    <span class="c1">#    https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392</span>
+
+    <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">fixed_max_length</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">query</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">+=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">+=</span> <span class="n">separator</span> <span class="o">+</span> <span class="n">item</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">query</span></div>
+
+
+<div class="viewcode-block" id="filter_descriptors"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.filter_descriptors">[docs]</a><span class="k">def</span> <span class="nf">filter_descriptors</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">digests</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Filter out the invalid descriptors.</span>
+<span class="sd">    :param descriptors: Descriptors to be filtered.</span>
+<span class="sd">    :param digests: Digests from the consensus.</span>
+<span class="sd">    :param flavor: Flavor of the descriptor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">descriptor_digests</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">descriptors_d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="c1"># Content depends on descriptor flavour.</span>
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">descriptor</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">descriptor</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]</span>
+            <span class="n">descriptor_digests</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)</span>
+            <span class="n">descriptors_d</span><span class="p">[</span><span class="n">fingerprint</span><span class="p">]</span> <span class="o">=</span> <span class="n">descriptor</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">descriptor</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">descriptor</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;====&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span>
+            <span class="n">descriptor_digests</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)</span>
+            <span class="n">descriptors_d</span><span class="p">[</span><span class="n">fingerprint</span><span class="p">]</span> <span class="o">=</span> <span class="n">descriptor</span>
+
+    <span class="n">fingerprints_valid</span> <span class="o">=</span> <span class="n">descriptor_digests</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">digests</span><span class="p">)</span>
+    <span class="n">descriptors_valid</span> <span class="o">=</span> <span class="p">[</span><span class="n">descriptors_d</span><span class="p">[</span><span class="n">fingerprint</span><span class="p">]</span> <span class="k">for</span> <span class="n">fingerprint</span> <span class="ow">in</span> <span class="n">fingerprints_valid</span><span class="p">]</span>
+
+    <span class="c1"># For logging only.</span>
+    <span class="n">desc_l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">descriptors</span><span class="p">)</span>
+    <span class="n">valid_l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">descriptors_valid</span><span class="p">)</span>
+    <span class="n">invalid_l</span> <span class="o">=</span> <span class="n">desc_l</span> <span class="o">-</span> <span class="n">valid_l</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Filtered </span><span class="si">%d</span><span class="s1"> descriptors, </span><span class="si">%d</span><span class="s1"> valid, </span><span class="si">%d</span><span class="s1"> invalid.&#39;</span><span class="p">,</span> <span class="n">desc_l</span><span class="p">,</span> <span class="n">valid_l</span><span class="p">,</span> <span class="n">invalid_l</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">descriptors_valid</span></div>
+
+
+<div class="viewcode-block" id="download_direct"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_direct">[docs]</a><span class="k">def</span> <span class="nf">download_direct</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">cons</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve  descriptor via a direct HTTP connection.</span>
+<span class="sd">    :param host: host from which to retrieve the descriptors.</span>
+<span class="sd">    :param port: port from which to retrieve the descriptors.</span>
+<span class="sd">    :param cons: consensus for which nodes a descriptor need to be retrieved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/micro/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/server/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;====&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+
+    <span class="n">descriptors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Retrieve descriptors not in the cache</span>
+    <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">batch_query</span><span class="p">(</span><span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">):</span>
+        <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;http://</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to fetch descriptors.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Rename parse to something sensible</span>
+        <span class="n">new_batch</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">parse_descriptors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">flavor</span><span class="o">=</span><span class="n">flavor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_batch</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">remaining</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to parse descriptors.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No descriptor listed. http=</span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">new_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">+=</span> <span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">]</span>
+
+    <span class="n">descriptors</span> <span class="o">=</span> <span class="n">filter_descriptors</span><span class="p">(</span><span class="n">descriptors</span><span class="p">,</span> <span class="n">digests</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">flavor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]:</span> <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span> <span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="download_relay_descriptor"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_relay_descriptor">[docs]</a><span class="k">def</span> <span class="nf">download_relay_descriptor</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9051</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve a relay&#39;s own descriptor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;http://</span><span class="si">{}</span><span class="s1">:</span><span class="si">{}</span><span class="s1">/tor/server/authority&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to fetch descriptors.&#39;</span><span class="p">)</span>
+
+    <span class="n">descriptors</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_descriptors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">descriptors</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="download_raw"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_raw">[docs]</a><span class="k">def</span> <span class="nf">download_raw</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">cons</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve  descriptor via a direct HTTP connection.</span>
+<span class="sd">    :param host: host from which to retrieve the descriptors.</span>
+<span class="sd">    :param port: port from which to retrieve the descriptors.</span>
+<span class="sd">    :param cons: consensus for which nodes a descriptor need to be retrieved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/micro/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/server/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;====&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+
+
+    <span class="c1"># Retrieve descriptors not in the cache</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">batch_query</span><span class="p">(</span><span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">):</span>
+        <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;http://</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to fetch descriptors.&#39;</span><span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">+=</span> <span class="n">res</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">desc</span></div>
+
+
+<div class="viewcode-block" id="download_raw_by_digests_unflavored"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_raw_by_digests_unflavored">[docs]</a><span class="k">def</span> <span class="nf">download_raw_by_digests_unflavored</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">digests_bytes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve  descriptor via a direct HTTP connection.</span>
+<span class="sd">    :param host: host from which to retrieve the descriptors.</span>
+<span class="sd">    :param port: port from which to retrieve the descriptors.</span>
+<span class="sd">    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">digest</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">digest</span> <span class="ow">in</span> <span class="n">digests_bytes</span><span class="p">]</span>
+    <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/server/d/&#39;</span>
+    <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+
+    <span class="k">return</span> <span class="n">_download_raw_by_digests</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="download_raw_by_digests_micro"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_raw_by_digests_micro">[docs]</a><span class="k">def</span> <span class="nf">download_raw_by_digests_micro</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">digests_bytes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve  descriptor via a direct HTTP connection.</span>
+<span class="sd">    :param host: host from which to retrieve the descriptors.</span>
+<span class="sd">    :param port: port from which to retrieve the descriptors.</span>
+<span class="sd">    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/micro/d/&#39;</span>
+    <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+    <span class="n">digests</span> <span class="o">=</span> <span class="n">digests_bytes</span>
+    <span class="k">return</span> <span class="n">_download_raw_by_digests</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_download_raw_by_digests</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve  descriptor via a direct HTTP connection.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">batch_query</span><span class="p">(</span><span class="n">digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">):</span>
+        <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;http://</span><span class="si">{}</span><span class="s1">:</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to fetch descriptors.&#39;</span><span class="p">)</span>
+
+        <span class="n">desc</span> <span class="o">+=</span> <span class="n">res</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">desc</span>
+
+
+<div class="viewcode-block" id="download"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download">[docs]</a><span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;microdesc&#39;</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fail_on_missing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use DEPRECATED method descriptor.download()!&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">cons</span> <span class="o">=</span> <span class="n">consensus</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">flavor</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cons</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">cons</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">routers</span><span class="o">=</span><span class="n">cons</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">digest_name</span> <span class="o">=</span> <span class="s1">&#39;micro-digest&#39;</span> <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span> <span class="k">else</span> <span class="s1">&#39;digest&#39;</span>
+        <span class="n">cons</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">routers</span><span class="o">=</span><span class="p">{</span><span class="n">digest_name</span><span class="p">:</span> <span class="n">cons</span><span class="p">})</span>
+    <span class="k">elif</span> <span class="s1">&#39;routers&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cons</span> <span class="ow">and</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">:</span>
+        <span class="n">cons</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">routers</span><span class="o">=</span><span class="p">[</span><span class="n">cons</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Expecting a dict for cons, got: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cons</span><span class="p">))</span>
+
+    <span class="n">digests</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/micro/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]]</span>
+        <span class="n">digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="s1">&#39;====&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">digests</span><span class="p">]</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="s1">&#39;/tor/server/d/&#39;</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+
+    <span class="c1"># retrieve descriptors from cache</span>
+    <span class="n">descriptors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">partial_digests</span> <span class="o">=</span> <span class="n">digests</span>
+    <span class="k">if</span> <span class="n">cache</span><span class="p">:</span>
+        <span class="n">digest_name</span> <span class="o">=</span> <span class="s1">&#39;micro-digest&#39;</span> <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span> <span class="k">else</span> <span class="s1">&#39;digest&#39;</span>
+        <span class="n">cached_digests</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">digest</span> <span class="ow">in</span> <span class="n">digests</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">descriptor</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">flavor</span><span class="p">,</span> <span class="n">digest</span><span class="p">)</span>
+                <span class="n">descriptors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+                <span class="n">cached_digests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">digest</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="n">partial_digests</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">digests</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cached_digests</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">batch_query</span><span class="p">(</span><span class="n">partial_digests</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">separator</span><span class="p">):</span>
+        <span class="n">state</span><span class="p">,</span> <span class="n">answer</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">hop</span><span class="o">.</span><span class="n">directory_query</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">answer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">new_batch</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">parse_descriptors</span><span class="p">(</span><span class="n">answer</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="n">flavor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_batch</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">remaining</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to parse descriptors.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">][</span><span class="s1">&#39;code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;404&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;No descriptor listed. http=</span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="n">new_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">descriptors</span> <span class="o">+=</span> <span class="n">new_batch</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">flavor</span> <span class="o">==</span> <span class="s1">&#39;microdesc&#39;</span><span class="p">:</span>
+        <span class="n">obtained</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;micro-digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">obtained</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">]</span>
+        <span class="n">obtained</span> <span class="o">=</span> <span class="p">[</span><span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="s1">&#39;====&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">obtained</span><span class="p">]</span>
+
+    <span class="n">invalid</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">digest</span> <span class="ow">in</span> <span class="n">digests</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">digest</span> <span class="ow">in</span> <span class="n">obtained</span><span class="p">:</span>
+            <span class="n">obtained</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">digest</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">invalid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">digest</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">obtained</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Mismatched digest afterward! </span><span class="si">{}</span><span class="s1"> vs </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">invalid</span><span class="p">),</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">obtained</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">fail_on_missing</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">invalid</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Missing </span><span class="si">{}</span><span class="s1"> digests in answer: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">invalid</span><span class="p">),</span> <span class="n">invalid</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">cache</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">descriptor</span> <span class="ow">in</span> <span class="n">descriptors</span><span class="p">:</span>
+            <span class="n">lnn</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">descriptors</span></div>
+
+
+<div class="viewcode-block" id="download_authority"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_authority">[docs]</a><span class="k">def</span> <span class="nf">download_authority</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+    <span class="n">state</span><span class="p">,</span> <span class="n">answer</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">hop</span><span class="o">.</span><span class="n">directory_query</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">&#39;/tor/server/authority&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">answer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">result</span><span class="p">,</span> <span class="n">remain</span> <span class="o">=</span> <span class="n">parse_descriptors</span><span class="p">(</span><span class="n">answer</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">remain</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to parse authority descriptor.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="download_authority_direct"><a class="viewcode-back" href="../../lightnion.html#lightnion.descriptors.download_authority_direct">[docs]</a><span class="k">def</span> <span class="nf">download_authority_direct</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve authority.</span>
+<span class="sd">    :param host: host from which to retrieve the authority.</span>
+<span class="sd">    :param port: port from which to retrieve the authority.</span>
+<span class="sd">    :return: Authority.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uri</span> <span class="o">=</span> <span class="s1">&#39;http://</span><span class="si">%s</span><span class="s1">:</span><span class="si">%d</span><span class="s1">/tor/server/authority&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">res</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">res</span><span class="o">.</span><span class="n">getcode</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">result</span><span class="p">,</span> <span class="n">remain</span> <span class="o">=</span> <span class="n">parse_descriptors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">remain</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unable to parse authority descriptor.&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;descriptors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

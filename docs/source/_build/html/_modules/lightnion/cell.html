@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.cell &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.cell</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.cell</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">view</span>
+
+<div class="viewcode-block" id="cmd"><a class="viewcode-back" href="../../lightnion.cell.html#lightnion.cell.cmd">[docs]</a><span class="k">class</span> <span class="nc">cmd</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">enum</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+    <span class="n">PADDING</span>             <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">CREATE</span>              <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">CREATED</span>             <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">RELAY</span>               <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">DESTROY</span>             <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">CREATE_FAST</span>         <span class="o">=</span> <span class="mh">0x05</span>
+    <span class="n">CREATED_FAST</span>        <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">VERSIONS</span>            <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">NETINFO</span>             <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">RELAY_EARLY</span>         <span class="o">=</span> <span class="mh">0x09</span>
+    <span class="n">CREATE2</span>             <span class="o">=</span> <span class="mh">0x0a</span>
+    <span class="n">CREATED2</span>            <span class="o">=</span> <span class="mh">0x0b</span>
+    <span class="n">PADDING_NEGOTIATE</span>   <span class="o">=</span> <span class="mh">0x0c</span>
+    <span class="n">VPADDING</span>            <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">CERTS</span>               <span class="o">=</span> <span class="mh">0x81</span>
+    <span class="n">AUTH_CHALLENGE</span>      <span class="o">=</span> <span class="mh">0x82</span>
+    <span class="n">AUTHENTICATE</span>        <span class="o">=</span> <span class="mh">0x83</span>
+    <span class="n">AUTHORIZE</span>           <span class="o">=</span> <span class="mh">0x84</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_fixed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_variable</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">VERSIONS</span><span class="p">)</span></div>
+
+<span class="n">header_view</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span>
+    <span class="n">circuit_id</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">uint</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">)</span>
+<span class="n">header_legacy_view</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span>
+    <span class="n">circuit_id</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">uint</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">cache</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">uint</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+<span class="n">header_variable_view</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span>
+    <span class="n">circuit_id</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">uint</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="n">view</span><span class="o">.</span><span class="n">cache</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">uint</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+
+<div class="viewcode-block" id="cell_view"><a class="viewcode-back" href="../../lightnion.cell.html#lightnion.cell.cell_view">[docs]</a><span class="k">class</span> <span class="nc">cell_view</span><span class="p">(</span><span class="n">view</span><span class="o">.</span><span class="n">packet</span><span class="p">):</span>
+    <span class="n">_whitelist</span> <span class="o">=</span> <span class="p">[</span><span class="n">header_view</span><span class="p">,</span> <span class="n">header_legacy_view</span><span class="p">,</span> <span class="n">header_variable_view</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">header</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_whitelist</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid header type: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">header</span><span class="p">))</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">header_view</span><span class="o">=</span><span class="n">header</span><span class="p">,</span> <span class="n">fixed_size</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">payload_len</span><span class="p">)</span>
+
+<div class="viewcode-block" id="cell_view.valid"><a class="viewcode-back" href="../../lightnion.cell.html#lightnion.cell.cell_view.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">cell_cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="s1">&#39;cmd&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cell_cmd</span><span class="o">.</span><span class="n">is_fixed</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span></div></div>
+
+<span class="n">variable_size</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">cell_view</span><span class="p">(</span><span class="n">header_variable_view</span><span class="p">),</span> <span class="s1">&#39;variable_size&#39;</span><span class="p">)</span>
+<span class="n">legacy_size</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">cell_view</span><span class="p">(</span><span class="n">header_legacy_view</span><span class="p">),</span> <span class="s1">&#39;legacy_size&#39;</span><span class="p">)</span>
+<span class="n">fixed_size</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">cell_view</span><span class="p">(</span><span class="n">header_view</span><span class="p">),</span> <span class="s1">&#39;fixed_size&#39;</span><span class="p">)</span>
+
+<span class="n">header</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">header_view</span><span class="p">,</span> <span class="s1">&#39;header&#39;</span><span class="p">)</span>
+<span class="n">header_legacy</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">header_legacy_view</span><span class="p">,</span> <span class="s1">&#39;header_legacy&#39;</span><span class="p">)</span>
+<span class="n">header_variable</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">header_variable_view</span><span class="p">,</span> <span class="s1">&#39;header_variable&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../lightnion.cell.html#lightnion.cell.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">raw</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">cell_header</span> <span class="o">=</span> <span class="n">header</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid cell header: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell_header</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+
+    <span class="n">length</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">payload_len</span> <span class="o">+</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">is_fixed</span><span class="p">:</span>
+        <span class="n">cell_header</span> <span class="o">=</span> <span class="n">header_variable</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Invalid variable cell header: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell_header</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+
+        <span class="n">length</span> <span class="o">=</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span>
+        <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">max_payload_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid cell length: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">length</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">payload</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">address</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">padding</span><span class="p">,</span> <span class="n">relay</span><span class="p">,</span> <span class="n">destroy</span><span class="p">,</span> <span class="n">create_fast</span><span class="p">,</span> <span class="n">created_fast</span><span class="p">,</span> <span class="n">versions</span><span class="p">,</span> <span class="n">netinfo</span><span class="p">,</span>
+    <span class="n">relay_early</span><span class="p">,</span> <span class="n">create2</span><span class="p">,</span> <span class="n">created2</span><span class="p">,</span> <span class="n">certs</span><span class="p">,</span> <span class="n">challenge</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

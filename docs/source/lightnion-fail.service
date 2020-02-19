@@ -1,0 +1,6 @@
+[Unit]
+Description=Lightnion proxy failure notification
+
+[Service]
+Type=oneshot
+ExecStart=/bin/echo 'Lightnion process failed' | /usr/bin/mailx -s "Lightnion process failed" lightnion@lightning-test

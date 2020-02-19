@@ -1,0 +1,1183 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.cell package &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">lightnion.cell package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.address">lightnion.cell.address module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.certs">lightnion.cell.certs module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.challenge">lightnion.cell.challenge module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.common">lightnion.cell.common module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.create2">lightnion.cell.create2 module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.create_fast">lightnion.cell.create_fast module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.created2">lightnion.cell.created2 module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.created_fast">lightnion.cell.created_fast module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.destroy">lightnion.cell.destroy module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.netinfo">lightnion.cell.netinfo module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.padding">lightnion.cell.padding module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.relay_early">lightnion.cell.relay_early module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.versions">lightnion.cell.versions module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell.view">lightnion.cell.view module</a></li>
+<li><a class="reference internal" href="#module-lightnion.cell">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>lightnion.cell package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lightnion.cell.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="lightnion-cell-package">
+<h1>lightnion.cell package<a class="headerlink" href="#lightnion-cell-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.cell.relay.html">lightnion.cell.relay package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.relay.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay.extend2">lightnion.cell.relay.extend2 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay.extended2">lightnion.cell.relay.extended2 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-lightnion.cell.address">
+<span id="lightnion-cell-address-module"></span><h2>lightnion.cell.address module<a class="headerlink" href="#module-lightnion.cell.address" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.address.addr_type">
+<em class="property">class </em><code class="descclassname">lightnion.cell.address.</code><code class="descname">addr_type</code><a class="reference internal" href="_modules/lightnion/cell/address.html#addr_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.address.addr_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view._anonymous_cached_enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.address.addr_type.ERROR_NON_TRANS">
+<code class="descname">ERROR_NON_TRANS</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_cached_enum.value of &lt;enum 'addr_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.address.addr_type.ERROR_NON_TRANS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.address.addr_type.ERROR_TRANS">
+<code class="descname">ERROR_TRANS</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_cached_enum.value of &lt;enum 'addr_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.address.addr_type.ERROR_TRANS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.address.addr_type.HOSTNAME">
+<code class="descname">HOSTNAME</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_cached_enum.value of &lt;enum 'addr_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.address.addr_type.HOSTNAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.address.addr_type.IPV4_ADDR">
+<code class="descname">IPV4_ADDR</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_cached_enum.value of &lt;enum 'addr_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.address.addr_type.IPV4_ADDR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.address.addr_type.IPV6_ADDR">
+<code class="descname">IPV6_ADDR</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_cached_enum.value of &lt;enum 'addr_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.address.addr_type.IPV6_ADDR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.address.address_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.address.</code><code class="descname">address_view</code><span class="sig-paren">(</span><em>*kargs</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/address.html#address_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.address.address_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.address.pack">
+<code class="descclassname">lightnion.cell.address.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>host</em>, <em>type_hint=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/address.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.address.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.certs">
+<span id="lightnion-cell-certs-module"></span><h2>lightnion.cell.certs module<a class="headerlink" href="#module-lightnion.cell.certs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.certs.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.certs.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/certs.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.certs.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.certs.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/certs.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.certs.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.certs.cert_type">
+<em class="property">class </em><code class="descclassname">lightnion.cell.certs.</code><code class="descname">cert_type</code><a class="reference internal" href="_modules/lightnion/cell/certs.html#cert_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.certs.cert_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view._anonymous_enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.ED_SIGNED_AUTHENTICATE">
+<code class="descname">ED_SIGNED_AUTHENTICATE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.ED_SIGNED_AUTHENTICATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.ED_SIGNED_SIGNING_KEY">
+<code class="descname">ED_SIGNED_SIGNING_KEY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.ED_SIGNED_SIGNING_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.ED_SIGNED_TLS_LINK">
+<code class="descname">ED_SIGNED_TLS_LINK</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.ED_SIGNED_TLS_LINK" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.RSA_SELF_SIGNED_IDENTITY">
+<code class="descname">RSA_SELF_SIGNED_IDENTITY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.RSA_SELF_SIGNED_IDENTITY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.RSA_SIGNED_AUTHENTICATE">
+<code class="descname">RSA_SIGNED_AUTHENTICATE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.RSA_SIGNED_AUTHENTICATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.RSA_SIGNED_ED_IDENTITY">
+<code class="descname">RSA_SIGNED_ED_IDENTITY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.RSA_SIGNED_ED_IDENTITY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.certs.cert_type.RSA_SIGNED_LINK_KEY">
+<code class="descname">RSA_SIGNED_LINK_KEY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cert_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.certs.cert_type.RSA_SIGNED_LINK_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.challenge">
+<span id="lightnion-cell-challenge-module"></span><h2>lightnion.cell.challenge module<a class="headerlink" href="#module-lightnion.cell.challenge" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.challenge.auth_type">
+<em class="property">class </em><code class="descclassname">lightnion.cell.challenge.</code><code class="descname">auth_type</code><a class="reference internal" href="_modules/lightnion/cell/challenge.html#auth_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.challenge.auth_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view._anonymous_enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.challenge.auth_type.ED_AUTH">
+<code class="descname">ED_AUTH</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'auth_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.challenge.auth_type.ED_AUTH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.challenge.auth_type.RSA_AUTH">
+<code class="descname">RSA_AUTH</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'auth_type'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.challenge.auth_type.RSA_AUTH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.challenge.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.challenge.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/challenge.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.challenge.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.challenge.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/challenge.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.challenge.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.challenge.pack">
+<code class="descclassname">lightnion.cell.challenge.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>*methods</em>, <em>challenge=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/challenge.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.challenge.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.common">
+<span id="lightnion-cell-common-module"></span><h2>lightnion.cell.common module<a class="headerlink" href="#module-lightnion.cell.common" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.common.length_halved_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.common.</code><code class="descname">length_halved_view</code><span class="sig-paren">(</span><em>*kargs</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/common.html#length_halved_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.common.length_halved_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.cached_uint</span></code></p>
+<dl class="method">
+<dt id="lightnion.cell.common.length_halved_view.cache">
+<code class="descname">cache</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/common.html#length_halved_view.cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.common.length_halved_view.cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.common.length_halved_view.iseven">
+<code class="descname">iseven</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/common.html#length_halved_view.iseven"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.common.length_halved_view.iseven" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.common.length_halved_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/common.html#length_halved_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.common.length_halved_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.common.length_halved_view.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/common.html#length_halved_view.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.common.length_halved_view.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.create2">
+<span id="lightnion-cell-create2-module"></span><h2>lightnion.cell.create2 module<a class="headerlink" href="#module-lightnion.cell.create2" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.create2.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.create2.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create2.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create2.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.create2.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create2.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create2.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.create2.create_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.create2.</code><code class="descname">create_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create2.html#create_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create2.create_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.create2.pack">
+<code class="descclassname">lightnion.cell.create2.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>handshake_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create2.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create2.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.create_fast">
+<span id="lightnion-cell-create-fast-module"></span><h2>lightnion.cell.create_fast module<a class="headerlink" href="#module-lightnion.cell.create_fast" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.create_fast.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.create_fast.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create_fast.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create_fast.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.create_fast.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create_fast.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create_fast.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.create_fast.pack">
+<code class="descclassname">lightnion.cell.create_fast.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>material=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/create_fast.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.create_fast.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.created2">
+<span id="lightnion-cell-created2-module"></span><h2>lightnion.cell.created2 module<a class="headerlink" href="#module-lightnion.cell.created2" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.created2.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.created2.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created2.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created2.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.created2.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created2.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created2.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.created2.created_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.created2.</code><code class="descname">created_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created2.html#created_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created2.created_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.created_fast">
+<span id="lightnion-cell-created-fast-module"></span><h2>lightnion.cell.created_fast module<a class="headerlink" href="#module-lightnion.cell.created_fast" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.created_fast.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.created_fast.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created_fast.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created_fast.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.created_fast.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created_fast.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created_fast.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.created_fast.pack">
+<code class="descclassname">lightnion.cell.created_fast.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>material</em>, <em>derivative</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/created_fast.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.created_fast.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.destroy">
+<span id="lightnion-cell-destroy-module"></span><h2>lightnion.cell.destroy module<a class="headerlink" href="#module-lightnion.cell.destroy" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.destroy.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.destroy.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/destroy.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.destroy.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.destroy.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/destroy.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.destroy.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.destroy.pack">
+<code class="descclassname">lightnion.cell.destroy.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>reason</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/destroy.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.destroy.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.destroy.reason">
+<em class="property">class </em><code class="descclassname">lightnion.cell.destroy.</code><code class="descname">reason</code><a class="reference internal" href="_modules/lightnion/cell/destroy.html#reason"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.destroy.reason" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view._anonymous_enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.CONNECTFAILED">
+<code class="descname">CONNECTFAILED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.CONNECTFAILED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.DESTROYED">
+<code class="descname">DESTROYED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.DESTROYED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.FINISHED">
+<code class="descname">FINISHED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.FINISHED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.HIBERNATING">
+<code class="descname">HIBERNATING</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.HIBERNATING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.INTERNAL">
+<code class="descname">INTERNAL</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.INTERNAL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.NONE">
+<code class="descname">NONE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.NONE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.NOSUCHSERVICE">
+<code class="descname">NOSUCHSERVICE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.NOSUCHSERVICE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.OR_CONN_CLOSED">
+<code class="descname">OR_CONN_CLOSED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.OR_CONN_CLOSED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.OR_IDENTITY">
+<code class="descname">OR_IDENTITY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.OR_IDENTITY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.PROTOCOL">
+<code class="descname">PROTOCOL</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.PROTOCOL" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.REQUESTED">
+<code class="descname">REQUESTED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.REQUESTED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.RESOURCELIMIT">
+<code class="descname">RESOURCELIMIT</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.RESOURCELIMIT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.destroy.reason.TIMEOUT">
+<code class="descname">TIMEOUT</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'reason'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.destroy.reason.TIMEOUT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.netinfo">
+<span id="lightnion-cell-netinfo-module"></span><h2>lightnion.cell.netinfo module<a class="headerlink" href="#module-lightnion.cell.netinfo" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.netinfo.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.netinfo.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/netinfo.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.netinfo.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.netinfo.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/netinfo.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.netinfo.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.netinfo.pack">
+<code class="descclassname">lightnion.cell.netinfo.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>other_address</em>, <em>*addresses</em>, <em>timestamp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/netinfo.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.netinfo.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.padding">
+<span id="lightnion-cell-padding-module"></span><h2>lightnion.cell.padding module<a class="headerlink" href="#module-lightnion.cell.padding" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.padding.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.padding.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/padding.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.padding.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.padding.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/padding.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.padding.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.padding.pack">
+<code class="descclassname">lightnion.cell.padding.</code><code class="descname">pack</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/padding.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.padding.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.relay_early">
+<span id="lightnion-cell-relay-early-module"></span><h2>lightnion.cell.relay_early module<a class="headerlink" href="#module-lightnion.cell.relay_early" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.relay_early.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.relay_early.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/relay_early.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.relay_early.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.relay_early.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/relay_early.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.relay_early.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.relay_early.pack">
+<code class="descclassname">lightnion.cell.relay_early.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>cmd</em>, <em>data</em>, <em>recognized=b'\x00\x00'</em>, <em>*</em>, <em>stream_id</em>, <em>digest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/relay_early.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.relay_early.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.versions">
+<span id="lightnion-cell-versions-module"></span><h2>lightnion.cell.versions module<a class="headerlink" href="#module-lightnion.cell.versions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.versions.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.versions.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header=&lt;lightnion.cell.view.fields object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/versions.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.versions.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.versions.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/versions.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.versions.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.versions.pack">
+<code class="descclassname">lightnion.cell.versions.</code><code class="descname">pack</code><span class="sig-paren">(</span><em>versions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/versions.html#pack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.versions.pack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.versions.recv">
+<code class="descclassname">lightnion.cell.versions.</code><code class="descname">recv</code><span class="sig-paren">(</span><em>peer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/versions.html#recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.versions.recv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.versions.send">
+<code class="descclassname">lightnion.cell.versions.</code><code class="descname">send</code><span class="sig-paren">(</span><em>peer</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/versions.html#send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.versions.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell.view">
+<span id="lightnion-cell-view-module"></span><h2>lightnion.cell.view module<a class="headerlink" href="#module-lightnion.cell.view" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.view.basic">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">basic</code><a class="reference internal" href="_modules/lightnion/cell/view.html#basic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.basic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.cell.view.basic.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#basic.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.basic.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.basic.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#basic.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.basic.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.basic.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#basic.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.basic.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.basic.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#basic.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.basic.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.bind">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">bind</code><span class="sig-paren">(</span><em>parent_view</em>, <em>parent_wrapper</em>, <em>parent_field=None</em>, <em>init=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#bind"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.bind" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.cache">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">cache</code><span class="sig-paren">(</span><em>base</em>, <em>typename=None</em>, <em>init=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.cache" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.codec">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">codec</code><span class="sig-paren">(</span><em>*codecs</em>, <em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#codec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.codec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.data" title="lightnion.cell.view.data"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.data</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.codec.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#codec.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.codec.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.codec.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#codec.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.codec.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.codec.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#codec.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.codec.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.composite">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">composite</code><a class="reference internal" href="_modules/lightnion/cell/view.html#composite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.composite" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.basic" title="lightnion.cell.view.basic"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.basic</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.composite.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#composite.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.composite.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.data">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">data</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.basic" title="lightnion.cell.view.basic"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.basic</span></code></a></p>
+<dl class="attribute">
+<dt id="lightnion.cell.view.data.size">
+<code class="descname">size</code><a class="headerlink" href="#lightnion.cell.view.data.size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.data.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#data.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.data.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.data.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#data.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.data.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.data.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#data.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.data.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.data.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#data.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.data.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.enum">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">enum</code><span class="sig-paren">(</span><em>size</em>, <em>byteorder='big'</em>, <em>typename=None</em>, <em>cached=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#enum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.enum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.fields">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">fields</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.composite" title="lightnion.cell.view.composite"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.composite</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.fields.list_fields">
+<code class="descname">list_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.list_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.list_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.offset">
+<code class="descname">offset</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.visit">
+<code class="descname">visit</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>operator=&lt;function fields.&lt;lambda&gt;&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.visit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.visit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.fields.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#fields.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.fields.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.ip_address">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">ip_address</code><span class="sig-paren">(</span><em>*</em>, <em>version</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#ip_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.ip_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.data" title="lightnion.cell.view.data"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.data</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.ip_address.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#ip_address.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.ip_address.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.ip_address.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#ip_address.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.ip_address.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.ip_address.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#ip_address.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.ip_address.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.iscached">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">iscached</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#iscached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.iscached" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.iscomposite">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">iscomposite</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#iscomposite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.iscomposite" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.isview">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">isview</code><span class="sig-paren">(</span><em>item</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#isview"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.isview" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.view.like">
+<code class="descclassname">lightnion.cell.view.</code><code class="descname">like</code><span class="sig-paren">(</span><em>parent_view</em>, <em>typename=None</em>, <em>init=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#like"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.like" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.packet">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">packet</code><span class="sig-paren">(</span><em>header_view=None</em>, <em>fixed_size=None</em>, <em>field_name=None</em>, <em>data_name=None</em>, <em>data_view=None</em>, <em>extra_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.fields" title="lightnion.cell.view.fields"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.fields</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.packet.cache_fields">
+<code class="descname">cache_fields</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.cache_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.cache_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.packet.fixed_size">
+<code class="descname">fixed_size</code><a class="headerlink" href="#lightnion.cell.view.packet.fixed_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.list_fields">
+<code class="descname">list_fields</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.list_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.list_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.offset">
+<code class="descname">offset</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.packet.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#packet.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.packet.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.series">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">series</code><span class="sig-paren">(</span><em>item_view</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.composite" title="lightnion.cell.view.composite"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.composite</span></code></a></p>
+<dl class="attribute">
+<dt id="lightnion.cell.view.series.max_quantity">
+<code class="descname">max_quantity</code><em class="property"> = 32</em><a class="headerlink" href="#lightnion.cell.view.series.max_quantity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.series.offset">
+<code class="descname">offset</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series.offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.series.quantity">
+<code class="descname">quantity</code><a class="headerlink" href="#lightnion.cell.view.series.quantity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.series.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.series.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.series.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.series.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#series.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.series.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.uint">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">uint</code><span class="sig-paren">(</span><em>size</em>, <em>byteorder='big'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#uint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.uint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.basic" title="lightnion.cell.view.basic"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.basic</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.view.uint.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#uint.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.uint.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.uint.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#uint.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.uint.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.uint.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#uint.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.uint.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.uint.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#uint.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.uint.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.union">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">union</code><span class="sig-paren">(</span><em>view_table</em>, <em>union_tag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.composite" title="lightnion.cell.view.composite"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.composite</span></code></a></p>
+<dl class="attribute">
+<dt id="lightnion.cell.view.union.active_view">
+<code class="descname">active_view</code><a class="headerlink" href="#lightnion.cell.view.union.active_view" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.union.offset">
+<code class="descname">offset</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union.offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.union.tag">
+<code class="descname">tag</code><a class="headerlink" href="#lightnion.cell.view.union.tag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.union.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.union.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.union.width">
+<code class="descname">width</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.union.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>payload=b''</em>, <em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#union.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.union.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.view.wrapper">
+<em class="property">class </em><code class="descclassname">lightnion.cell.view.</code><code class="descname">wrapper</code><span class="sig-paren">(</span><em>parent_view</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This is a view bound to raw bytes.</p>
+<p>See self.fields to list fields within the view.
+See help(self._view) for details on the underlying view.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.view.wrapper.fields">
+<code class="descname">fields</code><a class="headerlink" href="#lightnion.cell.view.wrapper.fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.wrapper.finalize">
+<code class="descname">finalize</code><span class="sig-paren">(</span><em>truncate=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper.finalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper.finalize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.wrapper.offset">
+<code class="descname">offset</code><span class="sig-paren">(</span><em>field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper.offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper.offset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.wrapper.raw">
+<code class="descname">raw</code><a class="headerlink" href="#lightnion.cell.view.wrapper.raw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.wrapper.set">
+<code class="descname">set</code><span class="sig-paren">(</span><em>*kargs</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper.set" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.wrapper.truncated">
+<code class="descname">truncated</code><a class="headerlink" href="#lightnion.cell.view.wrapper.truncated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.wrapper.valid">
+<code class="descname">valid</code><a class="headerlink" href="#lightnion.cell.view.wrapper.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.wrapper.value">
+<code class="descname">value</code><span class="sig-paren">(</span><em>field=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper.value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper.value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.view.wrapper.width">
+<code class="descname">width</code><a class="headerlink" href="#lightnion.cell.view.wrapper.width" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.cell.view.wrapper.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>value=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell/view.html#wrapper.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.view.wrapper.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.cell">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-lightnion.cell" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cell.cell_view">
+<em class="property">class </em><code class="descclassname">lightnion.cell.</code><code class="descname">cell_view</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell.html#cell_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.cell_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.cell.view.packet" title="lightnion.cell.view.packet"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view.packet</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.cell.cell_view.valid">
+<code class="descname">valid</code><span class="sig-paren">(</span><em>payload=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell.html#cell_view.valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.cell_view.valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cell.cmd">
+<em class="property">class </em><code class="descclassname">lightnion.cell.</code><code class="descname">cmd</code><a class="reference internal" href="_modules/lightnion/cell.html#cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.cell.view._anonymous_enum</span></code></p>
+<p>An enumeration.</p>
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.AUTHENTICATE">
+<code class="descname">AUTHENTICATE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.AUTHENTICATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.AUTHORIZE">
+<code class="descname">AUTHORIZE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.AUTHORIZE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.AUTH_CHALLENGE">
+<code class="descname">AUTH_CHALLENGE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.AUTH_CHALLENGE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CERTS">
+<code class="descname">CERTS</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CERTS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATE">
+<code class="descname">CREATE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATE2">
+<code class="descname">CREATE2</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATE2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATED">
+<code class="descname">CREATED</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATED" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATED2">
+<code class="descname">CREATED2</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATED2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATED_FAST">
+<code class="descname">CREATED_FAST</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATED_FAST" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.CREATE_FAST">
+<code class="descname">CREATE_FAST</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.CREATE_FAST" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.DESTROY">
+<code class="descname">DESTROY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.DESTROY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.NETINFO">
+<code class="descname">NETINFO</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.NETINFO" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.PADDING">
+<code class="descname">PADDING</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.PADDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.PADDING_NEGOTIATE">
+<code class="descname">PADDING_NEGOTIATE</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.PADDING_NEGOTIATE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.RELAY">
+<code class="descname">RELAY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.RELAY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.RELAY_EARLY">
+<code class="descname">RELAY_EARLY</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.RELAY_EARLY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.VERSIONS">
+<code class="descname">VERSIONS</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.VERSIONS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.VPADDING">
+<code class="descname">VPADDING</code><em class="property"> = &lt;bound method enum.&lt;locals&gt;._anonymous_enum.value of &lt;enum 'cmd'&gt;&gt;</em><a class="headerlink" href="#lightnion.cell.cmd.VPADDING" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.is_fixed">
+<code class="descname">is_fixed</code><a class="headerlink" href="#lightnion.cell.cmd.is_fixed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.cell.cmd.is_variable">
+<code class="descname">is_variable</code><a class="headerlink" href="#lightnion.cell.cmd.is_variable" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cell.pad">
+<code class="descclassname">lightnion.cell.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cell.html#pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cell.pad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

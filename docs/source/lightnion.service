@@ -1,0 +1,16 @@
+[Unit]
+Description=Lightnion proxy
+After=network.target
+
+[Service]
+TimeoutStopSec=2
+Restart=on-failure
+RestartSec=60
+User=lightnion
+Group=www-data
+WorkingDirectory=/home/lightnion/lightnion
+ExecStart=/home/lightnion/lightnion/venv/bin/python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000 -d 9051
+OnFailure=lightnion-fail.service
+
+[Install]
+WantedBy=multi-user.target

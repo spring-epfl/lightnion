@@ -1,0 +1,407 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.link &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.link</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.link</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+
+<span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+
+<div class="viewcode-block" id="link"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link">[docs]</a><span class="k">class</span> <span class="nc">link</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;An established Tor link, send and receive messages in separate threads.</span>
+
+<span class="sd">    :param io: socket.io instance that wraps the TLS/SSLv3 connection</span>
+<span class="sd">    :param int version: link version</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">        &gt;&gt;&gt; import lightnion as lnn</span>
+<span class="sd">        &gt;&gt;&gt; link = lnn.link.initiate(&#39;127.0.0.1&#39;, 5000)</span>
+<span class="sd">        &gt;&gt;&gt; link.version</span>
+<span class="sd">        5</span>
+<span class="sd">        &gt;&gt;&gt; link.send(lnn.cell.create_fast.pack(2**31))</span>
+<span class="sd">        &gt;&gt;&gt; lnn.cell.created_fast.cell(link.get(circuit_id=2**31)).valid</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; link.close()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">io</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">circuits</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">max_queue</span><span class="o">=</span><span class="mi">2048</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_queue</span> <span class="o">=</span> <span class="mi">2048</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">io</span> <span class="o">=</span> <span class="n">io</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">lnn</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">circuit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+<div class="viewcode-block" id="link.pull"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.pull">[docs]</a>    <span class="k">def</span> <span class="nf">pull</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># We know that receiver.get() will give you a cell with a well-formed</span>
+        <span class="c1"># header, thus we do not validate it one more time.</span>
+        <span class="c1">#</span>
+        <span class="c1"># We doesn&#39;t handle VERSIONS cells with shorter circuit_id.</span>
+        <span class="c1">#</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">header</span><span class="o">.</span><span class="n">circuit_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Got circuit </span><span class="si">{}</span><span class="s1"> outside </span><span class="si">{}</span><span class="s1">, cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">circuit_id</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">),</span> <span class="n">payload</span><span class="p">))</span>
+
+        <span class="c1"># TODO: property handle DESTROY cells</span>
+        <span class="n">circuit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">header</span><span class="o">.</span><span class="n">circuit_id</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">cmd</span> <span class="ow">is</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">DESTROY</span><span class="p">:</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">cell</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Got invalid DESTROY cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">cell</span><span class="o">.</span><span class="n">truncated</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">destroyed</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">circuit</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">reason</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unregister</span><span class="p">(</span><span class="n">circuit</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Circuit </span><span class="si">{}</span><span class="s1"> got destroyed, reason: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">circuit</span><span class="o">.</span><span class="n">reason</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">circuit</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="link.put"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="n">circuits_size</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+        <span class="k">if</span> <span class="n">circuits_size</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_queue</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Link circuit queues are full: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">circuits_size</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">circuit</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Got circuit_id </span><span class="si">{}</span><span class="s1"> outside </span><span class="si">{}</span><span class="s1">, cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">),</span> <span class="n">payload</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">raw</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="link.get"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">block</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">dead</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="p">()</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">dead</span><span class="p">:</span>
+                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">pull</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                    <span class="k">pass</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Seems that link.io is dead!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="link.register"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">circuit</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Circuit </span><span class="si">{}</span><span class="s1"> already registered.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+
+        <span class="n">circuit</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">circuit</span></div>
+
+<div class="viewcode-block" id="link.unregister"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.unregister">[docs]</a>    <span class="k">def</span> <span class="nf">unregister</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">circuit</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuits</span><span class="p">[</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="link.recv"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.recv">[docs]</a>    <span class="k">def</span> <span class="nf">recv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="link.send"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="link.close"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.link.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="negotiate_version"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.negotiate_version">[docs]</a><span class="k">def</span> <span class="nf">negotiate_version</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">versions</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">as_initiator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Performs a VERSIONS negotiation</span>
+
+<span class="sd">    :param peer: ssl.socket instance.</span>
+<span class="sd">    :param list versions: target link versions.</span>
+<span class="sd">    :param bool as_initiator: send VERSIONS cell first.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">as_initiator</span><span class="p">:</span>
+        <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">versions</span><span class="p">))</span>
+    <span class="n">vercell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+
+    <span class="n">common_versions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">vercell</span><span class="o">.</span><span class="n">versions</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">versions</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common_versions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No common supported versions: </span><span class="si">{}</span><span class="s1"> and </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="n">vercell</span><span class="o">.</span><span class="n">versions</span><span class="p">),</span> <span class="n">versions</span><span class="p">))</span>
+
+    <span class="n">version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">common_versions</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No support for version 3 or lower, got </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">version</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">as_initiator</span><span class="p">:</span>
+        <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">versions</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">versions</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">version</span></div>
+
+<div class="viewcode-block" id="initiate"><a class="viewcode-back" href="../../lightnion.html#lightnion.link.initiate">[docs]</a><span class="k">def</span> <span class="nf">initiate</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9050</span><span class="p">,</span> <span class="n">versions</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Establish a link with the &quot;in-protocol&quot; (v3) handshake as initiator</span>
+
+<span class="sd">    The expected transcript is:</span>
+
+<span class="sd">           Onion Proxy (client)              Onion Router (server)</span>
+
+<span class="sd">               /   [1] :-------- VERSIONS ---------&gt; [2]</span>
+<span class="sd">               |   [4] &lt;-------- VERSIONS ---------: [3]</span>
+<span class="sd">               |</span>
+<span class="sd">               |           Negotiated Version</span>
+<span class="sd">               |</span>
+<span class="sd">               |   [4] &lt;--------- CERTS -----------: [3]</span>
+<span class="sd">               |       &lt;----- AUTH_CHALLENGE ------:</span>
+<span class="sd">               |       &lt;-------- NETINFO ----------:</span>
+<span class="sd">               |</span>
+<span class="sd">               |             OP don&#39;t need to</span>
+<span class="sd">        Link   |               authenticate</span>
+<span class="sd">      Protocol |</span>
+<span class="sd">        &gt;= 3   |   [5] :-------- NETINFO ----------&gt; [6]</span>
+<span class="sd">               |</span>
+<span class="sd">               | Alternative:</span>
+<span class="sd">               | (          We (OR) authenticate         )</span>
+<span class="sd">               | (                                       )</span>
+<span class="sd">               | ( [5] :--------- CERTS -----------&gt; [6] )</span>
+<span class="sd">               | (     :------ AUTHENTICATE -------&gt;     )</span>
+<span class="sd">               | (             ^                         )</span>
+<span class="sd">               | (            (answers AUTH_CHALLENGE)   )</span>
+<span class="sd">               | (                                       )</span>
+<span class="sd">               \</span>
+
+<span class="sd">    :param str address: remote relay address (default: 127.0.0.1).</span>
+<span class="sd">    :param int port: remote relay ORPort (default: 9050).</span>
+<span class="sd">    :param list versions: target link versions (default: [4, 5]).</span>
+
+<span class="sd">    :returns: a link.link object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Setup context</span>
+    <span class="n">peer</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">ctxt</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_TLS</span><span class="p">)</span>
+
+    <span class="c1"># https://trac.torproject.org/projects/tor/ticket/28616</span>
+    <span class="n">ctxt</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_TLSv1_3</span>
+
+    <span class="c1"># Establish connection</span>
+    <span class="n">peer</span> <span class="o">=</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+    <span class="n">peer</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">address</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+
+    <span class="c1"># VERSIONS handshake</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">negotiate_version</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">versions</span><span class="p">,</span> <span class="n">as_initiator</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Wraps with socket.io</span>
+    <span class="n">peer</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">io</span><span class="p">(</span><span class="n">peer</span><span class="p">)</span>
+
+    <span class="c1"># Get CERTS, AUTH_CHALLENGE and NETINFO cells afterwards</span>
+    <span class="n">certs_cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">certs</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">peer</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+    <span class="n">auth_cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">challenge</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">peer</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+    <span class="n">netinfo_cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">netinfo</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">peer</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
+
+    <span class="c1"># Sanity checks</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">certs_cell</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid CERTS cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">certs_cell</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_cell</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid AUTH_CHALLENGE cell:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">auth_cell</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">netinfo_cell</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid NETINFO cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">netinfo_cell</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+
+    <span class="c1"># Send our NETINFO to say &quot;we don&#39;t want to authenticate&quot;</span>
+    <span class="n">peer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">netinfo</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">address</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">link</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

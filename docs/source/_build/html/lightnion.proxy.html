@@ -1,0 +1,675 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.proxy package &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">lightnion.proxy package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.auth">lightnion.proxy.auth module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.forward">lightnion.proxy.forward module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.jobs">lightnion.proxy.jobs module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.link">lightnion.proxy.link module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.parts">lightnion.proxy.parts module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.path">lightnion.proxy.path module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy.relayinfo">lightnion.proxy.relayinfo module</a></li>
+<li><a class="reference internal" href="#module-lightnion.proxy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>lightnion.proxy package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lightnion.proxy.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="lightnion-proxy-package">
+<h1>lightnion.proxy package<a class="headerlink" href="#lightnion-proxy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-lightnion.proxy.auth">
+<span id="lightnion-proxy-auth-module"></span><h2>lightnion.proxy.auth module<a class="headerlink" href="#module-lightnion.proxy.auth" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.proxy.auth.filename">
+<code class="descclassname">lightnion.proxy.auth.</code><code class="descname">filename</code><span class="sig-paren">(</span><em>auth_dir</em>, <em>filename</em>, <em>base_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/auth.html#filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.auth.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.auth.genpkey">
+<code class="descclassname">lightnion.proxy.auth.</code><code class="descname">genpkey</code><span class="sig-paren">(</span><em>auth_dir</em>, <em>base_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/auth.html#genpkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.auth.genpkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.auth.getpkey">
+<code class="descclassname">lightnion.proxy.auth.</code><code class="descname">getpkey</code><span class="sig-paren">(</span><em>auth_dir</em>, <em>base_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/auth.html#getpkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.auth.getpkey" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.auth.material">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.auth.</code><code class="descname">material</code><a class="reference internal" href="_modules/lightnion/proxy/auth.html#material"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.auth.material" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.proxy.auth.material" title="lightnion.proxy.auth.material"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.proxy.auth.material</span></code></a></p>
+<dl class="method">
+<dt id="lightnion.proxy.auth.material.perform">
+<code class="descname">perform</code><span class="sig-paren">(</span><em>client</em>, <em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/auth.html#material.perform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.auth.material.perform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.auth.material.public">
+<code class="descname">public</code><a class="headerlink" href="#lightnion.proxy.auth.material.public" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.auth.material.suffix">
+<code class="descname">suffix</code><a class="headerlink" href="#lightnion.proxy.auth.material.suffix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.forward">
+<span id="lightnion-proxy-forward-module"></span><h2>lightnion.proxy.forward module<a class="headerlink" href="#module-lightnion.proxy.forward" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.proxy.forward.clerk">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.forward.</code><code class="descname">clerk</code><span class="sig-paren">(</span><em>slave_node</em>, <em>control_port</em>, <em>dir_port</em>, <em>compute_path</em>, <em>auth_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.proxy.forward.clerk.get_descriptor_unflavoured">
+<code class="descname">get_descriptor_unflavoured</code><span class="sig-paren">(</span><em>router</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk.get_descriptor_unflavoured"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk.get_descriptor_unflavoured" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a descriptor.
+:param router: Router from which we want the descriptor.
+:return: the descriptor of the given router.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.forward.clerk.get_guard">
+<code class="descname">get_guard</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk.get_guard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk.get_guard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a guard
+:return: guard node</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.forward.clerk.prepare">
+<code class="descname">prepare</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk.prepare"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk.prepare" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.forward.clerk.retrieve_consensus">
+<code class="descname">retrieve_consensus</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk.retrieve_consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk.retrieve_consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve relays data with direct HTTP connection and schedule its future retrival.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.forward.clerk.wait_for_consensus">
+<code class="descname">wait_for_consensus</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#clerk.wait_for_consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.clerk.wait_for_consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure a consensus is present in the clerk, and fetch a new one if it is not.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.create_channel">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">create_channel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#create_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.create_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a channel.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.delete_channel">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">delete_channel</code><span class="sig-paren">(</span><em>uid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#delete_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.delete_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a channel.
+:param uid: channel identifier</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_consensus">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_consensus</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve consensus.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_consensus_raw">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_consensus_raw</code><span class="sig-paren">(</span><em>flavor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_consensus_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_consensus_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve raw consensus.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_descriptors">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_descriptors</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_descriptors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_descriptors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_descriptors_raw">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_descriptors_raw</code><span class="sig-paren">(</span><em>flavor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_descriptors_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_descriptors_raw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_guard">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_guard</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_guard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_guard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve guard descriptor.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.get_signing_keys">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">get_signing_keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#get_signing_keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.get_signing_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve signing keys to verify consensus.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.loop_signal_handler">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">loop_signal_handler</code><span class="sig-paren">(</span><em>signum</em>, <em>loop</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#loop_signal_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.loop_signal_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handler to stop coroutines.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.forward.main">
+<code class="descclassname">lightnion.proxy.forward.</code><code class="descname">main</code><span class="sig-paren">(</span><em>port</em>, <em>slave_node</em>, <em>control_port</em>, <em>dir_port</em>, <em>compute_path</em>, <em>auth_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/forward.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.forward.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entry point</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.jobs">
+<span id="lightnion-proxy-jobs-module"></span><h2>lightnion.proxy.jobs module<a class="headerlink" href="#module-lightnion.proxy.jobs" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.proxy.jobs.Channel">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">Channel</code><span class="sig-paren">(</span><em>token</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.jobs.ChannelDoesNotExistException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">ChannelDoesNotExistException</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelDoesNotExistException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelDoesNotExistException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.jobs.ChannelManager">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">ChannelManager</code><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Channel manager</p>
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.create_channel">
+<code class="descname">create_channel</code><span class="sig-paren">(</span><em>consensus</em>, <em>descriptors</em>, <em>select_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.create_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.create_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new channel.
+:param ntor: First part of the ntor handshake provided by the client.
+:param consensus: The current consensus.
+:param descriptors: A collection of the current descriptors.
+:return: Response to be send to the client</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.jobs.ChannelManager.crypto">
+<code class="descname">crypto</code><em class="property"> = &lt;lightnion.proxy.parts.crypto object&gt;</em><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.crypto" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.delete_channel">
+<code class="descname">delete_channel</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.delete_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.delete_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete a given channel if it is managed by the channel manager, do nothing otherwise.
+:param channel: Channel to be deleted.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_client">
+<code class="descname">destroy_circuit_from_client</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.destroy_circuit_from_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroy a circuit corresponding to a channel as if the order was comming from the client side.
+:param channel: Channel handling the circuit to be destroyed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_link">
+<code class="descname">destroy_circuit_from_link</code><span class="sig-paren">(</span><em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.destroy_circuit_from_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.destroy_circuit_from_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destroy a circuit corresponding to a channel as if the order was comming from the link side.
+:param channel: Channel handling the circuit to be destroyed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.gen_token_from_cid">
+<code class="descname">gen_token_from_cid</code><span class="sig-paren">(</span><em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.gen_token_from_cid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.gen_token_from_cid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a token from a circuit id.
+:param cid: circuit id used to generate the token.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.get_channel_by_token">
+<code class="descname">get_channel_by_token</code><span class="sig-paren">(</span><em>token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.get_channel_by_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.get_channel_by_token" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a channel by its token.
+:param token: Token identifying the channel.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.reset_link">
+<code class="descname">reset_link</code><span class="sig-paren">(</span><em>link</em>, <em>rnd_gen=&lt;function dummy_random_gen&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.reset_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.reset_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the link used the channel handler.
+:param link: Link to use.
+:param rnd_gen: Method to generate a random number to initialize the token generator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.schedule_to_send">
+<code class="descname">schedule_to_send</code><span class="sig-paren">(</span><em>cell</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.schedule_to_send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.schedule_to_send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scedule the data to be send to the correct channel.
+:param cell: cell to be send.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.ChannelManager.set_link">
+<code class="descname">set_link</code><span class="sig-paren">(</span><em>link</em>, <em>rnd_gen=&lt;function dummy_random_gen&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#ChannelManager.set_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.ChannelManager.set_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a link to be used by the channel handler.
+:param link: Link to use.
+:param rnd_gen: Method to generate a random number to initialize the token generator.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.jobs.CircuitDoesNotExistException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">CircuitDoesNotExistException</code><span class="sig-paren">(</span><em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#CircuitDoesNotExistException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.CircuitDoesNotExistException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.jobs.InvalidTokenException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">InvalidTokenException</code><span class="sig-paren">(</span><em>token</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#InvalidTokenException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.InvalidTokenException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.jobs.LinkAlreadyInitializedException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">LinkAlreadyInitializedException</code><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#LinkAlreadyInitializedException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.LinkAlreadyInitializedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.jobs.LinkNotInitializedException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">LinkNotInitializedException</code><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#LinkNotInitializedException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.LinkNotInitializedException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.jobs.WebsocketManager">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">WebsocketManager</code><span class="sig-paren">(</span><em>host='0.0.0.0'</em>, <em>port=8765</em>, <em>timeout=60</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#WebsocketManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="lightnion.proxy.jobs.WebsocketManager.prefix">
+<code class="descname">prefix</code><em class="property"> = '/lightnion/api/v0.1/channels/'</em><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager.prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.jobs.WebsocketManager.prefix_len">
+<code class="descname">prefix_len</code><em class="property"> = 29</em><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager.prefix_len" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.WebsocketManager.serve">
+<code class="descname">serve</code><span class="sig-paren">(</span><em>loop</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#WebsocketManager.serve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager.serve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and start a websocket server, then wait for it to close.        
+:param host: host on which the websocket need to run.
+:param port: port on which the websocket is listening.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.WebsocketManager.set_channel_manager">
+<code class="descname">set_channel_manager</code><span class="sig-paren">(</span><em>channel_manager</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#WebsocketManager.set_channel_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager.set_channel_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the channel manager to use for dispatching data.
+:param channel_manager: The channel manager to use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.jobs.WebsocketManager.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#WebsocketManager.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.WebsocketManager.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.jobs.dummy_random_gen">
+<code class="descclassname">lightnion.proxy.jobs.</code><code class="descname">dummy_random_gen</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/jobs.html#dummy_random_gen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.jobs.dummy_random_gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.link">
+<span id="lightnion-proxy-link-module"></span><h2>lightnion.proxy.link module<a class="headerlink" href="#module-lightnion.proxy.link" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidAuthCellException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidAuthCellException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidAuthCellException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidAuthCellException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidCellHeaderException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidCellHeaderException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidCellHeaderException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidCellHeaderException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidCertsCellException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidCertsCellException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidCertsCellException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidCertsCellException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidDestroyCellException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidDestroyCellException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidDestroyCellException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidDestroyCellException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidNetInfoCellException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidNetInfoCellException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidNetInfoCellException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidNetInfoCellException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.InvalidVersionCellException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">InvalidVersionCellException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#InvalidVersionCellException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.InvalidVersionCellException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.link.Link">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">Link</code><span class="sig-paren">(</span><em>guard</em>, <em>versions=(4</em>, <em>5)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/link.html#Link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.Link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.proxy.link.Link.gen_cid">
+<code class="descname">gen_cid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/link.html#Link.gen_cid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.Link.gen_cid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a new circuit id.
+:return: new circuit id</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.link.Link.schedule_to_send">
+<code class="descname">schedule_to_send</code><span class="sig-paren">(</span><em>cell_raw</em>, <em>channel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/link.html#Link.schedule_to_send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.Link.schedule_to_send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coroutine
+Order some data to be sent to the tor relay.
+:param cell: cell to be sent.
+:param channel: channel from which the cell is sent.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.link.Link.set_channel_manager">
+<code class="descname">set_channel_manager</code><span class="sig-paren">(</span><em>channel_manager</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/link.html#Link.set_channel_manager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.Link.set_channel_manager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the channel manager to which the traffic should be send.
+:param channel_manager: channel manager to use.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.proxy.link.NoSupportedVersionException">
+<em class="property">exception </em><code class="descclassname">lightnion.proxy.link.</code><code class="descname">NoSupportedVersionException</code><a class="reference internal" href="_modules/lightnion/proxy/link.html#NoSupportedVersionException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.link.NoSupportedVersionException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.parts">
+<span id="lightnion-proxy-parts-module"></span><h2>lightnion.proxy.parts module<a class="headerlink" href="#module-lightnion.proxy.parts" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.proxy.parts.crypto">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.parts.</code><code class="descname">crypto</code><a class="reference internal" href="_modules/lightnion/proxy/parts.html#crypto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.parts.crypto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.proxy.parts.crypto.compute_token">
+<code class="descname">compute_token</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>binding</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/parts.html#crypto.compute_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.parts.crypto.compute_token" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.parts.crypto.decrypt_token">
+<code class="descname">decrypt_token</code><span class="sig-paren">(</span><em>token</em>, <em>binding</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/parts.html#crypto.decrypt_token"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.parts.crypto.decrypt_token" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.path">
+<span id="lightnion-proxy-path-module"></span><h2>lightnion.proxy.path module<a class="headerlink" href="#module-lightnion.proxy.path" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.proxy.path.convert">
+<code class="descclassname">lightnion.proxy.path.</code><code class="descname">convert</code><span class="sig-paren">(</span><em>*entries</em>, <em>consensus</em>, <em>expect='fetch_format'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.path.emitter">
+<code class="descclassname">lightnion.proxy.path.</code><code class="descname">emitter</code><span class="sig-paren">(</span><em>output_queue</em>, <em>kill_queue</em>, <em>control_host</em>, <em>control_port</em>, <em>batch=32</em>, <em>target=1024</em>, <em>nb_worker=2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#emitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.emitter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.path.fetch">
+<code class="descclassname">lightnion.proxy.path.</code><code class="descname">fetch</code><span class="sig-paren">(</span><em>batch=32</em>, <em>target=1024</em>, <em>nb_worker=2</em>, <em>tor_process=None</em>, <em>socks_port=None</em>, <em>control_host='127.0.0.1'</em>, <em>control_port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#fetch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.fetch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.proxy.path.get_tor">
+<code class="descclassname">lightnion.proxy.path.</code><code class="descname">get_tor</code><span class="sig-paren">(</span><em>control_port=9051</em>, <em>socks_port=9050</em>, <em>msg_handler=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#get_tor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.get_tor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.path.producer">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.path.</code><code class="descname">producer</code><span class="sig-paren">(</span><em>process</em>, <em>path_queue</em>, <em>kill_queue</em>, <em>tor_process</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#producer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.producer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.proxy.path.producer.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#producer.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.producer.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.path.producer.dead">
+<code class="descname">dead</code><a class="headerlink" href="#lightnion.proxy.path.producer.dead" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.proxy.path.producer.empty">
+<code class="descname">empty</code><a class="headerlink" href="#lightnion.proxy.path.producer.empty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.proxy.path.producer.get">
+<code class="descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#producer.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.producer.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.proxy.path.worker">
+<em class="property">class </em><code class="descclassname">lightnion.proxy.path.</code><code class="descname">worker</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>barrier</em>, <em>path_queue</em>, <em>batch_size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">threading.Thread</span></code></p>
+<dl class="method">
+<dt id="lightnion.proxy.path.worker.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/path.html#worker.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.path.worker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method representing the thread’s activity.</p>
+<p>You may override this method in a subclass. The standard run() method
+invokes the callable object passed to the object’s constructor as the
+target argument, if any, with sequential and keyword arguments taken
+from the args and kwargs arguments, respectively.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy.relayinfo">
+<span id="lightnion-proxy-relayinfo-module"></span><h2>lightnion.proxy.relayinfo module<a class="headerlink" href="#module-lightnion.proxy.relayinfo" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.proxy.relayinfo.get_relay_info">
+<code class="descclassname">lightnion.proxy.relayinfo.</code><code class="descname">get_relay_info</code><span class="sig-paren">(</span><em>port</em>, <em>password=None</em>, <em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/proxy/relayinfo.html#get_relay_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.proxy.relayinfo.get_relay_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve some info from the relay.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.proxy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-lightnion.proxy" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

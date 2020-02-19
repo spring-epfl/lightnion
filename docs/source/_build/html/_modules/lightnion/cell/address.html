@@ -1,0 +1,244 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.cell.address &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../cell.html">lightnion.cell</a> &raquo;</li>
+        
+      <li>lightnion.cell.address</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.cell.address</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">view</span> <span class="k">as</span> <span class="n">_view</span>
+
+<span class="kn">import</span> <span class="nn">ipaddress</span>
+
+<div class="viewcode-block" id="addr_type"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.address.addr_type">[docs]</a><span class="k">class</span> <span class="nc">addr_type</span><span class="p">(</span><span class="n">_view</span><span class="o">.</span><span class="n">enum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+    <span class="n">HOSTNAME</span>        <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">IPV4_ADDR</span>       <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">IPV6_ADDR</span>       <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">ERROR_TRANS</span>     <span class="o">=</span> <span class="mh">0xF0</span>
+    <span class="n">ERROR_NON_TRANS</span> <span class="o">=</span> <span class="mh">0xF1</span></div>
+
+<span class="n">header_view</span> <span class="o">=</span> <span class="n">_view</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="o">**</span><span class="p">{</span>
+    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">addr_type</span><span class="p">,</span>
+    <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">cache</span><span class="p">(</span><span class="n">_view</span><span class="o">.</span><span class="n">uint</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])})</span>
+
+<div class="viewcode-block" id="address_view"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.address.address_view">[docs]</a><span class="k">class</span> <span class="nc">address_view</span><span class="p">(</span><span class="n">_view</span><span class="o">.</span><span class="n">packet</span><span class="p">):</span>
+    <span class="n">_default_extra_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span>
+    <span class="n">_default_header_view</span> <span class="o">=</span> <span class="n">header_view</span>
+    <span class="n">_default_data_name</span> <span class="o">=</span> <span class="s1">&#39;host&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="s1">&#39;length&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_view</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+            <span class="n">view_table</span><span class="o">=</span><span class="p">{</span>
+                <span class="n">addr_type</span><span class="o">.</span><span class="n">HOSTNAME</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">codec</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">length</span><span class="p">),</span>
+                <span class="n">addr_type</span><span class="o">.</span><span class="n">IPV4_ADDR</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+                <span class="n">addr_type</span><span class="o">.</span><span class="n">IPV6_ADDR</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span>
+                <span class="n">addr_type</span><span class="o">.</span><span class="n">ERROR_TRANS</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">length</span><span class="p">),</span>
+                <span class="n">addr_type</span><span class="o">.</span><span class="n">ERROR_NON_TRANS</span><span class="p">:</span> <span class="n">_view</span><span class="o">.</span><span class="n">data</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+            <span class="p">},</span> <span class="n">union_tag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span></div>
+
+<span class="n">view</span> <span class="o">=</span> <span class="n">address_view</span><span class="p">()</span>
+<span class="n">address</span> <span class="o">=</span> <span class="n">_view</span><span class="o">.</span><span class="n">like</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="s1">&#39;address&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="pack"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.address.pack">[docs]</a><span class="k">def</span> <span class="nf">pack</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">type_hint</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">type_hint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Address</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+            <span class="n">type_hint</span> <span class="o">=</span> <span class="n">addr_type</span><span class="o">.</span><span class="n">IPV4_ADDR</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv6Address</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+            <span class="n">type_hint</span> <span class="o">=</span> <span class="n">addr_type</span><span class="o">.</span><span class="n">IPV6_ADDR</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="n">address</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">type_hint</span><span class="p">,</span> <span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
+
+    <span class="n">length</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">host</span><span class="o">.</span><span class="n">width</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="n">length</span><span class="p">)</span>
+
+    <span class="n">base</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">base</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

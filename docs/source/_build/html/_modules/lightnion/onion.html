@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.onion &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.onion</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.onion</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">cryptography</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+
+<div class="viewcode-block" id="state"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.state">[docs]</a><span class="k">class</span> <span class="nc">state</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;Handle Tor onion-encryption cryptographic states.</span>
+
+<span class="sd">    *For now, only handle cryptography as an initiator (as an OP to an OR).*</span>
+
+<span class="sd">    TODO: add support for __init__(link, circuit, initiator={True,False})</span>
+
+<span class="sd">                                Status    Condition</span>
+
+<span class="sd">        backward  decryptor   provided    initiator=True</span>
+<span class="sd">                  encryptor     (none)    initiator=False</span>
+<span class="sd">                     digest   provided</span>
+<span class="sd">        forward   decryptor     (none)    initiator=False</span>
+<span class="sd">                  encryptor   provided    initiator=True</span>
+<span class="sd">                     digest   provided</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">link</span><span class="p">,</span> <span class="n">circuit</span><span class="p">,</span> <span class="n">early_count</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Build a new onion-encryption state from a link and circuit.</span>
+
+<span class="sd">        :params link: a link object (see link.link)</span>
+<span class="sd">        :params circuit: a circuit object (see create.circuit)</span>
+<span class="sd">        :params int early_count: first `early_count` cells will be RELAY_EARLY</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span> <span class="o">=</span> <span class="n">circuit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="n">link</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">early_count</span> <span class="o">=</span> <span class="n">early_count</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_material</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_digest</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">material</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reset_encryption</span><span class="p">(</span><span class="n">circuit</span><span class="o">.</span><span class="n">material</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Number of inner layers in the onion.&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span><span class="o">.</span><span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">early_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Number of remaining RELAY_EARLY cells before sending RELAY cells.&#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_early_count</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span><span class="o">.</span><span class="n">early_count</span>
+
+    <span class="nd">@early_count</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">early_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Setter for self.early_count.&#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_early_count</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Unable to set RELAY_EARLY counter from the outer layers!&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="state.wrap"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.state.wrap">[docs]</a>    <span class="k">def</span> <span class="nf">wrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inner</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Wraps an inner state w/ self as outer state (see lightnion.extend).</span>
+
+<span class="sd">        Usage:</span>
+<span class="sd">            1. A one-hop circuit is build with stateA.</span>
+<span class="sd">            2. A key exchange is made through stateA to get stateB.</span>
+<span class="sd">            3. Then, call stateA.wrap(stateB) to properly wrap the onion.</span>
+
+<span class="sd">        Usage:</span>
+<span class="sd">            1. A two-hop circuit is build with state{A,B}.</span>
+<span class="sd">            2. A key exchange is made through state{A,B} to get stateC.</span>
+<span class="sd">            3. Then, call statea.wrap(stateC) to properly wrap the onion.</span>
+
+<span class="sd">        *Note: should not be called explicitly.*</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">inner</span><span class="o">.</span><span class="n">_early_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_early_count</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="o">=</span> <span class="n">inner</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">inner</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_reset_encryption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Initialize stateful stream cipher with cryptographic material.</span>
+
+<span class="sd">        :params material: shared material w/ {forward,backward}_key</span>
+
+<span class="sd">        *Note: should not be called explicitly.*</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_last_material</span> <span class="o">==</span> <span class="n">material</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unsafe! Do NOT reset w/ same material!&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_last_material</span> <span class="o">=</span> <span class="n">material</span>
+
+        <span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="k">import</span> <span class="n">default_backend</span>
+        <span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.ciphers</span> <span class="k">import</span> <span class="p">(</span>
+            <span class="n">algorithms</span><span class="p">,</span> <span class="n">modes</span><span class="p">,</span> <span class="n">Cipher</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Tor uses AES128-CTR with IV=0 as stream cipher</span>
+        <span class="n">nonce_size</span> <span class="o">=</span> <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="o">.</span><span class="n">block_size</span> <span class="o">//</span> <span class="mi">8</span>
+        <span class="n">zeroed_ctr</span> <span class="o">=</span> <span class="n">modes</span><span class="o">.</span><span class="n">CTR</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span> <span class="o">*</span> <span class="n">nonce_size</span><span class="p">)</span>
+
+        <span class="c1"># Initiate forward/backward encryption/decryption (as OP) TODO: add OR</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_encryptor</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span>
+                <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">forward_key</span><span class="p">),</span>
+                <span class="n">zeroed_ctr</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">encryptor</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backward_decryptor</span> <span class="o">=</span> <span class="n">Cipher</span><span class="p">(</span>
+                <span class="n">algorithms</span><span class="o">.</span><span class="n">AES</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">backward_key</span><span class="p">),</span>
+                <span class="n">zeroed_ctr</span><span class="p">,</span> <span class="n">default_backend</span><span class="p">())</span><span class="o">.</span><span class="n">decryptor</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_reset_digest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Seed stateful &#39;running digests&#39; used to authenticate payloads.</span>
+
+<span class="sd">        :params material: shared material w/ {forward,backward}_key</span>
+
+<span class="sd">        *Note: should not be called explicitly.*</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">forward_digest</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backward_digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">material</span><span class="o">.</span><span class="n">backward_digest</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Non-recursive clone of current cryptographic state.</span>
+
+<span class="sd">        Whenever it is required to rollback after an error, you can use this</span>
+<span class="sd">        function to give yourself a clone of the current state.</span>
+
+<span class="sd">        *Note: does not clone inner cryptographic states.*</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit</span><span class="p">)</span>
+
+        <span class="c1"># Clone digest state (use of hashlib&#39;s native hash copy)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">forward_digest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_digest</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">backward_digest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward_digest</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Clone encryption state (use of python&#39;s ad-hoc copy)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">forward_encryptor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward_encryptor</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">backward_decryptor</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backward_decryptor</span><span class="p">)</span>
+
+        <span class="c1"># Don&#39;t forget to propagate the RELAY_EARLY count</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">_early_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_early_count</span>
+
+        <span class="c1"># (note: we don&#39;t recursively clone inner layers of state)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">_inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span>
+
+        <span class="k">return</span> <span class="n">child</span></div>
+
+<div class="viewcode-block" id="core"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.core">[docs]</a><span class="k">def</span> <span class="nf">core</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">stream_id</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Build a RELAY{_EARLY,} cell as an onion core (plaintext w/ `state`)</span>
+
+<span class="sd">    :param state: a state object (see onion.state)</span>
+<span class="sd">    :param str command: RELAY{_EARLY,} cell command (see cell.relay.cmd)</span>
+<span class="sd">    :param bytes payload: RELAY{_EARLY,} cell content (default: b&#39;&#39;)</span>
+<span class="sd">    :param int stream_id: RELAY{_EARLY,} stream ID (default: 0)</span>
+
+<span class="sd">    :returns: a tuple (updated state, cell)</span>
+
+<span class="sd">    *Note: should not be called explicitly.*</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">rollback</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">_clone</span><span class="p">()</span>
+
+    <span class="c1"># Send RELAY_EARLY cells first</span>
+    <span class="n">relay_pack</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">pack</span>
+    <span class="k">if</span> <span class="n">rollback</span><span class="o">.</span><span class="n">early_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">rollback</span><span class="o">.</span><span class="n">early_count</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">relay_pack</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">relay_early</span><span class="o">.</span><span class="n">pack</span>
+
+    <span class="c1"># Compute the cell with a zeroed &#39;digest&#39; field.</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">relay_pack</span><span class="p">(</span>
+        <span class="n">circuit_id</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">circuit</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="o">=</span><span class="n">command</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span>
+        <span class="n">stream_id</span><span class="o">=</span><span class="n">stream_id</span><span class="p">,</span>
+        <span class="n">digest</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00\x00\x00\x00</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Update the &quot;running digest&quot;</span>
+    <span class="n">rollback</span><span class="o">.</span><span class="n">forward_digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="c1"># Write the &quot;running digest&quot;</span>
+    <span class="n">full_digest</span> <span class="o">=</span> <span class="n">rollback</span><span class="o">.</span><span class="n">forward_digest</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">digest</span> <span class="o">=</span> <span class="n">full_digest</span><span class="p">[:</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">width</span><span class="p">()]</span>
+
+    <span class="c1"># Encrypt the to-be-encrypted parts &amp; build final cell</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">rollback</span><span class="o">.</span><span class="n">forward_encryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rollback</span><span class="p">,</span> <span class="n">cell</span></div>
+
+<div class="viewcode-block" id="build"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.build">[docs]</a><span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">stream_id</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Build a RELAY{_EARLY,} cell.</span>
+
+<span class="sd">    :param state: a state object (see onion.state)</span>
+<span class="sd">    :param str command: RELAY{_EARLY,} cell command (see cell.relay.cmd)</span>
+<span class="sd">    :param bytes payload: RELAY{_EARLY,} cell content (default: b&#39;&#39;)</span>
+<span class="sd">    :param int stream_id: RELAY{_EARLY,} stream ID (default: 0)</span>
+
+<span class="sd">    :returns: a tuple (updated state, cell)</span>
+
+<span class="sd">    *Note: returns an updated state that MUST be used afterwards.*</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">stream_id</span><span class="p">)</span>
+    <span class="n">rollback</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">_clone</span><span class="p">()</span>
+
+    <span class="c1"># Retrieve the inner layer of the onion</span>
+    <span class="n">rollback</span><span class="o">.</span><span class="n">_inner</span><span class="p">,</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">build</span><span class="p">(</span><span class="n">rollback</span><span class="o">.</span><span class="n">_inner</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">stream_id</span><span class="p">)</span>
+
+    <span class="c1"># Wraps the layer with our outer layer of encryption</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">rollback</span><span class="o">.</span><span class="n">forward_encryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rollback</span><span class="p">,</span> <span class="n">cell</span></div>
+
+<div class="viewcode-block" id="recognize"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.recognize">[docs]</a><span class="k">def</span> <span class="nf">recognize</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">backward</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Attempt to recognize a RELAY{_EARLY,} cell.</span>
+
+<span class="sd">    :param state: a state object (see onion.state)</span>
+<span class="sd">    :param cell: a RELAY{_EARLY,} cell object (see cell.relay.cell)</span>
+<span class="sd">    :param bool backward: is it backward? or else forward? (default: True)</span>
+
+<span class="sd">    :returns: a tuple (updated state, bool)</span>
+
+<span class="sd">    *Note: returns an updated state that MUST be used afterwards.*</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">rollback</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">_clone</span><span class="p">()</span>
+
+    <span class="c1"># We expect the recognized field to be zeroed upon successful decryption</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">recognized</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00\x00</span><span class="s1">&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="c1"># We build a copy of the cell with a zeroed &#39;digest field&#39;</span>
+    <span class="n">cell_digest</span> <span class="o">=</span> <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">digest</span>
+    <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">digest</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00\x00\x00\x00</span><span class="s1">&#39;</span>
+
+    <span class="c1"># Update the digest state accordingly (backward or forward)</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">rollback</span><span class="o">.</span><span class="n">backward_digest</span> <span class="k">if</span> <span class="n">backward</span> <span class="k">else</span> <span class="n">rollback</span><span class="o">.</span><span class="n">forward_digest</span>
+    <span class="n">digest</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="c1"># Check if the computed digest match the cell digest</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_digest</span> <span class="o">==</span> <span class="n">digest</span><span class="o">.</span><span class="n">digest</span><span class="p">()[:</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">digest</span><span class="o">.</span><span class="n">width</span><span class="p">()]:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="c1"># Update state iff the digests matched</span>
+    <span class="k">return</span> <span class="n">rollback</span><span class="p">,</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="peel"><a class="viewcode-back" href="../../lightnion.html#lightnion.onion.peel">[docs]</a><span class="k">def</span> <span class="nf">peel</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Decrypt a RELAY{_EARLY,} cell using provided `state`.</span>
+
+<span class="sd">    :param state: a state object (see onion.state)</span>
+<span class="sd">    :param cell: a RELAY{_EARLY,} cell object (see cell.relay.cell)</span>
+
+<span class="sd">    :returns: a tuple (updated state, decrypted cell)</span>
+
+<span class="sd">    *Note: returns an updated state that MUST be used afterwards.*</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">rollback</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">_clone</span><span class="p">()</span>
+
+    <span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">rollback</span><span class="o">.</span><span class="n">backward_decryptor</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">relay</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rollback</span><span class="o">.</span><span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">rollback</span><span class="p">,</span> <span class="n">recognized</span> <span class="o">=</span> <span class="n">recognize</span><span class="p">(</span><span class="n">rollback</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">recognized</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Got an unrecognized RELAY cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">rollback</span><span class="p">,</span> <span class="n">cell</span>
+
+    <span class="n">rollback</span><span class="o">.</span><span class="n">_inner</span><span class="p">,</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">peel</span><span class="p">(</span><span class="n">rollback</span><span class="o">.</span><span class="n">_inner</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rollback</span><span class="p">,</span> <span class="n">cell</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

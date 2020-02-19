@@ -1,0 +1,452 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.proxy.path &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.proxy.path</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.proxy.path</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">atexit</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">queue</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">stem</span>
+<span class="kn">import</span> <span class="nn">stem.process</span>
+<span class="kn">import</span> <span class="nn">stem.control</span>
+
+<span class="c1"># TODO: replace the whole content of this file with proper stuff!</span>
+
+<span class="n">default_nb_worker</span> <span class="o">=</span> <span class="mi">2</span>
+
+<div class="viewcode-block" id="worker"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.worker">[docs]</a><span class="k">class</span> <span class="nc">worker</span><span class="p">(</span><span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">barrier</span><span class="p">,</span> <span class="n">path_queue</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mini_batch</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">//</span> <span class="mi">8</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="o">//</span> <span class="mi">8</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span> <span class="o">=</span> <span class="n">path_queue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">barrier</span> <span class="o">=</span> <span class="n">barrier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+
+<div class="viewcode-block" id="worker.run"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.worker.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ctrl</span> <span class="o">=</span> <span class="n">stem</span><span class="o">.</span><span class="n">control</span><span class="o">.</span><span class="n">Controller</span><span class="o">.</span><span class="n">from_port</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+        <span class="n">ctrl</span><span class="o">.</span><span class="n">authenticate</span><span class="p">()</span>
+
+        <span class="n">first</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">barrier</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">first</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ctrl</span><span class="o">.</span><span class="n">drop_guards</span><span class="p">()</span>
+            <span class="n">ctrl</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">stem</span><span class="o">.</span><span class="n">Signal</span><span class="o">.</span><span class="n">NEWNYM</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">barrier</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+        <span class="n">circs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dead</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dead</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">circ</span> <span class="ow">in</span> <span class="n">circs</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">ctrl</span><span class="o">.</span><span class="n">close_circuit</span><span class="p">(</span><span class="n">circ</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="p">(</span><span class="n">stem</span><span class="o">.</span><span class="n">ControllerError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                        <span class="k">pass</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mini_batch</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">circs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">circs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ctrl</span><span class="o">.</span><span class="n">new_circuit</span><span class="p">())</span>
+                <span class="k">except</span> <span class="n">stem</span><span class="o">.</span><span class="n">ControllerError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="n">fails</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">circ</span> <span class="ow">in</span> <span class="n">circs</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">path</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">get_circuit</span><span class="p">(</span><span class="n">circ</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                        <span class="n">ctrl</span><span class="o">.</span><span class="n">close_circuit</span><span class="p">(</span><span class="n">circ</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fails</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">circ</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="n">stem</span><span class="o">.</span><span class="n">ControllerError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="n">circs</span> <span class="o">=</span> <span class="n">fails</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">barrier</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+
+        <span class="n">ctrl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+
+<span class="n">_cached_tor</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="get_tor"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.get_tor">[docs]</a><span class="k">def</span> <span class="nf">get_tor</span><span class="p">(</span><span class="n">control_port</span><span class="o">=</span><span class="mi">9051</span><span class="p">,</span> <span class="n">socks_port</span><span class="o">=</span><span class="mi">9050</span><span class="p">,</span> <span class="n">msg_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">_cached_tor</span>
+    <span class="k">if</span> <span class="n">_cached_tor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_cached_tor</span>
+
+    <span class="n">tor</span> <span class="o">=</span> <span class="n">stem</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">launch_tor_with_config</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+                <span class="s1">&#39;SocksPort&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">socks_port</span><span class="p">),</span>
+                <span class="s1">&#39;ControlPort&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">control_port</span><span class="p">),</span>
+                <span class="s1">&#39;PublishServerDescriptor&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+            <span class="p">},</span> <span class="n">init_msg_handler</span><span class="o">=</span><span class="n">msg_handler</span><span class="p">)</span>
+    <span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">tor</span><span class="o">.</span><span class="n">kill</span><span class="p">)</span>
+
+    <span class="n">_cached_tor</span> <span class="o">=</span> <span class="n">tor</span></div>
+
+<div class="viewcode-block" id="emitter"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.emitter">[docs]</a><span class="k">def</span> <span class="nf">emitter</span><span class="p">(</span>
+        <span class="n">output_queue</span><span class="p">,</span>
+        <span class="n">kill_queue</span><span class="p">,</span>
+        <span class="n">control_host</span><span class="p">,</span>
+        <span class="n">control_port</span><span class="p">,</span>
+        <span class="n">batch</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+        <span class="n">target</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+        <span class="n">nb_worker</span><span class="o">=</span><span class="n">default_nb_worker</span><span class="p">):</span>
+
+    <span class="c1"># (shut up stem)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">stem</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+
+    <span class="n">barrier</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Barrier</span><span class="p">(</span><span class="n">nb_worker</span><span class="p">)</span>
+    <span class="n">path_queue</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">target</span> <span class="o">//</span> <span class="n">nb_worker</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">workers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_worker</span><span class="p">):</span>
+        <span class="n">workers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">worker</span><span class="p">(</span>
+                <span class="n">control_host</span><span class="p">,</span>
+                <span class="n">control_port</span><span class="p">,</span>
+                <span class="n">barrier</span><span class="p">,</span>
+                <span class="n">path_queue</span><span class="p">,</span>
+                <span class="n">batch_size</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="n">guard</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">exit</span> <span class="o">=</span> <span class="n">path_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">output_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">guard</span><span class="p">)</span>
+    <span class="n">output_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">middle</span><span class="p">,</span> <span class="n">exit</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="nb">any</span><span class="p">([</span><span class="ow">not</span> <span class="n">w</span><span class="o">.</span><span class="n">finished</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">]):</span>
+        <span class="n">new_guard</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">exit</span> <span class="o">=</span> <span class="n">path_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">new_guard</span> <span class="o">!=</span> <span class="n">guard</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">output_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">middle</span><span class="p">,</span> <span class="n">exit</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">kill_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">.</span><span class="n">finished</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># (cleanup is useless as the process will die, but do it nonetheless)</span>
+    <span class="n">barrier</span><span class="o">.</span><span class="n">abort</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">path_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()):</span>
+            <span class="n">path_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">workers</span><span class="p">:</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="producer"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.producer">[docs]</a><span class="k">class</span> <span class="nc">producer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">process</span><span class="p">,</span> <span class="n">path_queue</span><span class="p">,</span> <span class="n">kill_queue</span><span class="p">,</span> <span class="n">tor_process</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guard</span> <span class="o">=</span> <span class="n">path_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="o">=</span> <span class="n">process</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span> <span class="o">=</span> <span class="n">path_queue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kill_queue</span> <span class="o">=</span> <span class="n">kill_queue</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tor_process</span> <span class="o">=</span> <span class="n">tor_process</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dead</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="producer.get"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.producer.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="producer.close"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.producer.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kill_queue</span><span class="o">.</span><span class="n">put_nowait</span><span class="p">([</span><span class="kc">None</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Full</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path_queue</span><span class="o">.</span><span class="n">get_nowait</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+            <span class="k">pass</span></div></div>
+
+<span class="n">_default_tor</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_default_socks_port</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">_default_control_port</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="viewcode-block" id="fetch"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.fetch">[docs]</a><span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span>
+    <span class="n">batch</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">target</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+    <span class="n">nb_worker</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">tor_process</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">socks_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">control_host</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span>
+    <span class="n">control_port</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">global</span> <span class="n">_default_tor</span><span class="p">,</span> <span class="n">_default_socks_port</span><span class="p">,</span> <span class="n">_default_control_port</span>
+    <span class="k">if</span> <span class="n">socks_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_default_socks_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_default_socks_port</span> <span class="o">=</span> <span class="mi">9050</span>
+        <span class="n">socks_port</span> <span class="o">=</span> <span class="n">_default_socks_port</span>
+
+    <span class="k">if</span> <span class="n">control_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_default_control_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_default_control_port</span> <span class="o">=</span> <span class="mi">9051</span>
+        <span class="n">control_port</span> <span class="o">=</span> <span class="n">_default_control_port</span>
+
+    <span class="k">if</span> <span class="n">tor_process</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_default_tor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_default_tor</span> <span class="o">=</span> <span class="n">get_tor</span><span class="p">(</span>
+                <span class="n">socks_port</span><span class="o">=</span><span class="n">socks_port</span><span class="p">,</span>
+                <span class="n">control_port</span><span class="o">=</span><span class="n">control_port</span><span class="p">,</span>
+                <span class="n">msg_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">tor_process</span> <span class="o">=</span> <span class="n">_default_tor</span>
+
+    <span class="n">path_queue</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">batch</span><span class="p">)</span>
+    <span class="n">kill_queue</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">emitter</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">path_queue</span><span class="p">,</span>
+            <span class="n">kill_queue</span><span class="p">,</span>
+            <span class="n">control_host</span><span class="p">,</span>
+            <span class="n">control_port</span><span class="p">,</span>
+            <span class="n">batch</span><span class="p">,</span>
+            <span class="n">target</span><span class="p">,</span>
+            <span class="n">nb_worker</span><span class="p">))</span>
+    <span class="n">process</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">tor_process</span><span class="p">:</span>
+        <span class="n">tor_process</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">producer</span><span class="p">(</span><span class="n">process</span><span class="p">,</span> <span class="n">path_queue</span><span class="p">,</span> <span class="n">kill_queue</span><span class="p">,</span> <span class="n">tor_process</span><span class="p">)</span></div>
+
+<span class="c1"># TODO: check if this conversion fingerprint-&gt;descriptor is safe?</span>
+<div class="viewcode-block" id="convert"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.path.convert">[docs]</a><span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="o">*</span><span class="n">entries</span><span class="p">,</span> <span class="n">consensus</span><span class="p">,</span> <span class="n">expect</span><span class="o">=</span><span class="s1">&#39;fetch_format&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">expect</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;list&#39;</span><span class="p">,</span> <span class="s1">&#39;fetch_format&#39;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Format unknown: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expect</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">expect</span> <span class="o">==</span> <span class="s1">&#39;fetch_format&#39;</span><span class="p">:</span>
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="n">entries</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">pair</span><span class="p">]</span>
+        <span class="n">guard</span><span class="p">,</span> <span class="o">*</span><span class="n">paths</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="o">*</span><span class="n">entries</span><span class="p">,</span> <span class="n">consensus</span><span class="o">=</span><span class="n">consensus</span><span class="p">,</span> <span class="n">expect</span><span class="o">=</span><span class="s1">&#39;list&#39;</span><span class="p">)</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">paths</span><span class="p">[::</span><span class="mi">2</span><span class="p">],</span> <span class="n">paths</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">guard</span><span class="p">,</span> <span class="n">paths</span>
+
+    <span class="k">if</span> <span class="n">expect</span> <span class="o">==</span> <span class="s1">&#39;list&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">new_entries</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">by_identity</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">consensus</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">by_identity</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">consensus</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unsafe! Duplicates in the consensus!&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+        <span class="n">fingerprint</span><span class="p">,</span> <span class="n">nickname</span> <span class="o">=</span> <span class="n">entry</span>
+
+        <span class="n">as_identity</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="nb">bytes</span><span class="o">.</span><span class="n">fromhex</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)),</span> <span class="s1">&#39;utf8&#39;</span><span class="p">)</span>
+        <span class="n">as_identity</span> <span class="o">=</span> <span class="n">as_identity</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">as_identity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">by_identity</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown entity within consensus: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">as_identity</span><span class="p">)))</span>
+
+        <span class="n">router</span> <span class="o">=</span> <span class="n">by_identity</span><span class="p">[</span><span class="n">as_identity</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nickname</span> <span class="o">!=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;nickname&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Mismatched nickname: </span><span class="si">{}</span><span class="s1"> vs </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nickname</span><span class="p">,</span>
+                <span class="n">router</span><span class="p">[</span><span class="s1">&#39;nickname&#39;</span><span class="p">]))</span>
+
+        <span class="n">new_entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">router</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_entries</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

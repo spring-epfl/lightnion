@@ -1,0 +1,1916 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion package &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">lightnion package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-lightnion.cache">lightnion.cache module</a></li>
+<li><a class="reference internal" href="#module-lightnion.consensus">lightnion.consensus module</a></li>
+<li><a class="reference internal" href="#module-lightnion.constants">lightnion.constants module</a></li>
+<li><a class="reference internal" href="#module-lightnion.create">lightnion.create module</a></li>
+<li><a class="reference internal" href="#module-lightnion.descriptors">lightnion.descriptors module</a></li>
+<li><a class="reference internal" href="#module-lightnion.extend">lightnion.extend module</a></li>
+<li><a class="reference internal" href="#module-lightnion.hop">lightnion.hop module</a></li>
+<li><a class="reference internal" href="#module-lightnion.link">lightnion.link module</a></li>
+<li><a class="reference internal" href="#module-lightnion.onion">lightnion.onion module</a></li>
+<li><a class="reference internal" href="#module-lightnion.path_selection">lightnion.path_selection module</a></li>
+<li><a class="reference internal" href="#module-lightnion.signature">lightnion.signature module</a></li>
+<li><a class="reference internal" href="#module-lightnion.socket">lightnion.socket module</a></li>
+<li><a class="reference internal" href="#module-lightnion.utils">lightnion.utils module</a></li>
+<li><a class="reference internal" href="#module-lightnion">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>lightnion package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lightnion.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="lightnion-package">
+<h1>lightnion package<a class="headerlink" href="#lightnion-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.cell.html">lightnion.cell package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lightnion.cell.relay.html">lightnion.cell.relay package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="lightnion.cell.relay.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay.extend2">lightnion.cell.relay.extend2 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay.extended2">lightnion.cell.relay.extended2 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="lightnion.cell.relay.html#module-lightnion.cell.relay">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.address">lightnion.cell.address module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.certs">lightnion.cell.certs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.challenge">lightnion.cell.challenge module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.common">lightnion.cell.common module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.create2">lightnion.cell.create2 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.create_fast">lightnion.cell.create_fast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.created2">lightnion.cell.created2 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.created_fast">lightnion.cell.created_fast module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.destroy">lightnion.cell.destroy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.netinfo">lightnion.cell.netinfo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.padding">lightnion.cell.padding module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.relay_early">lightnion.cell.relay_early module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.versions">lightnion.cell.versions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell.view">lightnion.cell.view module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.cell.html#module-lightnion.cell">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.crypto.html">lightnion.crypto package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.crypto.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.crypto.html#module-lightnion.crypto.kdf">lightnion.crypto.kdf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.crypto.html#module-lightnion.crypto.ntor">lightnion.crypto.ntor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.crypto.html#module-lightnion.crypto">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.http.html">lightnion.http package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.http.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.http.html#module-lightnion.http.ntor">lightnion.http.ntor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.http.html#module-lightnion.http.polling">lightnion.http.polling module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.http.html#module-lightnion.http.websocket">lightnion.http.websocket module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.http.html#module-lightnion.http">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.proxy.html">lightnion.proxy package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.auth">lightnion.proxy.auth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.forward">lightnion.proxy.forward module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.jobs">lightnion.proxy.jobs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.link">lightnion.proxy.link module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.parts">lightnion.proxy.parts module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.path">lightnion.proxy.path module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy.relayinfo">lightnion.proxy.relayinfo module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.proxy.html#module-lightnion.proxy">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lightnion.tests.html">lightnion.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.path_selection_test">lightnion.tests.path_selection_test module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_consensus_chutney">lightnion.tests.test_consensus_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_create_chutney">lightnion.tests.test_create_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_descriptors_chutney">lightnion.tests.test_descriptors_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_extend_chutney">lightnion.tests.test_extend_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_hop_chutney">lightnion.tests.test_hop_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_link_chutney">lightnion.tests.test_link_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests.test_path_selection_chutney">lightnion.tests.test_path_selection_chutney module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lightnion.tests.html#module-lightnion.tests">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-lightnion.cache">
+<span id="lightnion-cache-module"></span><h2>lightnion.cache module<a class="headerlink" href="#module-lightnion.cache" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.cache.consensus">
+<em class="property">class </em><code class="descclassname">lightnion.cache.</code><code class="descname">consensus</code><a class="reference internal" href="_modules/lightnion/cache.html#consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="staticmethod">
+<dt id="lightnion.cache.consensus.filename">
+<em class="property">static </em><code class="descname">filename</code><span class="sig-paren">(</span><em>flavor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#consensus.filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.consensus.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="lightnion.cache.consensus.get">
+<em class="property">static </em><code class="descname">get</code><span class="sig-paren">(</span><em>flavor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#consensus.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.consensus.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="lightnion.cache.consensus.put">
+<em class="property">static </em><code class="descname">put</code><span class="sig-paren">(</span><em>fields</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#consensus.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.consensus.put" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.cache.descriptors">
+<em class="property">class </em><code class="descclassname">lightnion.cache.</code><code class="descname">descriptors</code><a class="reference internal" href="_modules/lightnion/cache.html#descriptors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.descriptors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="staticmethod">
+<dt id="lightnion.cache.descriptors.filename">
+<em class="property">static </em><code class="descname">filename</code><span class="sig-paren">(</span><em>descriptor</em>, <em>get=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#descriptors.filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.descriptors.filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="lightnion.cache.descriptors.get">
+<em class="property">static </em><code class="descname">get</code><span class="sig-paren">(</span><em>flavor</em>, <em>digest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#descriptors.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.descriptors.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="lightnion.cache.descriptors.put">
+<em class="property">static </em><code class="descname">put</code><span class="sig-paren">(</span><em>descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#descriptors.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.descriptors.put" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cache.directory">
+<code class="descclassname">lightnion.cache.</code><code class="descname">directory</code><span class="sig-paren">(</span><em>base_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#directory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.directory" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.cache.purge">
+<code class="descclassname">lightnion.cache.</code><code class="descname">purge</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/cache.html#purge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.cache.purge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.consensus">
+<span id="lightnion-consensus-module"></span><h2>lightnion.consensus module<a class="headerlink" href="#module-lightnion.consensus" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.consensus.consume_dir_sources">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">consume_dir_sources</code><span class="sig-paren">(</span><em>consensus</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#consume_dir_sources"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.consume_dir_sources" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume directory source listing if present, then returns the remaining
+input to be further processed and a set of directory sources (or None,
+if none present).</p>
+<dl class="docutils">
+<dt>Will consume the following fields:</dt>
+<dd><ul class="first last simple">
+<li>dir-source</li>
+<li>contact</li>
+<li>vote-digest</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>consensus</strong> (<em>str</em>) – input to be processed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (remaining-input, headers-or-None)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.consume_footer">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">consume_footer</code><span class="sig-paren">(</span><em>consensus</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#consume_footer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.consume_footer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume consensus footer if present, then returns the remaining input
+to be further processed and a set of footers (or None, if none
+present).</p>
+<dl class="docutils">
+<dt>Will consume the following fields:</dt>
+<dd><ul class="first last simple">
+<li>directory-footer</li>
+<li>bandwidth-weights</li>
+<li>directory-signature</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>consensus</strong> (<em>str</em>) – input to be processed</li>
+<li><strong>flavor</strong> (<em>str</em>) – consensus flavor (‘unflavored’ or ‘microdesc’)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (remaining-input, headers-or-None)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.consume_headers">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">consume_headers</code><span class="sig-paren">(</span><em>consensus</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#consume_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.consume_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume consensus headers if present, then returns the remaining input
+to be further processed and a set of headers (or None, if none
+present).</p>
+<dl class="docutils">
+<dt>Will consume the following fields:</dt>
+<dd><ul class="first last simple">
+<li>network-status-version</li>
+<li>vote-status</li>
+<li>consensus-method</li>
+<li>valid-after</li>
+<li>fresh-until</li>
+<li>valid-until</li>
+<li>voting-delay</li>
+<li>client-versions</li>
+<li>server-versions</li>
+<li>known-flags</li>
+<li>recommended-client-protocols</li>
+<li>recommended-relay-protocols</li>
+<li>required-client-protocols</li>
+<li>required-relay-protocols</li>
+<li>params</li>
+<li>shared-rand-previous-value</li>
+<li>shared-rand-current-value</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>consensus</strong> (<em>str</em>) – input to be processed</li>
+<li><strong>flavor</strong> (<em>str</em>) – consensus flavor (‘unflavored’ or ‘microdesc’)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (remaining-input, headers-or-None)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.consume_http">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">consume_http</code><span class="sig-paren">(</span><em>consensus</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#consume_http"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.consume_http" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume HTTP headers if present, then returns the remaining input to be
+further processed and a set of headers (or None, if none present).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>consensus</strong> (<em>str</em>) – input to be processed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (remaining-input, headers-or-None)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.consume_routers">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">consume_routers</code><span class="sig-paren">(</span><em>consensus</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#consume_routers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.consume_routers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume router listing if present, then returns the remaining input to
+be further processed and a set of routers (or None, if none present).</p>
+<dl class="docutils">
+<dt>Will consume the following fields:</dt>
+<dd><ul class="first last simple">
+<li>r</li>
+<li>m</li>
+<li>s</li>
+<li>v</li>
+<li>pr</li>
+<li>w</li>
+<li>p (unflavored only)</li>
+<li>a (unflavored only)</li>
+</ul>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>consensus</strong> (<em>str</em>) – input to be processed</li>
+<li><strong>flavor</strong> (<em>str</em>) – consensus flavor (‘unflavored’ or ‘microdesc’)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (remaining-input, headers-or-None)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.download">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">download</code><span class="sig-paren">(</span><em>state</em>, <em>flavor='microdesc'</em>, <em>cache=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.download_direct">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">download_direct</code><span class="sig-paren">(</span><em>hostname</em>, <em>port</em>, <em>flavor='microdesc'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#download_direct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.download_direct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve consensus via a direct HTTP connection.
+:param hostname: host name of the node from which to retrieve the consensus.
+:param port: port of the node from which to retrieve the consensus.
+:param flavor: flavour of the consensus to retrieve.
+:param cache: if the retrieved consensus should put in the cache.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.download_raw">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">download_raw</code><span class="sig-paren">(</span><em>hostname</em>, <em>port</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#download_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.download_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve raw consensus via a direct HTTP connection.
+:param hostname: host name of the node from which to retrieve the consensus.
+:param port: port of the node from which to retrieve the consensus.
+:param flavor: flavour of the consensus to retrieve.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.extract_date">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">extract_date</code><span class="sig-paren">(</span><em>consensus</em>, <em>field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#extract_date"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.extract_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the value from a date field as a datetime object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.extract_nodes_digests_micro">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">extract_nodes_digests_micro</code><span class="sig-paren">(</span><em>consensus_raw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#extract_nodes_digests_micro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.extract_nodes_digests_micro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a list of the digests of all routers in the consensus.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.extract_nodes_digests_unflavored">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">extract_nodes_digests_unflavored</code><span class="sig-paren">(</span><em>consensus_raw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#extract_nodes_digests_unflavored"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.extract_nodes_digests_unflavored" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a list of the digests of all routers in the consensus.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.load">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">load</code><span class="sig-paren">(</span><em>file_name</em>, <em>cache=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the consensus from a file
+:param file_name: the name of the file in consensus_file
+:param cache: if we cache the newly downloaded consensus
+:return: the parsed consensus</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse</code><span class="sig-paren">(</span><em>consensus</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a raw consensus with the given flavor, then returns sanitized
+entries as a python dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>consensus</strong> (<em>str</em>) – input to be processed</li>
+<li><strong>flavor</strong> (<em>str</em>) – consensus flavor (‘unflavored’ or ‘microdesc’)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a python dictionary</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_address">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_address</code><span class="sig-paren">(</span><em>address</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_address"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take a Tor-formatted v4 or v6 IP address with a port, returns a
+cleaned-up version.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> (<em>str</em>) – input address to be processed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (address, port, guessed-type) where port is an
+integer and guessed-type is 4 or 6 (IPv4 or IPv6).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_base64">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_base64</code><span class="sig-paren">(</span><em>payload</em>, <em>decode=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_base64"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_base64" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take an input base64 string, decode it, re-encode it.</p>
+<dl class="docutils">
+<dt>For example, we use it to parse “shared-rand-current-value” fields:</dt>
+<dd><a class="reference external" href="https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2069">https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2069</a></dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>payload</strong> (<em>str</em>) – input base64-encoded data</li>
+<li><strong>decode</strong> (<em>bool</em>) – return raw bytes (default: False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a base64-encoded string equivalent to the input</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_fingerprint">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_fingerprint</code><span class="sig-paren">(</span><em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_fingerprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_fingerprint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_params">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_params</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take Tor-formatted parameters, then returns a keyword-based dictionary
+of integers.</p>
+<dl class="docutils">
+<dt>For example, we use it to parse “params” fields:</dt>
+<dd><a class="reference external" href="https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L1820">https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L1820</a></dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>params</strong> (<em>str</em>) – input params to be processed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a dictionary with (param-name, param-integer-value) items</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_range_once">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_range_once</code><span class="sig-paren">(</span><em>value</em>, <em>expand=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_range_once"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_range_once" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take Tor-formatted ranges, then returns it as a list of integers if
+expanded or a mix of integers and ranges as [low, high] tuples.</p>
+<dl class="docutils">
+<dt>For example, we use it to parse “p” fields:</dt>
+<dd><a class="reference external" href="https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2322">https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L2322</a></dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>value</strong> (<em>str</em>) – input value to be processed</li>
+<li><strong>expand</strong> (<em>bool</em>) – do we expand a range as integers? (default: True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a list of integers or a mix of integers and range list/tuples</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_ranges">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_ranges</code><span class="sig-paren">(</span><em>ranges</em>, <em>expand=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_ranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_ranges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take Tor-formatted named ranges, then returns a keyword-based
+dictionary of list of integers or mix of integers and range tuples (as
+returned by parse_range_once), expanded or not.</p>
+<dl class="docutils">
+<dt>For example, we use it to parse “recommended-client-protocols” fields:</dt>
+<dd><a class="reference external" href="https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L780">https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L780</a></dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ranges</strong> (<em>str</em>) – input ranges to be processed</li>
+<li><strong>expand</strong> (<em>bool</em>) – do we expand ranges as integers? (default: True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a dictionary with (range-name, range-content) items</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.parse_time">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">parse_time</code><span class="sig-paren">(</span><em>timedate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#parse_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.parse_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take a Tor-formatted (Y-m-d H:M:S) time, parse it, then returns the
+corresponding date, time and datetime object. This function assumes
+that the given time uses the UTC timezone – as it’s the timezone used
+into Tor consensuses.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timedate</strong> (<em>str</em>) – input time and date to be parsed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (date-str, time-str, datetime-object)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.scrap">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">scrap</code><span class="sig-paren">(</span><em>consensus</em>, <em>end_of_field</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#scrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.scrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume lines upon matching a criterion.</p>
+<dl class="docutils">
+<dt>Returns (consensus-without-first-line, first-line)</dt>
+<dd>if end_of_field(first-line) returns True,
+else returns (consensus-with-first-line, None)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>consensus</strong> (<em>bytes</em>) – input which first line may be consumed</li>
+<li><strong>end_of_field</strong> (<em>function</em>) – passed a line, returns True when no match</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated-consensus, next-field-or-None)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.consensus.scrap_signature">
+<code class="descclassname">lightnion.consensus.</code><code class="descname">scrap_signature</code><span class="sig-paren">(</span><em>consensus</em>, <em>fix=b'SIGNATURE'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/consensus.html#scrap_signature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.consensus.scrap_signature" title="Permalink to this definition">¶</a></dt>
+<dd><p>Consume a signature field if there is one to consume.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>consensus</strong> (<em>bytes</em>) – input which may start with a signature.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a tuple (updated-consensus, signature-or-None)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.constants">
+<span id="lightnion-constants-module"></span><h2>lightnion.constants module<a class="headerlink" href="#module-lightnion.constants" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.constants.flow">
+<em class="property">class </em><code class="descclassname">lightnion.constants.</code><code class="descname">flow</code><a class="reference internal" href="_modules/lightnion/constants.html#flow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.constants.flow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="class">
+<dt id="lightnion.constants.flow.circuit">
+<em class="property">class </em><code class="descname">circuit</code><a class="reference internal" href="_modules/lightnion/constants.html#flow.circuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.constants.flow.circuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="lightnion.constants.flow.circuit.default">
+<code class="descname">default</code><em class="property"> = 1000</em><a class="headerlink" href="#lightnion.constants.flow.circuit.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.constants.flow.circuit.increment">
+<code class="descname">increment</code><em class="property"> = 100</em><a class="headerlink" href="#lightnion.constants.flow.circuit.increment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.constants.flow.circuit.lowlimit">
+<code class="descname">lowlimit</code><em class="property"> = 900</em><a class="headerlink" href="#lightnion.constants.flow.circuit.lowlimit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.constants.flow.stream">
+<em class="property">class </em><code class="descname">stream</code><a class="reference internal" href="_modules/lightnion/constants.html#flow.stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.constants.flow.stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="lightnion.constants.flow.stream.default">
+<code class="descname">default</code><em class="property"> = 500</em><a class="headerlink" href="#lightnion.constants.flow.stream.default" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.constants.flow.stream.increment">
+<code class="descname">increment</code><em class="property"> = 50</em><a class="headerlink" href="#lightnion.constants.flow.stream.increment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.constants.flow.stream.lowlimit">
+<code class="descname">lowlimit</code><em class="property"> = 450</em><a class="headerlink" href="#lightnion.constants.flow.stream.lowlimit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.create">
+<span id="lightnion-create-module"></span><h2>lightnion.create module<a class="headerlink" href="#module-lightnion.create" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="lightnion.create.circuit">
+<em class="property">class </em><code class="descclassname">lightnion.create.</code><code class="descname">circuit</code><a class="reference internal" href="_modules/lightnion/create.html#circuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.circuit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lightnion.create.circuit" title="lightnion.create.circuit"><code class="xref py py-class docutils literal notranslate"><span class="pre">lightnion.create.circuit</span></code></a></p>
+<dl class="attribute">
+<dt id="lightnion.create.circuit.destroyed">
+<code class="descname">destroyed</code><em class="property"> = False</em><a class="headerlink" href="#lightnion.create.circuit.destroyed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.create.circuit.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#circuit.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.circuit.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.create.circuit.last_stream_id">
+<code class="descname">last_stream_id</code><em class="property"> = 0</em><a class="headerlink" href="#lightnion.create.circuit.last_stream_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.create.circuit.put">
+<code class="descname">put</code><span class="sig-paren">(</span><em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#circuit.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.circuit.put" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.create.circuit.queue">
+<code class="descname">queue</code><em class="property"> = None</em><a class="headerlink" href="#lightnion.create.circuit.queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.create.circuit.reason">
+<code class="descname">reason</code><em class="property"> = None</em><a class="headerlink" href="#lightnion.create.circuit.reason" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.create.circuit.stream_windows">
+<code class="descname">stream_windows</code><em class="property"> = None</em><a class="headerlink" href="#lightnion.create.circuit.stream_windows" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.create.circuit.window">
+<code class="descname">window</code><em class="property"> = None</em><a class="headerlink" href="#lightnion.create.circuit.window" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.fast">
+<code class="descclassname">lightnion.create.</code><code class="descname">fast</code><span class="sig-paren">(</span><em>link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a CREATE_FAST cell to initiate a one-hop circuit.</p>
+<p>The expected transcript is:</p>
+<blockquote>
+<div><blockquote>
+<div>(… perform a proper link handshake here …)</div></blockquote>
+<p>Onion Proxy (client)              Onion Router (server)</p>
+<blockquote>
+<div>/  [ 7] :—— CREATE_FAST¹ ——-&gt; [8]
+|  [10] &lt;—— CREATED_FAST ——-: [9]
+|
+|      Shared circuit key (via KDF-TOR²)</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>¹The initiator picks an available circuit ID (CircID) with its most</dt>
+<dd>significant bit equal to 1 (v4-or-higher links).</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>link</strong> – a link.link object, see: link.initiate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a onion.state object, see: onion.state</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.fast_async">
+<code class="descclassname">lightnion.create.</code><code class="descname">fast_async</code><span class="sig-paren">(</span><em>link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#fast_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.fast_async" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use a CREATE_FAST cell to initiate a one-hop circuit.</p>
+<p>The expected transcript is:</p>
+<blockquote>
+<div><blockquote>
+<div>(… perform a proper link handshake here …)</div></blockquote>
+<p>Onion Proxy (client)              Onion Router (server)</p>
+<blockquote>
+<div>/  [ 7] :—— CREATE_FAST¹ ——-&gt; [8]
+|  [10] &lt;—— CREATED_FAST ——-: [9]
+|
+|      Shared circuit key (via KDF-TOR²)</div></blockquote>
+</div></blockquote>
+<dl class="docutils">
+<dt>¹The initiator picks an available circuit ID (CircID) with its most</dt>
+<dd>significant bit equal to 1 (v4-or-higher links).</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>link</strong> – a link.link object, see: link.initiate</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a onion.state object, see: onion.state</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.ntor">
+<code class="descclassname">lightnion.create.</code><code class="descname">ntor</code><span class="sig-paren">(</span><em>link</em>, <em>descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#ntor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.ntor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.ntor_async">
+<code class="descclassname">lightnion.create.</code><code class="descname">ntor_async</code><span class="sig-paren">(</span><em>link</em>, <em>descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#ntor_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.ntor_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.ntor_handshake">
+<code class="descclassname">lightnion.create.</code><code class="descname">ntor_handshake</code><span class="sig-paren">(</span><em>link</em>, <em>circuit_id</em>, <em>handshake</em>, <em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#ntor_handshake"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.ntor_handshake" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.ntor_raw">
+<code class="descclassname">lightnion.create.</code><code class="descname">ntor_raw</code><span class="sig-paren">(</span><em>link</em>, <em>payload</em>, <em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#ntor_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.ntor_raw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.create.ntor_raw2">
+<code class="descclassname">lightnion.create.</code><code class="descname">ntor_raw2</code><span class="sig-paren">(</span><em>circuit_id</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/create.html#ntor_raw2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.create.ntor_raw2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.descriptors">
+<span id="lightnion-descriptors-module"></span><h2>lightnion.descriptors module<a class="headerlink" href="#module-lightnion.descriptors" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.descriptors.batch_query">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">batch_query</code><span class="sig-paren">(</span><em>items</em>, <em>prefix</em>, <em>separator='-'</em>, <em>fixed_max_length=3968</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#batch_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.batch_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.compute_descriptor_digest">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">compute_descriptor_digest</code><span class="sig-paren">(</span><em>fields</em>, <em>descriptors</em>, <em>entry</em>, <em>flavor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#compute_descriptor_digest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.compute_descriptor_digest" title="Permalink to this definition">¶</a></dt>
+<dd><p>(details of the parser – private API)</p>
+<p>Plugs into our consumer to compute extra “digest” fields that expose
+the (micro-)descriptor’s (micro-)digest, enabling us to easily fetch
+associated entries within a consensus.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fields</strong> (<em>list</em>) – “fields” accumulator used by the consumer</li>
+<li><strong>descriptors</strong> (<em>bytes</em>) – remaining input to be parsed by the consumer</li>
+<li><strong>entry</strong> (<em>bytes</em>) – last line being parsed by the consumer</li>
+<li><strong>flavor</strong> (<em>str</em>) – flavor used by the consumer</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">updated (or not) fields accumulator</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.consume_descriptors">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">consume_descriptors</code><span class="sig-paren">(</span><em>descriptors</em>, <em>flavor='microdesc'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#consume_descriptors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.consume_descriptors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download</code><span class="sig-paren">(</span><em>state</em>, <em>cons=None</em>, <em>flavor='microdesc'</em>, <em>cache=True</em>, <em>fail_on_missing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_authority">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_authority</code><span class="sig-paren">(</span><em>state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_authority"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_authority" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_authority_direct">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_authority_direct</code><span class="sig-paren">(</span><em>host</em>, <em>port</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_authority_direct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_authority_direct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve authority.
+:param host: host from which to retrieve the authority.
+:param port: port from which to retrieve the authority.
+:return: Authority.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_direct">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_direct</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>cons</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_direct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_direct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve  descriptor via a direct HTTP connection.
+:param host: host from which to retrieve the descriptors.
+:param port: port from which to retrieve the descriptors.
+:param cons: consensus for which nodes a descriptor need to be retrieved.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_raw">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_raw</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>cons</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve  descriptor via a direct HTTP connection.
+:param host: host from which to retrieve the descriptors.
+:param port: port from which to retrieve the descriptors.
+:param cons: consensus for which nodes a descriptor need to be retrieved.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_raw_by_digests_micro">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_raw_by_digests_micro</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>digests_bytes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_raw_by_digests_micro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_raw_by_digests_micro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve  descriptor via a direct HTTP connection.
+:param host: host from which to retrieve the descriptors.
+:param port: port from which to retrieve the descriptors.
+:param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_raw_by_digests_unflavored">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_raw_by_digests_unflavored</code><span class="sig-paren">(</span><em>host</em>, <em>port</em>, <em>digests_bytes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_raw_by_digests_unflavored"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_raw_by_digests_unflavored" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve  descriptor via a direct HTTP connection.
+:param host: host from which to retrieve the descriptors.
+:param port: port from which to retrieve the descriptors.
+:param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.download_relay_descriptor">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">download_relay_descriptor</code><span class="sig-paren">(</span><em>host='127.0.0.1'</em>, <em>port=9051</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#download_relay_descriptor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.download_relay_descriptor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve a relay’s own descriptor.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.filter_descriptors">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">filter_descriptors</code><span class="sig-paren">(</span><em>descriptors</em>, <em>digests</em>, <em>flavor='unflavored'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#filter_descriptors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.filter_descriptors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter out the invalid descriptors.
+:param descriptors: Descriptors to be filtered.
+:param digests: Digests from the consensus.
+:param flavor: Flavor of the descriptor.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.descriptors.parse_descriptors">
+<code class="descclassname">lightnion.descriptors.</code><code class="descname">parse_descriptors</code><span class="sig-paren">(</span><em>descriptors</em>, <em>flavor='microdesc'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/descriptors.html#parse_descriptors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.descriptors.parse_descriptors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.extend">
+<span id="lightnion-extend-module"></span><h2>lightnion.extend module<a class="headerlink" href="#module-lightnion.extend" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.extend.circuit">
+<code class="descclassname">lightnion.extend.</code><code class="descname">circuit</code><span class="sig-paren">(</span><em>state</em>, <em>descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/extend.html#circuit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.extend.circuit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.hop">
+<span id="lightnion-hop-module"></span><h2>lightnion.hop module<a class="headerlink" href="#module-lightnion.hop" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.hop.directory_query">
+<code class="descclassname">lightnion.hop.</code><code class="descname">directory_query</code><span class="sig-paren">(</span><em>state</em>, <em>query=None</em>, <em>compression='deflate'</em>, <em>timeout=30</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/hop.html#directory_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.hop.directory_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.hop.recv">
+<code class="descclassname">lightnion.hop.</code><code class="descname">recv</code><span class="sig-paren">(</span><em>state</em>, <em>block=True</em>, <em>once=False</em>, <em>auto_sendme=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/hop.html#recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.hop.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive one or more RELAY{_EARLY,} cells from <cite>state</cite> attached circuit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>block</strong> (<em>bool</em>) – block while receiving? (default: True)</li>
+<li><strong>block</strong> – attempt only receiving once? (default: False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated state, received RELAY{_EARLY,} cells)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Notes:</dt>
+<dd><ul class="first last simple">
+<li>returns an updated state that <em>MUST</em> be used afterwards.</li>
+<li>non-RELAY{_EARLY,} cells within the circuit <em>may be reordered.</em></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.hop.send">
+<code class="descclassname">lightnion.hop.</code><code class="descname">send</code><span class="sig-paren">(</span><em>state</em>, <em>command</em>, <em>payload=b''</em>, <em>stream_id=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/hop.html#send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.hop.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send one RELAY{_EARLY,} cell through <cite>state</cite> attached circuit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>command</strong> (<em>str</em>) – RELAY{_EARLY,} cell command (see cell.relay.cmd)</li>
+<li><strong>payload</strong> (<em>bytes</em>) – RELAY{_EARLY,} cell content (default: b’‘)</li>
+<li><strong>stream_id</strong> (<em>int</em>) – RELAY{_EARLY,} stream ID (default: 0)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">an updated state</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: returns an updated state that *MUST</em> be used afterwards.*</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.hop.zlib_decompress">
+<code class="descclassname">lightnion.hop.</code><code class="descname">zlib_decompress</code><span class="sig-paren">(</span><em>compressed_data</em>, <em>min_bufsize=32</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/hop.html#zlib_decompress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.hop.zlib_decompress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.link">
+<span id="lightnion-link-module"></span><h2>lightnion.link module<a class="headerlink" href="#module-lightnion.link" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.link.initiate">
+<code class="descclassname">lightnion.link.</code><code class="descname">initiate</code><span class="sig-paren">(</span><em>address='127.0.0.1', port=9050, versions=[4, 5]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#initiate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.initiate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Establish a link with the “in-protocol” (v3) handshake as initiator</p>
+<p>The expected transcript is:</p>
+<blockquote>
+<div><blockquote>
+<div><blockquote>
+<div><p>Onion Proxy (client)              Onion Router (server)</p>
+<blockquote>
+<div>/   [1] :——– VERSIONS ———&gt; [2]
+|   [4] &lt;——– VERSIONS ———: [3]
+|
+|           Negotiated Version
+|
+|   [4] &lt;——— CERTS ———–: [3]
+|       &lt;—– AUTH_CHALLENGE ——:
+|       &lt;——– NETINFO ———-:
+|
+|             OP don’t need to</div></blockquote>
+</div></blockquote>
+<p>Link   |               authenticate</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>Protocol |</dt>
+<dd><dl class="first last docutils">
+<dt>&gt;= 3   |   [5] :——– NETINFO ———-&gt; [6]</dt>
+<dd><div class="first last line-block">
+<div class="line"><br /></div>
+<div class="line">Alternative:</div>
+<div class="line">(          We (OR) authenticate         )</div>
+<div class="line">(                                       )</div>
+<div class="line">( [5] :——— CERTS ———–&gt; [6] )</div>
+<div class="line">(     :—— AUTHENTICATE ——-&gt;     )</div>
+<div class="line">(             ^                         )</div>
+<div class="line">(            (answers AUTH_CHALLENGE)   )</div>
+<div class="line">(                                       )</div>
+</div>
+</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>address</strong> (<em>str</em>) – remote relay address (default: 127.0.0.1).</li>
+<li><strong>port</strong> (<em>int</em>) – remote relay ORPort (default: 9050).</li>
+<li><strong>versions</strong> (<em>list</em>) – target link versions (default: [4, 5]).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a link.link object</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.link.link">
+<em class="property">class </em><code class="descclassname">lightnion.link.</code><code class="descname">link</code><span class="sig-paren">(</span><em>io, version, circuits=[0], max_queue=2048</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An established Tor link, send and receive messages in separate threads.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>io</strong> – socket.io instance that wraps the TLS/SSLv3 connection</li>
+<li><strong>version</strong> (<em>int</em>) – link version</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">initiate</span><span class="p">(</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="o">.</span><span class="n">version</span>
+<span class="go">5</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">create_fast</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">31</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">created_fast</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">link</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">circuit_id</span><span class="o">=</span><span class="mi">2</span><span class="o">**</span><span class="mi">31</span><span class="p">))</span><span class="o">.</span><span class="n">valid</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="lightnion.link.link.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>circuit</em>, <em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.pull">
+<code class="descname">pull</code><span class="sig-paren">(</span><em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.pull"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.pull" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.put">
+<code class="descname">put</code><span class="sig-paren">(</span><em>circuit</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.put" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.recv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.register">
+<code class="descname">register</code><span class="sig-paren">(</span><em>circuit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.register" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>cell</em>, <em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.link.link.unregister">
+<code class="descname">unregister</code><span class="sig-paren">(</span><em>circuit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#link.unregister"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.link.unregister" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.link.negotiate_version">
+<code class="descclassname">lightnion.link.</code><code class="descname">negotiate_version</code><span class="sig-paren">(</span><em>peer</em>, <em>versions</em>, <em>*</em>, <em>as_initiator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/link.html#negotiate_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.link.negotiate_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a VERSIONS negotiation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>peer</strong> – ssl.socket instance.</li>
+<li><strong>versions</strong> (<em>list</em>) – target link versions.</li>
+<li><strong>as_initiator</strong> (<em>bool</em>) – send VERSIONS cell first.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.onion">
+<span id="lightnion-onion-module"></span><h2>lightnion.onion module<a class="headerlink" href="#module-lightnion.onion" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.onion.build">
+<code class="descclassname">lightnion.onion.</code><code class="descname">build</code><span class="sig-paren">(</span><em>state</em>, <em>command</em>, <em>payload=b''</em>, <em>stream_id=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a RELAY{_EARLY,} cell.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>command</strong> (<em>str</em>) – RELAY{_EARLY,} cell command (see cell.relay.cmd)</li>
+<li><strong>payload</strong> (<em>bytes</em>) – RELAY{_EARLY,} cell content (default: b’‘)</li>
+<li><strong>stream_id</strong> (<em>int</em>) – RELAY{_EARLY,} stream ID (default: 0)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated state, cell)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: returns an updated state that MUST be used afterwards.</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.onion.core">
+<code class="descclassname">lightnion.onion.</code><code class="descname">core</code><span class="sig-paren">(</span><em>state</em>, <em>command</em>, <em>payload=b''</em>, <em>stream_id=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.core" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a RELAY{_EARLY,} cell as an onion core (plaintext w/ <cite>state</cite>)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>command</strong> (<em>str</em>) – RELAY{_EARLY,} cell command (see cell.relay.cmd)</li>
+<li><strong>payload</strong> (<em>bytes</em>) – RELAY{_EARLY,} cell content (default: b’‘)</li>
+<li><strong>stream_id</strong> (<em>int</em>) – RELAY{_EARLY,} stream ID (default: 0)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated state, cell)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: should not be called explicitly.</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.onion.peel">
+<code class="descclassname">lightnion.onion.</code><code class="descname">peel</code><span class="sig-paren">(</span><em>state</em>, <em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#peel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.peel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrypt a RELAY{_EARLY,} cell using provided <cite>state</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>cell</strong> – a RELAY{_EARLY,} cell object (see cell.relay.cell)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated state, decrypted cell)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: returns an updated state that MUST be used afterwards.</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.onion.recognize">
+<code class="descclassname">lightnion.onion.</code><code class="descname">recognize</code><span class="sig-paren">(</span><em>state</em>, <em>cell</em>, <em>backward=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#recognize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.recognize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to recognize a RELAY{_EARLY,} cell.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state</strong> – a state object (see onion.state)</li>
+<li><strong>cell</strong> – a RELAY{_EARLY,} cell object (see cell.relay.cell)</li>
+<li><strong>backward</strong> (<em>bool</em>) – is it backward? or else forward? (default: True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a tuple (updated state, bool)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: returns an updated state that MUST be used afterwards.</em></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.onion.state">
+<em class="property">class </em><code class="descclassname">lightnion.onion.</code><code class="descname">state</code><span class="sig-paren">(</span><em>link</em>, <em>circuit</em>, <em>early_count=8</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Handle Tor onion-encryption cryptographic states.</p>
+<p><em>For now, only handle cryptography as an initiator (as an OP to an OR).</em></p>
+<p>TODO: add support for __init__(link, circuit, initiator={True,False})</p>
+<blockquote>
+<div><blockquote>
+<div>Status    Condition</div></blockquote>
+<dl class="docutils">
+<dt>backward  decryptor   provided    initiator=True</dt>
+<dd><dl class="first last docutils">
+<dt>encryptor     (none)    initiator=False</dt>
+<dd>digest   provided</dd>
+</dl>
+</dd>
+<dt>forward   decryptor     (none)    initiator=False</dt>
+<dd><dl class="first last docutils">
+<dt>encryptor   provided    initiator=True</dt>
+<dd>digest   provided</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="attribute">
+<dt id="lightnion.onion.state.depth">
+<code class="descname">depth</code><a class="headerlink" href="#lightnion.onion.state.depth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of inner layers in the onion.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.onion.state.early_count">
+<code class="descname">early_count</code><a class="headerlink" href="#lightnion.onion.state.early_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of remaining RELAY_EARLY cells before sending RELAY cells.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.onion.state.wrap">
+<code class="descname">wrap</code><span class="sig-paren">(</span><em>inner</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/onion.html#state.wrap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.onion.state.wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps an inner state w/ self as outer state (see lightnion.extend).</p>
+<dl class="docutils">
+<dt>Usage:</dt>
+<dd><ol class="first last arabic simple">
+<li>A one-hop circuit is build with stateA.</li>
+<li>A key exchange is made through stateA to get stateB.</li>
+<li>Then, call stateA.wrap(stateB) to properly wrap the onion.</li>
+</ol>
+</dd>
+<dt>Usage:</dt>
+<dd><ol class="first last arabic simple">
+<li>A two-hop circuit is build with state{A,B}.</li>
+<li>A key exchange is made through state{A,B} to get stateC.</li>
+<li>Then, call statea.wrap(stateC) to properly wrap the onion.</li>
+</ol>
+</dd>
+</dl>
+<p><em>Note: should not be called explicitly.</em></p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.path_selection">
+<span id="lightnion-path-selection-module"></span><h2>lightnion.path_selection module<a class="headerlink" href="#module-lightnion.path_selection" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.path_selection.in_same_family">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">in_same_family</code><span class="sig-paren">(</span><em>r0</em>, <em>r1</em>, <em>r2=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#in_same_family"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.in_same_family" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if r0 and r1 (and possibly r0 and r2) are in the same family or not
+:param r0: the descriptor of the first router (the router we are trying to see if it meets all conditions to be chosen)
+:param r1: the descriptor of the second router
+:param r2: the descriptor of the third router (possibly none)
+:return: a boolean</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_exit">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_exit</code><span class="sig-paren">(</span><em>router</em>, <em>state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_exit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_exit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the router is not a bad exit, is not down, is stable,
+is valid, does not run an old TOR’s version, has an available ed25519
+identity key and has an ‘accept’ exit policy
+:params router: the router we want to check
+:state:
+:return: tuple (boolean that indicates if we keep it, new state, descriptor)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_exit_with_descr">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_exit_with_descr</code><span class="sig-paren">(</span><em>descr</em>, <em>router</em>, <em>guard</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_exit_with_descr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_exit_with_descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the router is not a bad exit, is not down, is stable,
+is valid, does not run an old TOR’s version, has an available ed25519
+identity key and has an ‘accept’ exit policy
+:param descr: descriptor of the exit candidate.
+:params router: the router we want to check
+:param guard: the guard in the path
+:return: tuple (boolean that indicates if we keep it, new state, descriptor)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_guard">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_guard</code><span class="sig-paren">(</span><em>router</em>, <em>state</em>, <em>exit_node</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_guard"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_guard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given router has the properties to be a guard
+:param router: the router that must be inspected
+:param state: state
+:param exit_node: the previously chosen node
+:return: if the router can be kept, the updated state and the descriptor</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_guard_with_descr">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_guard_with_descr</code><span class="sig-paren">(</span><em>descr</em>, <em>router</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_guard_with_descr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_guard_with_descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given router has the properties to be a guard
+:param descr: descriptor of the exit candidate.
+:param router: the router that must be inspected
+:return: if the router can be kept, the updated state and the descriptor</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_middle">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_middle</code><span class="sig-paren">(</span><em>router</em>, <em>state</em>, <em>exit_node</em>, <em>guard</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_middle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_middle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given router has the properties to be a middle node
+:param router: the router that must be inspected
+:param state: state
+:param exit_node: the previously chosen exit node
+:param guard: the previously chosen guard
+:return: if the router can be kept, the updated state and the descriptor</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.keep_middle_with_descr">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">keep_middle_with_descr</code><span class="sig-paren">(</span><em>descr</em>, <em>router</em>, <em>exit_node</em>, <em>guard</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#keep_middle_with_descr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.keep_middle_with_descr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given router has the properties to be a middle node
+:param descr: descriptor of the exit candidate.
+:param router: the router that must be inspected
+:param exit_node: the previously chosen exit node
+:param guard: the previously chosen guard
+:return: if the router can be kept, the updated state and the descriptor</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.obey_minimal_constraint">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">obey_minimal_constraint</code><span class="sig-paren">(</span><em>router</em>, <em>exit_node=None</em>, <em>guard=None</em>, <em>testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#obey_minimal_constraint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.obey_minimal_constraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the given router respects the minimal constraints
+:param testing:
+:param router: router that must respect the constraints
+:param exit_node: the chosen exit node
+:param guard: the chosen guard node
+:return: boolean</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_entry">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_entry</code><span class="sig-paren">(</span><em>routers</em>, <em>state</em>, <em>exit_node</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_entry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_entry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplified version of the Guard selection algorithm
+:param routers: the routers of the consensus
+:param state: the state
+:return: updated state and the descriptor of the guard node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_entry_from_routers">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_entry_from_routers</code><span class="sig-paren">(</span><em>descr</em>, <em>routers</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_entry_from_routers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_entry_from_routers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simplified version of the Guard selection algorithm
+:param routers: the routers of the consensus
+:param state: the state
+:return: updated state and the descriptor of the guard node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_exit">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_exit</code><span class="sig-paren">(</span><em>routers</em>, <em>state</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_exit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_exit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose the exit node
+:param routers: the routers given by the consensus
+:param state: the state
+:return: the descriptor of the exit node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_exit_from_routers">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_exit_from_routers</code><span class="sig-paren">(</span><em>descr</em>, <em>routers</em>, <em>guard</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_exit_from_routers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_exit_from_routers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose the exit node
+:param routers: the routers given by the consensus
+:param guard: the guard in the path
+:return: the descriptor of the exit node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_middle">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_middle</code><span class="sig-paren">(</span><em>routers</em>, <em>state</em>, <em>exit_node</em>, <em>guard</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_middle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_middle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose the middle node given the exit and the guard node
+:param routers: the routers of the consensus
+:param state: the state
+:param exit_node: the previously chosen exit node
+:param guard: the previously chosen guard node
+:return: updated state and the descriptor of the guard node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.pick_good_middle_from_routers">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">pick_good_middle_from_routers</code><span class="sig-paren">(</span><em>descr</em>, <em>routers</em>, <em>exit_node</em>, <em>guard</em>, <em>testing</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#pick_good_middle_from_routers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.pick_good_middle_from_routers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose the middle node given the exit and the guard node
+:param routers: the routers of the consensus
+:param exit_node: the previously chosen exit node
+:param guard: the previously chosen guard node
+:return: updated state and the descriptor of the guard node</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.select_end_path_from_consensus">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">select_end_path_from_consensus</code><span class="sig-paren">(</span><em>cons</em>, <em>descr</em>, <em>guard</em>, <em>testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#select_end_path_from_consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.select_end_path_from_consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle the selection of the middle and exit nodes
+:params routers: list of the routers given by the consensus
+:params descr: list of descriptors
+:returns: tuple (guard, middle, exit)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.select_guard_from_consensus">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">select_guard_from_consensus</code><span class="sig-paren">(</span><em>cons</em>, <em>descr</em>, <em>testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#select_guard_from_consensus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.select_guard_from_consensus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle the selection of the guard node
+:params routers: list of the routers given by the consensus
+:params descr: list of descriptors
+:returns: tuple (guard, middle, exit)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.select_path">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">select_path</code><span class="sig-paren">(</span><em>routers</em>, <em>state</em>, <em>testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#select_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.select_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle the path selection
+:params routers: list of the routers given by the consensus
+:state:
+:returns: updated state tuple (guard, middle, exit)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.path_selection.weighted_random_choice">
+<code class="descclassname">lightnion.path_selection.</code><code class="descname">weighted_random_choice</code><span class="sig-paren">(</span><em>list_of_possible</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/path_selection.html#weighted_random_choice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.path_selection.weighted_random_choice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Choose one of the candidates at random weighted by their (avg) bandwidth
+:params list_of_possible: list of descriptors of the candidates
+:returns: descriptor of the randomly selected router</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.signature">
+<span id="lightnion-signature-module"></span><h2>lightnion.signature module<a class="headerlink" href="#module-lightnion.signature" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.signature.get_binary_signature">
+<code class="descclassname">lightnion.signature.</code><code class="descname">get_binary_signature</code><span class="sig-paren">(</span><em>fingerprint</em>, <em>signatures_and_key_digest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#get_binary_signature"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.get_binary_signature" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function encodes a signature in base64 pem format into binary
+:param fingerprint: the fingerprint of the author of the signature we want to encode
+:param signatures_and_key_digest: the mapping from fingerprints to signature (and the signature key digest)
+:return: the binary version of the signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.signature.get_hash">
+<code class="descclassname">lightnion.signature.</code><code class="descname">get_hash</code><span class="sig-paren">(</span><em>public_key</em>, <em>signature</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#get_hash"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.get_hash" title="Permalink to this definition">¶</a></dt>
+<dd><p>This functions performs RSA on a binary signature
+:param public_key: the key used to compute RSA
+:param signature: the signature
+:return: the binary digest of the signature</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.signature.get_signature_and_digests">
+<code class="descclassname">lightnion.signature.</code><code class="descname">get_signature_and_digests</code><span class="sig-paren">(</span><em>remaining</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#get_signature_and_digests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.get_signature_and_digests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that get the signature and the hex digests from the remaining part of the consensus
+:param remaining: remaining (without the part that must be hashed) part of the consensus split by authority
+:return: dictionary mapping the fingerprint of an authority and both its signature and the hex digest of its public
+key</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.signature.verify">
+<code class="descclassname">lightnion.signature.</code><code class="descname">verify</code><span class="sig-paren">(</span><em>raw_cons</em>, <em>keys</em>, <em>minimal=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.verify" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function verifies the given raw consensus</p>
+<dl class="docutils">
+<dt>Note:   TOR does not perform a full PKCS#1 v1.5 signature (RFC 2313) as mentioned in the TOR’s reference.</dt>
+<dd>The padding of the data that must be signed is done following the reference (see subsection 8.1 of the
+RFC 2313 for more details), however the digest is not wrapped into the data structure described in the
+subsection 10.1.2. This is the reason why RSA is performed manually and the module PKCS1_v1_5 of pycrypto is
+not used.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>raw_cons</strong> – the consensus we want to verify</li>
+<li><strong>keys</strong> – a dictionary of keys as retrieved by the function get_signing_keys_info of tools/keys.py</li>
+<li><strong>minimal</strong> – the minimal percentage of the authorities whose signatures must be verified in order to accept the</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>given consensus
+:return: true if at least the minimal number of signatures are verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.signature.verify_format">
+<code class="descclassname">lightnion.signature.</code><code class="descname">verify_format</code><span class="sig-paren">(</span><em>padded_hash</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#verify_format"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.verify_format" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function verifies that the hash as the good format, i.e:
+# 1 byte  - [null ‘’]
+# 1 byte  - [block type identifier ‘’] - Should always be 1
+# N bytes - [padding ‘ÿ’ ]
+# 1 byte  - [separator ‘’ ]
+# M bytes - [message]
+:param padded_hash:
+:return: true if the format is correct</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.signature.verify_key">
+<code class="descclassname">lightnion.signature.</code><code class="descname">verify_key</code><span class="sig-paren">(</span><em>actual</em>, <em>hex_digest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/signature.html#verify_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.signature.verify_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that verify that the downloaded key corresponds to the hex digest of the consensus
+:param actual: the key with the format</p>
+<p>—–BEGIN RSA PUBLIC KEY—–</p>
+<p>base64 encoded key split on multiples lines ending with</p>
+<p>—–END RSA PUBLIC KEY—–</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>hex_digest</strong> – the sha1 digest of the key</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">true if the key is verified</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.socket">
+<span id="lightnion-socket-module"></span><h2>lightnion.socket module<a class="headerlink" href="#module-lightnion.socket" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="lightnion.socket.cell_slice">
+<code class="descclassname">lightnion.socket.</code><code class="descname">cell_slice</code><span class="sig-paren">(</span><em>payload</em>, <em>once=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#cell_slice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.cell_slice" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="lightnion.socket.io">
+<em class="property">class </em><code class="descclassname">lightnion.socket.</code><code class="descname">io</code><span class="sig-paren">(</span><em>peer</em>, <em>daemon=True</em>, <em>period=0.01</em>, <em>max_fails=32</em>, <em>max_queue=2048</em>, <em>buffer_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#io"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.io" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="lightnion.socket.io.binding">
+<code class="descname">binding</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#io.binding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.io.binding" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.io.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#io.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.io.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.socket.io.dead">
+<code class="descname">dead</code><a class="headerlink" href="#lightnion.socket.io.dead" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="lightnion.socket.io.pending">
+<code class="descname">pending</code><a class="headerlink" href="#lightnion.socket.io.pending" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.io.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#io.recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.io.recv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.io.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>payload</em>, <em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#io.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.io.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="lightnion.socket.worker">
+<em class="property">class </em><code class="descclassname">lightnion.socket.</code><code class="descname">worker</code><span class="sig-paren">(</span><em>peer</em>, <em>max_fails=32</em>, <em>max_queue=2048</em>, <em>buffer_size=4096</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">threading.Thread</span></code></p>
+<dl class="method">
+<dt id="lightnion.socket.worker.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.worker.die">
+<code class="descname">die</code><span class="sig-paren">(</span><em>e</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.die"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.die" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.worker.main">
+<code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.worker.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.recv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.worker.run">
+<code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method representing the thread’s activity.</p>
+<p>You may override this method in a subclass. The standard run() method
+invokes the callable object passed to the object’s constructor as the
+target argument, if any, with sequential and keyword arguments taken
+from the args and kwargs arguments, respectively.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="lightnion.socket.worker.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>cell</em>, <em>block=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/socket.html#worker.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.socket.worker.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-lightnion.utils">
+<span id="lightnion-utils-module"></span><h2>lightnion.utils module<a class="headerlink" href="#module-lightnion.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="lightnion.utils.InvalidCellHeaderException">
+<em class="property">exception </em><code class="descclassname">lightnion.utils.</code><code class="descname">InvalidCellHeaderException</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#InvalidCellHeaderException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.InvalidCellHeaderException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="lightnion.utils.InvalidCellLengthException">
+<em class="property">exception </em><code class="descclassname">lightnion.utils.</code><code class="descname">InvalidCellLengthException</code><a class="reference internal" href="_modules/lightnion/utils.html#InvalidCellLengthException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.InvalidCellLengthException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_get_cid">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_get_cid</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_get_cid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_get_cid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_get_cmd">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_get_cmd</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_get_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_get_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_get_len">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_get_len</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_get_len"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_get_len" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_is_valid">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_is_valid</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_is_valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_is_variable_length">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_is_variable_length</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_is_variable_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_is_variable_length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_netinfo_build">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_netinfo_build</code><span class="sig-paren">(</span><em>host</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_netinfo_build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_netinfo_build" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_pad_null">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_pad_null</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_pad_null"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_pad_null" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_pad_rnd">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_pad_rnd</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_pad_rnd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_pad_rnd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_set_cid">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_set_cid</code><span class="sig-paren">(</span><em>cell</em>, <em>cid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_set_cid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_set_cid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_slice">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_slice</code><span class="sig-paren">(</span><em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_slice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_slice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the next cell from the payload and truncate that one.
+:param payload: bytearray</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_slice_old">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_slice_old</code><span class="sig-paren">(</span><em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_slice_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_slice_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the next cell from the payload and truncate that one.
+:param payload: bytearray</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_to_str">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_to_str</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_to_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_to_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_version_build">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_version_build</code><span class="sig-paren">(</span><em>versions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_version_build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_version_build" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_version_get_cmd">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_version_get_cmd</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_version_get_cmd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_version_get_cmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_version_get_len">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_version_get_len</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_version_get_len"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_version_get_len" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_version_get_versions">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_version_get_versions</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_version_get_versions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_version_get_versions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cell_version_is_valid">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cell_version_is_valid</code><span class="sig-paren">(</span><em>cell</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cell_version_is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cell_version_is_valid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="lightnion.utils.cmd_to_str">
+<code class="descclassname">lightnion.utils.</code><code class="descname">cmd_to_str</code><span class="sig-paren">(</span><em>cmd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/lightnion/utils.html#cmd_to_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#lightnion.utils.cmd_to_str" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-lightnion">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-lightnion" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

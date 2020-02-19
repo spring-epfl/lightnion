@@ -1,0 +1,416 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.utils &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<div class="viewcode-block" id="InvalidCellHeaderException"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.InvalidCellHeaderException">[docs]</a><span class="k">class</span> <span class="nc">InvalidCellHeaderException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s1">&#39;Invalid cell header: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">header</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="InvalidCellLengthException"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.InvalidCellLengthException">[docs]</a><span class="k">class</span> <span class="nc">InvalidCellLengthException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<span class="n">cell_cmd_to_string</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;PADDING&quot;</span><span class="p">,</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;CREATE&quot;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;CREATED&quot;</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;RELAY&quot;</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;DESTROY&quot;</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="s2">&quot;CREATE_FAST&quot;</span><span class="p">,</span>
+    <span class="mi">6</span><span class="p">:</span> <span class="s2">&quot;CREATED_FAST&quot;</span><span class="p">,</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="s2">&quot;VERSIONS&quot;</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="s2">&quot;NETINFO&quot;</span><span class="p">,</span>
+    <span class="mi">9</span><span class="p">:</span> <span class="s2">&quot;RELAY_EARLY&quot;</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">:</span> <span class="s2">&quot;CREATE2&quot;</span><span class="p">,</span>
+    <span class="mi">11</span><span class="p">:</span> <span class="s2">&quot;CREATED2&quot;</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="s2">&quot;PADDING_NEGOTIATE&quot;</span><span class="p">,</span>
+    <span class="mi">128</span><span class="p">:</span> <span class="s2">&quot;VPADDING&quot;</span><span class="p">,</span>
+    <span class="mi">129</span><span class="p">:</span> <span class="s2">&quot;CERTS&quot;</span><span class="p">,</span>
+    <span class="mi">130</span><span class="p">:</span> <span class="s2">&quot;AUTH_CHALLENGE&quot;</span><span class="p">,</span>
+    <span class="mi">131</span><span class="p">:</span> <span class="s2">&quot;AUTHENTICATE&quot;</span><span class="p">,</span>
+    <span class="mi">132</span><span class="p">:</span> <span class="s2">&quot;AUTHORIZE&quot;</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="cell_to_str"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_to_str">[docs]</a><span class="k">def</span> <span class="nf">cell_to_str</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="cell_get_cid"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_get_cid">[docs]</a><span class="k">def</span> <span class="nf">cell_get_cid</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">cell</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="cell_set_cid"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_set_cid">[docs]</a><span class="k">def</span> <span class="nf">cell_set_cid</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cid</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">cell</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span></div>
+
+
+<div class="viewcode-block" id="cell_get_cmd"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_get_cmd">[docs]</a><span class="k">def</span> <span class="nf">cell_get_cmd</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cell</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="cell_version_get_cmd"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_version_get_cmd">[docs]</a><span class="k">def</span> <span class="nf">cell_version_get_cmd</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="cell_get_len"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_get_len">[docs]</a><span class="k">def</span> <span class="nf">cell_get_len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">cell</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">7</span><span class="p">],</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="cell_version_get_len"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_version_get_len">[docs]</a><span class="k">def</span> <span class="nf">cell_version_get_len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">cell</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">],</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="cell_pad_rnd"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_pad_rnd">[docs]</a><span class="k">def</span> <span class="nf">cell_pad_rnd</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">cell_is_variable_length</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">+</span> <span class="n">cell_get_len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">514</span>
+
+    <span class="k">if</span> <span class="n">cell_len</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cell</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="n">cell_len</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cell</span></div>
+
+
+<div class="viewcode-block" id="cell_pad_null"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_pad_null">[docs]</a><span class="k">def</span> <span class="nf">cell_pad_null</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">cell_is_variable_length</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">+</span> <span class="n">cell_get_len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">514</span>
+
+    <span class="k">if</span> <span class="n">cell_len</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cell</span> <span class="o">+</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">cell_len</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cell</span></div>
+
+
+<div class="viewcode-block" id="cell_is_valid"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_is_valid">[docs]</a><span class="k">def</span> <span class="nf">cell_is_valid</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">cell_get_cmd</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cmd</span> <span class="ow">in</span>  <span class="n">cell_cmd_to_string</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">cell_len</span> <span class="o">=</span> <span class="n">cell_get_len</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cell_len</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># TODO: add some checks.</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="cell_is_variable_length"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_is_variable_length">[docs]</a><span class="k">def</span> <span class="nf">cell_is_variable_length</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">cmd</span> <span class="o">&gt;=</span> <span class="mi">128</span> <span class="ow">or</span> <span class="n">cmd</span> <span class="o">==</span> <span class="mi">7</span></div>
+
+
+<div class="viewcode-block" id="cmd_to_str"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cmd_to_str">[docs]</a><span class="k">def</span> <span class="nf">cmd_to_str</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">cmd</span> <span class="ow">in</span>  <span class="n">cell_cmd_to_string</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">cell_cmd_to_string</span><span class="p">[</span><span class="n">cmd</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="s1">&#39;UNKNOWN (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="cell_version_build"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_version_build">[docs]</a><span class="k">def</span> <span class="nf">cell_version_build</span><span class="p">(</span><span class="n">versions</span><span class="p">):</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00\x00\x07</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">version</span> <span class="ow">in</span> <span class="n">versions</span><span class="p">:</span>
+        <span class="n">cell</span> <span class="o">+=</span> <span class="n">version</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">cell</span></div>
+
+
+<div class="viewcode-block" id="cell_version_is_valid"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_version_is_valid">[docs]</a><span class="k">def</span> <span class="nf">cell_version_is_valid</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">cell_version_get_cmd</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cmd</span> <span class="o">!=</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="n">cell_len</span> <span class="o">=</span> <span class="n">cell_version_get_len</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cell_len</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="c1"># TODO: add some checks.</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="cell_version_get_versions"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_version_get_versions">[docs]</a><span class="k">def</span> <span class="nf">cell_version_get_versions</span><span class="p">(</span><span class="n">cell</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">cell</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">),</span> <span class="mi">2</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="cell_netinfo_build"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_netinfo_build">[docs]</a><span class="k">def</span> <span class="nf">cell_netinfo_build</span><span class="p">(</span><span class="n">host</span><span class="p">):</span>
+    <span class="n">tstmp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">host</span> <span class="o">==</span> <span class="s1">&#39;localhost&#39;</span><span class="p">:</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x7f\x00\x00\x01</span><span class="s1">&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">inet_aton</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+
+    <span class="n">addr_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">addr_len</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">addr_t</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x04</span><span class="s1">&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">addr_t</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x06</span><span class="s1">&#39;</span>
+
+    <span class="n">cell</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\x00\x00\x00\x00\x08</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">tstmp</span> <span class="o">+</span> <span class="n">addr_t</span> <span class="o">+</span> <span class="n">addr_len</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;big&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">addr</span>
+
+    <span class="c1"># padding</span>
+    <span class="n">cell</span> <span class="o">+=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">514</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">cell</span></div>
+
+
+<div class="viewcode-block" id="cell_slice"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_slice">[docs]</a><span class="k">def</span> <span class="nf">cell_slice</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve the next cell from the payload and truncate that one.</span>
+<span class="sd">    :param payload: bytearray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">payload_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">payload_len</span> <span class="o">&lt;</span> <span class="mi">7</span><span class="p">:</span> <span class="c1"># (payload too small, need data)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">cell_get_cmd</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cell_is_variable_length</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">+</span> <span class="n">cell_get_len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cell_len</span> <span class="o">=</span> <span class="mi">514</span>
+
+    <span class="k">if</span> <span class="n">payload_len</span> <span class="o">&lt;</span> <span class="n">cell_len</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span>
+
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[:</span><span class="n">cell_len</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cell</span><span class="p">,</span> <span class="n">payload</span><span class="p">[</span><span class="n">cell_len</span><span class="p">:]</span></div>
+
+
+<span class="c1">#def cell_version_slice(payload):</span>
+<span class="c1">#    payload_len = len(payload)</span>
+<span class="c1">#    if payload_len &lt; 5: # (payload too small, need data)</span>
+<span class="c1">#        return None, payload</span>
+<span class="c1">#</span>
+<span class="c1">#    cell_len = 5 + cell_version_get_len(payload)</span>
+<span class="c1">#</span>
+<span class="c1">#    if payload_len &lt; cell_len:</span>
+<span class="c1">#        return None, payload</span>
+<span class="c1">#    </span>
+<span class="c1">#    cell = payload[:cell_len]</span>
+<span class="c1">#</span>
+<span class="c1">#    return cell, payload[cell_len:]</span>
+
+
+<div class="viewcode-block" id="cell_slice_old"><a class="viewcode-back" href="../../lightnion.html#lightnion.utils.cell_slice_old">[docs]</a><span class="k">def</span> <span class="nf">cell_slice_old</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retrieve the next cell from the payload and truncate that one.</span>
+<span class="sd">    :param payload: bytearray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cell_header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span><span class="p">:</span> <span class="c1"># (payload too small, need data)</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidCellHeaderException</span><span class="p">(</span><span class="n">cell_header</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="n">length</span> <span class="o">=</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="n">lnn</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">payload_len</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">is_fixed</span><span class="p">:</span>
+        <span class="n">cell_header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header_variable</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span><span class="p">:</span> <span class="c1"># (payload too small, need data)</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidCellHeaderException</span><span class="p">(</span><span class="n">cell_header</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+        <span class="n">length</span> <span class="o">=</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">width</span> <span class="o">+</span> <span class="n">cell_header</span><span class="o">.</span><span class="n">length</span>
+
+    <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="n">lnn</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">max_payload_len</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InvalidCellLengthException</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span>
+
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[:</span><span class="n">length</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">cell</span><span class="p">,</span> <span class="n">payload</span><span class="p">[</span><span class="n">length</span><span class="p">:]</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

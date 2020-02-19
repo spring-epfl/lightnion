@@ -1,0 +1,686 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.path_selection &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.path_selection</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.path_selection</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">lightnion.descriptors</span> <span class="k">as</span> <span class="nn">descriptors</span>
+
+<span class="c1"># Chutney launches all relays in the same subnet.</span>
+<span class="c1"># So to test the proxy with Chutney, these checks needs to be disabled.</span>
+<span class="n">check_different_subnets</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="select_path"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.select_path">[docs]</a><span class="k">def</span> <span class="nf">select_path</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle the path selection</span>
+<span class="sd">    :params routers: list of the routers given by the consensus</span>
+<span class="sd">    :state:</span>
+<span class="sd">    :returns: updated state tuple (guard, middle, exit)&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="n">routers</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">routers</span> <span class="k">if</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+
+    <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span> <span class="o">=</span> <span class="n">pick_good_exit</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+    <span class="n">state</span><span class="p">,</span> <span class="n">guard</span> <span class="o">=</span> <span class="n">pick_good_entry</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+
+    <span class="n">state</span><span class="p">,</span> <span class="n">middle</span> <span class="o">=</span> <span class="n">pick_good_middle</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">middle</span><span class="p">,</span> <span class="n">exit_node</span></div>
+
+
+<div class="viewcode-block" id="select_guard_from_consensus"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.select_guard_from_consensus">[docs]</a><span class="k">def</span> <span class="nf">select_guard_from_consensus</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="n">descr</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle the selection of the guard node</span>
+<span class="sd">    :params routers: list of the routers given by the consensus</span>
+<span class="sd">    :params descr: list of descriptors</span>
+<span class="sd">    :returns: tuple (guard, middle, exit)&quot;&quot;&quot;</span>
+
+    <span class="n">routers</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+
+    <span class="n">guard</span> <span class="o">=</span> <span class="n">pick_good_entry_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">guard</span></div>
+
+
+<div class="viewcode-block" id="select_end_path_from_consensus"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.select_end_path_from_consensus">[docs]</a><span class="k">def</span> <span class="nf">select_end_path_from_consensus</span><span class="p">(</span><span class="n">cons</span><span class="p">,</span> <span class="n">descr</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle the selection of the middle and exit nodes</span>
+<span class="sd">    :params routers: list of the routers given by the consensus</span>
+<span class="sd">    :params descr: list of descriptors</span>
+<span class="sd">    :returns: tuple (guard, middle, exit)&quot;&quot;&quot;</span>
+
+    <span class="n">routers</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span>
+    <span class="n">exit_node</span> <span class="o">=</span> <span class="n">pick_good_exit_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">guard</span><span class="p">)</span>
+    <span class="n">middle</span>    <span class="o">=</span> <span class="n">pick_good_middle_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">middle</span><span class="p">,</span> <span class="n">exit_node</span></div>
+
+
+<div class="viewcode-block" id="obey_minimal_constraint"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.obey_minimal_constraint">[docs]</a><span class="k">def</span> <span class="nf">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">guard</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks if the given router respects the minimal constraints</span>
+<span class="sd">    :param testing:</span>
+<span class="sd">    :param router: router that must respect the constraints</span>
+<span class="sd">    :param exit_node: the chosen exit node</span>
+<span class="sd">    :param guard: the chosen guard node</span>
+<span class="sd">    :return: boolean&quot;&quot;&quot;</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span>
+    <span class="n">router_address</span> <span class="o">=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;address&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check that the router  is running, valid and has a recent version of TOR</span>
+    <span class="k">if</span> <span class="s1">&#39;Running&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s1">&#39;Valid&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Tor 0.3.&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">exit_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="c1"># check that they are distinct</span>
+        <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">exit_node</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># check if they are in the same 16 subnet</span>
+        <span class="k">if</span> <span class="n">check_different_subnets</span><span class="p">:</span>
+            <span class="n">exit_addr</span> <span class="o">=</span> <span class="n">exit_node</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;address&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">testing</span> <span class="ow">and</span> <span class="n">router_address</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">exit_addr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">router_address</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">exit_addr</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">guard</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="c1"># check that they are distinct</span>
+        <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">guard</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># check if they are in the same 16 subnet</span>
+        <span class="k">if</span> <span class="n">check_different_subnets</span><span class="p">:</span>
+            <span class="n">guard_addr</span> <span class="o">=</span> <span class="n">guard</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;address&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">testing</span> <span class="ow">and</span> <span class="n">router_address</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">guard_addr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">router_address</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">guard_addr</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="in_same_family"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.in_same_family">[docs]</a><span class="k">def</span> <span class="nf">in_same_family</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Check if r0 and r1 (and possibly r0 and r2) are in the same family or not</span>
+<span class="sd">    :param r0: the descriptor of the first router (the router we are trying to see if it meets all conditions to be chosen)</span>
+<span class="sd">    :param r1: the descriptor of the second router</span>
+<span class="sd">    :param r2: the descriptor of the third router (possibly none)</span>
+<span class="sd">    :return: a boolean&quot;&quot;&quot;</span>
+
+    <span class="c1"># check if r0 and r1 are in the same family</span>
+    <span class="k">if</span> <span class="s1">&#39;family&#39;</span> <span class="ow">in</span> <span class="n">r0</span> <span class="ow">and</span> <span class="s1">&#39;family&#39;</span> <span class="ow">in</span> <span class="n">r1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r0</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r1</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">if</span> <span class="n">r2</span> <span class="ow">and</span> <span class="s1">&#39;family&#39;</span> <span class="ow">in</span> <span class="n">r0</span> <span class="ow">and</span> <span class="s1">&#39;family&#39;</span> <span class="ow">in</span> <span class="n">r2</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r0</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">r2</span><span class="p">[</span><span class="s1">&#39;family&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="keep_exit"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_exit">[docs]</a><span class="k">def</span> <span class="nf">keep_exit</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the router is not a bad exit, is not down, is stable,</span>
+<span class="sd">    is valid, does not run an old TOR&#39;s version, has an available ed25519</span>
+<span class="sd">    identity key and has an &#39;accept&#39; exit policy</span>
+<span class="sd">    :params router: the router we want to check</span>
+<span class="sd">    :state:</span>
+<span class="sd">    :return: tuple (boolean that indicates if we keep it, new state, descriptor)&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Exit&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;BadExit&#39;</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Retrieve the descriptor</span>
+    <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span> <span class="o">=</span> <span class="n">descriptors</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="n">router</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nhop</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">nhop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;policy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+    
+    <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;policy&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*:*&quot;</span> <span class="ow">and</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;accept&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span>
+    
+    <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="keep_exit_with_descr"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_exit_with_descr">[docs]</a><span class="k">def</span> <span class="nf">keep_exit_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">guard</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the router is not a bad exit, is not down, is stable,</span>
+<span class="sd">    is valid, does not run an old TOR&#39;s version, has an available ed25519</span>
+<span class="sd">    identity key and has an &#39;accept&#39; exit policy</span>
+<span class="sd">    :param descr: descriptor of the exit candidate.</span>
+<span class="sd">    :params router: the router we want to check</span>
+<span class="sd">    :param guard: the guard in the path</span>
+<span class="sd">    :return: tuple (boolean that indicates if we keep it, new state, descriptor)&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">guard</span><span class="o">=</span><span class="n">guard</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Exit&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;BadExit&#39;</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">descr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">descr</span><span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;policy&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">in_same_family</span><span class="p">(</span><span class="n">nhop</span><span class="p">,</span> <span class="n">guard</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;policy&#39;</span><span class="p">][</span><span class="s1">&#39;rules&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;*:*&quot;</span> <span class="ow">and</span> <span class="n">rule</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;accept&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span>  <span class="n">nhop</span>
+    
+    <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="weighted_random_choice"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.weighted_random_choice">[docs]</a><span class="k">def</span> <span class="nf">weighted_random_choice</span><span class="p">(</span><span class="n">list_of_possible</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose one of the candidates at random weighted by their (avg) bandwidth</span>
+<span class="sd">    :params list_of_possible: list of descriptors of the candidates</span>
+<span class="sd">    :returns: descriptor of the randomly selected router&quot;&quot;&quot;</span>
+
+    <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">list_of_possible</span><span class="p">:</span>
+        <span class="n">total</span> <span class="o">+=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">][</span><span class="s1">&#39;avg&#39;</span><span class="p">]</span>
+
+    <span class="n">r</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total</span><span class="p">)</span>
+    <span class="n">upto</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">list_of_possible</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">upto</span> <span class="o">+</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">][</span><span class="s1">&#39;avg&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">r</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">router</span>
+        <span class="n">upto</span> <span class="o">+=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">][</span><span class="s1">&#39;avg&#39;</span><span class="p">]</span>
+
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pick_good_exit"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_exit">[docs]</a><span class="k">def</span> <span class="nf">pick_good_exit</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose the exit node</span>
+<span class="sd">    :param routers: the routers given by the consensus</span>
+<span class="sd">    :param state: the state</span>
+<span class="sd">    :return: the descriptor of the exit node&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="c1"># Go through all routers and check if they meet the conditions of an exit node</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_exit</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No exit is suitable&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pick_good_exit_from_routers"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_exit_from_routers">[docs]</a><span class="k">def</span> <span class="nf">pick_good_exit_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">guard</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose the exit node</span>
+<span class="sd">    :param routers: the routers given by the consensus</span>
+<span class="sd">    :param guard: the guard in the path</span>
+<span class="sd">    :return: the descriptor of the exit node&quot;&quot;&quot;</span>
+
+    <span class="c1"># Go through all routers and check if they meet the conditions of an exit node</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_exit_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">guard</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No exit is suitable&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="keep_guard"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_guard">[docs]</a><span class="k">def</span> <span class="nf">keep_guard</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the given router has the properties to be a guard</span>
+<span class="sd">    :param router: the router that must be inspected</span>
+<span class="sd">    :param state: state</span>
+<span class="sd">    :param exit_node: the previously chosen node</span>
+<span class="sd">    :return: if the router can be kept, the updated state and the descriptor&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">testing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Guard&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Stable&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Fast&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;V2Dir&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Retrieve the descriptor</span>
+    <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span> <span class="o">=</span> <span class="n">descriptors</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="n">router</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nhop</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">nhop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">in_same_family</span><span class="p">(</span><span class="n">nhop</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span></div>
+
+
+
+<div class="viewcode-block" id="keep_guard_with_descr"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_guard_with_descr">[docs]</a><span class="k">def</span> <span class="nf">keep_guard_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the given router has the properties to be a guard</span>
+<span class="sd">    :param descr: descriptor of the exit candidate.</span>
+<span class="sd">    :param router: the router that must be inspected</span>
+<span class="sd">    :return: if the router can be kept, the updated state and the descriptor&quot;&quot;&quot;</span>
+
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">testing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Guard&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Stable&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;Fast&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;V2Dir&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">descr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">descr</span><span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">nhop</span></div>
+
+
+
+<div class="viewcode-block" id="pick_good_entry"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_entry">[docs]</a><span class="k">def</span> <span class="nf">pick_good_entry</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simplified version of the Guard selection algorithm</span>
+<span class="sd">    :param routers: the routers of the consensus</span>
+<span class="sd">    :param state: the state</span>
+<span class="sd">    :return: updated state and the descriptor of the guard node&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_guard</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No guard is suitable&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pick_good_entry_from_routers"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_entry_from_routers">[docs]</a><span class="k">def</span> <span class="nf">pick_good_entry_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simplified version of the Guard selection algorithm</span>
+<span class="sd">    :param routers: the routers of the consensus</span>
+<span class="sd">    :param state: the state</span>
+<span class="sd">    :return: updated state and the descriptor of the guard node&quot;&quot;&quot;</span>
+
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_guard_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No guard is suitable&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="keep_middle"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_middle">[docs]</a><span class="k">def</span> <span class="nf">keep_middle</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the given router has the properties to be a middle node</span>
+<span class="sd">       :param router: the router that must be inspected</span>
+<span class="sd">       :param state: state</span>
+<span class="sd">       :param exit_node: the previously chosen exit node</span>
+<span class="sd">       :param guard: the previously chosen guard</span>
+<span class="sd">       :return: if the router can be kept, the updated state and the descriptor&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">testing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="c1"># Retrieve the descriptor</span>
+    <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span> <span class="o">=</span> <span class="n">descriptors</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="n">router</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nhop</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">nhop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">in_same_family</span><span class="p">(</span><span class="n">nhop</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">nhop</span></div>
+
+
+<div class="viewcode-block" id="keep_middle_with_descr"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.keep_middle_with_descr">[docs]</a><span class="k">def</span> <span class="nf">keep_middle_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks that the given router has the properties to be a middle node</span>
+<span class="sd">       :param descr: descriptor of the exit candidate.</span>
+<span class="sd">       :param router: the router that must be inspected</span>
+<span class="sd">       :param exit_node: the previously chosen exit node</span>
+<span class="sd">       :param guard: the previously chosen guard</span>
+<span class="sd">       :return: if the router can be kept, the updated state and the descriptor&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">obey_minimal_constraint</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="o">=</span><span class="n">testing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">descr</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">nhop</span> <span class="o">=</span> <span class="n">descr</span><span class="p">[</span><span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]]</span>
+
+    <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">in_same_family</span><span class="p">(</span><span class="n">nhop</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">nhop</span></div>
+
+
+<div class="viewcode-block" id="pick_good_middle"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_middle">[docs]</a><span class="k">def</span> <span class="nf">pick_good_middle</span><span class="p">(</span><span class="n">routers</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose the middle node given the exit and the guard node</span>
+<span class="sd">    :param routers: the routers of the consensus</span>
+<span class="sd">    :param state: the state</span>
+<span class="sd">    :param exit_node: the previously chosen exit node</span>
+<span class="sd">    :param guard: the previously chosen guard node</span>
+<span class="sd">    :return: updated state and the descriptor of the guard node&quot;&quot;&quot;</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Use of DEPRECATED method </span><span class="si">%s</span><span class="s1">()&#39;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_middle</span><span class="p">(</span><span class="n">router</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">state</span><span class="p">,</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No middle node is suitable&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pick_good_middle_from_routers"><a class="viewcode-back" href="../../lightnion.html#lightnion.path_selection.pick_good_middle_from_routers">[docs]</a><span class="k">def</span> <span class="nf">pick_good_middle_from_routers</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">routers</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Choose the middle node given the exit and the guard node</span>
+<span class="sd">    :param routers: the routers of the consensus</span>
+<span class="sd">    :param exit_node: the previously chosen exit node</span>
+<span class="sd">    :param guard: the previously chosen guard node</span>
+<span class="sd">    :return: updated state and the descriptor of the guard node&quot;&quot;&quot;</span>
+
+    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">routers</span><span class="p">:</span>
+        <span class="n">keep</span><span class="p">,</span> <span class="n">descriptor</span> <span class="o">=</span> <span class="n">keep_middle_with_descr</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">router</span><span class="p">,</span> <span class="n">exit_node</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">testing</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">descriptor</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">candidates</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">weighted_random_choice</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: see if we select another policy here</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No middle node is suitable&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

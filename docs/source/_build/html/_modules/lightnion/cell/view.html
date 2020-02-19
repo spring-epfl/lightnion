@@ -1,0 +1,1076 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.cell.view &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../cell.html">lightnion.cell</a> &raquo;</li>
+        
+      <li>lightnion.cell.view</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.cell.view</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">ipaddress</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">enum</span> <span class="k">as</span> <span class="nn">_enum</span>
+
+<div class="viewcode-block" id="basic"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.basic">[docs]</a><span class="k">class</span> <span class="nc">basic</span><span class="p">:</span>
+<div class="viewcode-block" id="basic.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.basic.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="basic.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.basic.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="basic.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.basic.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="basic.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.basic.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="composite"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.composite">[docs]</a><span class="k">class</span> <span class="nc">composite</span><span class="p">(</span><span class="n">basic</span><span class="p">):</span>
+<div class="viewcode-block" id="composite.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.composite.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="uint"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.uint">[docs]</a><span class="k">class</span> <span class="nc">uint</span><span class="p">(</span><span class="n">basic</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid uint size: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">byteorder</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;big&#39;</span><span class="p">,</span> <span class="s1">&#39;little&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid uint byteorder: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">byteorder</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span> <span class="o">=</span> <span class="n">byteorder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
+
+<div class="viewcode-block" id="uint.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.uint.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
+
+<div class="viewcode-block" id="uint.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.uint.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
+
+<div class="viewcode-block" id="uint.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.uint.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">],</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="uint.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.uint.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">byteorder</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">+</span> <span class="n">payload</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:]</span></div></div>
+
+<div class="viewcode-block" id="enum"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.enum">[docs]</a><span class="k">def</span> <span class="nf">enum</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">,</span> <span class="n">typename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cached</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">typename</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Typename </span><span class="si">{}</span><span class="s1"> is not an identifier&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">))</span>
+
+    <span class="nd">@_enum</span><span class="o">.</span><span class="n">unique</span>
+    <span class="k">class</span> <span class="nc">_anonymous_enum</span><span class="p">(</span><span class="n">_enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="n">member</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">_value_</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">return</span> <span class="n">member</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">size</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">def</span> <span class="nf">__int__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value_</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">[:</span><span class="n">size</span><span class="p">],</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">))</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">value</span> <span class="o">+</span> <span class="n">payload</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+
+    <span class="k">if</span> <span class="n">cached</span><span class="p">:</span>
+        <span class="k">class</span> <span class="nc">_anonymous_cached_enum</span><span class="p">(</span><span class="n">_anonymous_enum</span><span class="p">):</span>
+            <span class="nd">@classmethod</span>
+            <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">cached</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Bounded value unknown at runtime: &#39;</span>
+                        <span class="o">+</span> <span class="s1">&#39;Have you called .value() of parent view yet?&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span>
+
+            <span class="nd">@classmethod</span>
+            <span class="k">def</span> <span class="nf">cached</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+            <span class="nd">@classmethod</span>
+            <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">[:</span><span class="n">size</span><span class="p">],</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">)</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+            <span class="nd">@classmethod</span>
+            <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">packed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">cache</span><span class="p">())</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">byteorder</span><span class="o">=</span><span class="s1">&#39;big&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">packed</span> <span class="o">+</span> <span class="n">payload</span><span class="p">[</span><span class="n">size</span><span class="p">:]</span>
+
+        <span class="n">_anonymous_cached_enum</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+        <span class="n">_anonymous_cached_enum</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">_anonymous_enum</span> <span class="o">=</span> <span class="n">_anonymous_cached_enum</span>
+
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_anonymous_enum</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="n">typename</span>
+    <span class="k">return</span> <span class="n">_anonymous_enum</span></div>
+
+<div class="viewcode-block" id="data"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.data">[docs]</a><span class="k">class</span> <span class="nc">data</span><span class="p">(</span><span class="n">basic</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fixed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">isview</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="ow">and</span> <span class="n">iscached</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
+            <span class="n">fixed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid size: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="o">=</span> <span class="n">fixed</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+<div class="viewcode-block" id="data.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.data.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
+
+<div class="viewcode-block" id="data.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.data.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">cached</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
+
+<div class="viewcode-block" id="data.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.data.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">payload</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="data.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.data.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid value size: </span><span class="si">{}</span><span class="s1"> instead of </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">+</span> <span class="n">payload</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">:]</span></div></div>
+
+<div class="viewcode-block" id="fields"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields">[docs]</a><span class="k">class</span> <span class="nc">fields</span><span class="p">(</span><span class="n">composite</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">view</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isview</span><span class="p">(</span><span class="n">view</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Field </span><span class="si">{}</span><span class="s1"> is not a view: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">view</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="fields.list_fields"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.list_fields">[docs]</a>    <span class="k">def</span> <span class="nf">list_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="fields.visit"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.visit">[docs]</a>    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">operator</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">p</span><span class="p">)):</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">view</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operator</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="fields.offset"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.offset">[docs]</a>    <span class="k">def</span> <span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Field </span><span class="si">{}</span><span class="s1"> not in fields&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
+
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">view</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">field</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">offset</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">width</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span></div>
+
+<div class="viewcode-block" id="fields.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">v</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">p</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="fields.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">view</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">view</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="n">view</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="fields.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">v</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">values</span><span class="p">)}</span>
+
+        <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">offset</span><span class="p">:])</span></div>
+
+<div class="viewcode-block" id="fields.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.fields.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Conflict: value and kwargs both given.&#39;</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">svalue</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+            <span class="n">svalue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">offset</span><span class="p">:],</span> <span class="n">svalue</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[:</span><span class="n">offset</span><span class="p">]</span> <span class="o">+</span> <span class="n">svalue</span>
+        <span class="k">return</span> <span class="n">payload</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="packet"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet">[docs]</a><span class="k">class</span> <span class="nc">packet</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+    <span class="n">_max_size</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>
+    <span class="n">_default_extra_fields</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_default_header_view</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_default_field_name</span> <span class="o">=</span> <span class="s1">&#39;length&#39;</span>
+    <span class="n">_default_fixed_size</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">_default_data_view</span> <span class="o">=</span> <span class="n">data</span>
+    <span class="n">_default_data_name</span> <span class="o">=</span> <span class="s1">&#39;data&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header_view</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fixed_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">field_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">data_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_view</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extra_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">extra_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">extra_fields</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_extra_fields</span>
+        <span class="k">if</span> <span class="n">extra_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">extra_fields</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">header_view</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">header_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_header_view</span>
+        <span class="k">if</span> <span class="n">field_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">field_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_field_name</span>
+        <span class="k">if</span> <span class="n">fixed_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">fixed_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_fixed_size</span>
+        <span class="k">if</span> <span class="n">data_view</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_view</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_data_view</span>
+        <span class="k">if</span> <span class="n">data_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_data_name</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header_view</span><span class="p">,</span> <span class="n">fields</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Header not a view.fields: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">header_view</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_size</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">header_view</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_size</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">extra_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">data_view</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_size</span><span class="p">:</span>
+                <span class="n">data_view</span> <span class="o">=</span> <span class="n">data_view</span><span class="p">(</span><span class="n">fixed_size</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data_view</span> <span class="o">=</span> <span class="n">data_view</span><span class="p">(</span><span class="n">header_view</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">field_name</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isview</span><span class="p">(</span><span class="n">data_view</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Data view not a view: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_view</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span> <span class="o">=</span> <span class="n">extra_fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field_name</span> <span class="o">=</span> <span class="n">field_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span> <span class="o">=</span> <span class="n">data_name</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="n">header_view</span><span class="p">,</span> <span class="n">data_name</span><span class="p">:</span> <span class="n">data_view</span><span class="p">})</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fixed_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixed_size</span>
+
+<div class="viewcode-block" id="packet.list_fields"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.list_fields">[docs]</a>    <span class="k">def</span> <span class="nf">list_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">list_fields</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="packet.cache_fields"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.cache_fields">[docs]</a>    <span class="k">def</span> <span class="nf">cache_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="packet.offset"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.offset">[docs]</a>    <span class="k">def</span> <span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="packet.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache_fields</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="packet.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache_fields</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_size</span><span class="p">:</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_size</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="packet.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache_fields</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">whole</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">whole</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">whole</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="packet.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.packet.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Conflict: value and kwargs both given.&#39;</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="k">if</span> <span class="s1">&#39;header&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="n">value</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">])</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache_fields</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">headers</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">headers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">]</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">headers</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span>
+                <span class="o">**</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">]})</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span> <span class="ow">or</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;header&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_name</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="n">field</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="series"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series">[docs]</a><span class="k">class</span> <span class="nc">series</span><span class="p">(</span><span class="n">composite</span><span class="p">):</span>
+    <span class="n">max_quantity</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_view</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fixed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">isview</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="ow">and</span> <span class="n">iscached</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">fixed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid quantity: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="o">=</span> <span class="n">fixed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">item_view</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">quantity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+<div class="viewcode-block" id="series.offset"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series.offset">[docs]</a>    <span class="k">def</span> <span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">field</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span> <span class="o">&gt;</span> <span class="n">field</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Invalid item index: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
+
+        <span class="n">total_offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">field</span><span class="p">):</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span>
+            <span class="n">total_offset</span> <span class="o">+=</span> <span class="n">width</span>
+        <span class="k">return</span> <span class="n">total_offset</span></div>
+
+<div class="viewcode-block" id="series.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">offset</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">offset</span><span class="p">:])</span></div>
+
+<div class="viewcode-block" id="series.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_quantity</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="series.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">):</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+                <span class="n">width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="n">width</span><span class="p">:]</span>
+            <span class="k">return</span> <span class="n">results</span>
+
+        <span class="n">field</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span> <span class="o">&gt;</span> <span class="n">field</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Invalid item index: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">):])</span></div>
+
+<div class="viewcode-block" id="series.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.series.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Conflict: value and kwargs both given.&#39;</span><span class="p">)</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Input list too long: </span><span class="si">{}</span><span class="s1"> out of </span><span class="si">{}</span><span class="s1"> items&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">svalue</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">field</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+            <span class="n">svalue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">offset</span><span class="p">:],</span> <span class="n">svalue</span><span class="p">)</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[:</span><span class="n">offset</span><span class="p">]</span> <span class="o">+</span> <span class="n">svalue</span>
+        <span class="k">return</span> <span class="n">payload</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span></div>
+
+<div class="viewcode-block" id="union"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union">[docs]</a><span class="k">class</span> <span class="nc">union</span><span class="p">(</span><span class="n">composite</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view_table</span><span class="p">,</span> <span class="n">union_tag</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">view</span> <span class="ow">in</span> <span class="n">view_table</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">isview</span><span class="p">(</span><span class="n">view</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Union of </span><span class="si">{}</span><span class="s1"> not a view: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">view</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">view_table</span> <span class="o">=</span> <span class="n">view_table</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">union_tag</span> <span class="o">=</span> <span class="n">union_tag</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">union_tag</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">active_view</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_table</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="p">]</span>
+
+<div class="viewcode-block" id="union.offset"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union.offset">[docs]</a>    <span class="k">def</span> <span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="union.width"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union.width">[docs]</a>    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="union.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">view_table</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="union.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="union.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.union.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_view</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrapper"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper">[docs]</a><span class="k">class</span> <span class="nc">wrapper</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;This is a view bound to raw bytes.</span>
+
+<span class="sd">    See self.fields to list fields within the view.</span>
+<span class="sd">    See help(self._view) for details on the underlying view.&#39;&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_view</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isview</span><span class="p">(</span><span class="n">parent_view</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Wrapping not a view: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">parent_view</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_view</span> <span class="o">=</span> <span class="n">parent_view</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@raw</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">width</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapper_attr</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;raw&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">,</span> <span class="s1">&#39;list_fields&#39;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">list_fields</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">wrapper_attr</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">list_fields</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">wrapper_attr</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">truncated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">width</span><span class="p">]</span>
+
+<div class="viewcode-block" id="wrapper.offset"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper.offset">[docs]</a>    <span class="k">def</span> <span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrapper.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="n">field</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrapper.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrapper.set"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">(</span><span class="n">truncate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="wrapper.finalize"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.wrapper.finalize">[docs]</a>    <span class="k">def</span> <span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">truncate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">truncate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncated</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid payload for </span><span class="si">{}</span><span class="s1"> view: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">iscomposite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">iscomposite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="k">return</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">field</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">iscomposite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span>
+        <span class="k">if</span> <span class="n">iscomposite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">:</span>
+            <span class="n">subview</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">iscomposite</span><span class="p">(</span><span class="n">subview</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">bind</span><span class="p">(</span><span class="n">subview</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_view</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">_forward_init</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="s1">&#39;kargs&#39;</span> <span class="ow">in</span> <span class="n">args</span> <span class="ow">and</span> <span class="s1">&#39;kwargs&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;kargs&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39;kwargs&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s1">&#39;kargs&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;kargs&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+<div class="viewcode-block" id="bind"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.bind">[docs]</a><span class="k">def</span> <span class="nf">bind</span><span class="p">(</span><span class="n">parent_view</span><span class="p">,</span> <span class="n">parent_wrapper</span><span class="p">,</span> <span class="n">parent_field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="k">class</span> <span class="nc">_anonymous_subwrapper</span><span class="p">(</span><span class="n">wrapper</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent_view</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">parent_wrapper</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="o">=</span> <span class="n">parent_field</span>
+
+        <span class="nd">@property</span>
+        <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">raw</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">raw</span><span class="p">[</span><span class="n">offset</span><span class="p">:]</span>
+
+        <span class="nd">@raw</span><span class="o">.</span><span class="n">setter</span>
+        <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">return</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">raw</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">)</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="p">[:</span><span class="n">offset</span><span class="p">]</span> <span class="o">+</span> <span class="n">value</span> <span class="o">+</span> <span class="n">parent</span><span class="p">[</span><span class="n">offset</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">):]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">raw</span> <span class="o">=</span> <span class="n">parent</span>
+
+    <span class="n">typename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parent_field</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">typename</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">typename</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">typename</span> <span class="o">=</span> <span class="s1">&#39;idx_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="n">typename</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+            <span class="n">_anonymous_subwrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">)</span>
+
+    <span class="n">_anonymous_subwrapper</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">parent_wrapper</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">,</span> <span class="n">_anonymous_subwrapper</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_forward_init</span><span class="p">(</span><span class="n">_anonymous_subwrapper</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="like"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.like">[docs]</a><span class="k">def</span> <span class="nf">like</span><span class="p">(</span><span class="n">parent_view</span><span class="p">,</span> <span class="n">typename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">typename</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Typename </span><span class="si">{}</span><span class="s1"> is not an identifier&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">))</span>
+
+    <span class="k">class</span> <span class="nc">_anonymous_wrapper</span><span class="p">(</span><span class="n">wrapper</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent_view</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">raw</span>
+
+        <span class="nd">@property</span>
+        <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span>
+
+        <span class="nd">@raw</span><span class="o">.</span><span class="n">setter</span>
+        <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_anonymous_wrapper</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="s1">&#39;wrapper.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">)</span>
+        <span class="n">_anonymous_wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_wrapper&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_forward_init</span><span class="p">(</span><span class="n">_anonymous_wrapper</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="cache"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.cache">[docs]</a><span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">typename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">typename</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Typename </span><span class="si">{}</span><span class="s1"> is not an identifier&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typename</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Expect a class: </span><span class="si">{}</span><span class="s1"> is not.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">_enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Use view.enum(cached=True) to cache enumerations.&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">iscached</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1"> already cached.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+
+    <span class="k">class</span> <span class="nc">_anonymous_cached_view</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;See help({}.__init__) for an accurate signature.&#39;&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">base</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">)</span>
+
+            <span class="n">base</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Bounded value unknown at runtime: &#39;</span>
+                    <span class="o">+</span> <span class="s1">&#39;Have you called .value() of parent view yet?&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">def</span> <span class="nf">cached</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+        <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">payload</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="o">*</span><span class="n">kargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">payload</span>
+
+    <span class="n">_anonymous_cached_view</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="s1">&#39;cached.</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">_anonymous_cached_view</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="s1">&#39;cached_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">typename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_anonymous_cached_view</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">typename</span>
+
+    <span class="k">return</span> <span class="n">_forward_init</span><span class="p">(</span><span class="n">_anonymous_cached_view</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="isview"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.isview">[docs]</a><span class="k">def</span> <span class="nf">isview</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">width</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;valid&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">valid</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;write&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">write</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="iscached"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.iscached">[docs]</a><span class="k">def</span> <span class="nf">iscached</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;cache&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">cache</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;cached&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">cache</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="iscomposite"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.iscomposite">[docs]</a><span class="k">def</span> <span class="nf">iscomposite</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">union</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">union_tag</span><span class="o">.</span><span class="n">cached</span><span class="p">():</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">active_view</span><span class="p">,</span> <span class="n">composite</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">composite</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ip_address"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.ip_address">[docs]</a><span class="k">class</span> <span class="nc">ip_address</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid IP version: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">version</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ip_type</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Address</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ip_type</span> <span class="o">=</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv6Address</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ip_address.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.ip_address.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">AddressValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="ip_address.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.ip_address.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ip_address.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.ip_address.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip_type</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">packed</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="codec"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.codec">[docs]</a><span class="k">class</span> <span class="nc">codec</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">codecs</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_is_bytes_mapping</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">codecs</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">),</span> <span class="nb">bytes</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_is_text_mapping</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;rot_13&#39;</span><span class="p">,</span> <span class="s1">&#39;rot13&#39;</span><span class="p">]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_build_encode_chain</span><span class="p">(</span><span class="n">codecs</span><span class="p">):</span>
+        <span class="n">encode_chain</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">is_input_str</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">codecs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+                <span class="n">encode_chain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">is_input_str</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+                <span class="n">is_input_str</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="ow">not</span> <span class="n">is_input_str</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_input_str</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Got bytes for </span><span class="si">{}</span><span class="s1"> in chain: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">codecs</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_bytes_mapping</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_input_str</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Got str for </span><span class="si">{}</span><span class="s1"> in chain: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">codecs</span><span class="p">))</span>
+            <span class="n">encode_chain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="kc">True</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">is_input_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Chain encodes to str instead of bytes: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">codecs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">encode_chain</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_build_decode_chain</span><span class="p">(</span><span class="n">codecs</span><span class="p">):</span>
+        <span class="n">decode_chain</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">is_input_str</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">codecs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+                <span class="n">decode_chain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">is_input_str</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+                <span class="n">is_input_str</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="ow">not</span> <span class="n">is_input_str</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_text_encoding</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_input_str</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Got bytes for </span><span class="si">{}</span><span class="s1"> in chain: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">codecs</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">codec</span><span class="o">.</span><span class="n">_is_bytes_mapping</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_input_str</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Got str for </span><span class="si">{}</span><span class="s1"> in chain: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">codecs</span><span class="p">))</span>
+            <span class="n">decode_chain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="kc">False</span><span class="p">,</span> <span class="n">c</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_input_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Chain decodes to bytes instead of str: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">codecs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">decode_chain</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">codecs</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encode_chain</span> <span class="o">=</span> <span class="n">codec</span><span class="o">.</span><span class="n">_build_encode_chain</span><span class="p">(</span><span class="n">codecs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decode_chain</span> <span class="o">=</span> <span class="n">codec</span><span class="o">.</span><span class="n">_build_decode_chain</span><span class="p">(</span><span class="n">codecs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+
+<div class="viewcode-block" id="codec.valid"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.codec.valid">[docs]</a>    <span class="k">def</span> <span class="nf">valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">valid</span><span class="p">(</span><span class="n">payload</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="codec.value"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.codec.value">[docs]</a>    <span class="k">def</span> <span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">use_encode</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_chain</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_encode</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="codec.write"><a class="viewcode-back" href="../../../lightnion.cell.html#lightnion.cell.view.codec.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">use_encode</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_chain</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_encode</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

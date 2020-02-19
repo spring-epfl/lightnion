@@ -1,0 +1,593 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.proxy.link &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.proxy.link</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.proxy.link</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+<span class="kn">import</span> <span class="nn">lightnion.cell</span>
+<span class="kn">import</span> <span class="nn">lightnion.utils</span>
+<span class="kn">from</span> <span class="nn">lightnion.proxy</span> <span class="k">import</span> <span class="n">fake_circuit_id</span>
+
+
+<div class="viewcode-block" id="InvalidCellHeaderException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidCellHeaderException">[docs]</a><span class="k">class</span> <span class="nc">InvalidCellHeaderException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="InvalidAuthCellException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidAuthCellException">[docs]</a><span class="k">class</span> <span class="nc">InvalidAuthCellException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="InvalidCertsCellException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidCertsCellException">[docs]</a><span class="k">class</span> <span class="nc">InvalidCertsCellException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="InvalidDestroyCellException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidDestroyCellException">[docs]</a><span class="k">class</span> <span class="nc">InvalidDestroyCellException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="InvalidNetInfoCellException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidNetInfoCellException">[docs]</a><span class="k">class</span> <span class="nc">InvalidNetInfoCellException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="InvalidVersionCellException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.InvalidVersionCellException">[docs]</a><span class="k">class</span> <span class="nc">InvalidVersionCellException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="NoSupportedVersionException"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.NoSupportedVersionException">[docs]</a><span class="k">class</span> <span class="nc">NoSupportedVersionException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Link"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.Link">[docs]</a><span class="k">class</span> <span class="nc">Link</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">guard</span><span class="p">,</span> <span class="n">versions</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler for communications between the proxy and a guard relay.</span>
+<span class="sd">        :param guard: guard tor relay with with to establish a link.</span>
+<span class="sd">        :param versions: versions supported by the proxy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">host</span> <span class="o">=</span> <span class="n">guard</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;address&#39;</span><span class="p">]</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">guard</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;orport&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Queue containing cells to be send to the tor relay.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_send</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">(</span><span class="mi">16384</span><span class="p">)</span>
+
+        <span class="c1"># Buffer containing beginning of potential imcomplete cell.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+
+        <span class="c1"># The link is bound to a specific guard node.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">guard</span> <span class="o">=</span> <span class="n">guard</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Guard </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">guard</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">][</span><span class="s1">&#39;nickname&#39;</span><span class="p">]))</span>
+
+        <span class="c1"># The first bit of the circuit id must be 1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_id</span> <span class="o">=</span> <span class="mh">0x80000000</span>
+
+        <span class="n">ctxt</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_TLS</span><span class="p">)</span>
+
+        <span class="c1"># TLS 1.3 disabled for compatibility issues.</span>
+        <span class="c1"># https://trac.torproject.org/projects/tor/ticket/28616</span>
+        <span class="n">ctxt</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_TLSv1_3</span>
+
+        <span class="c1"># channel manager set later.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># The connection to the tor relay.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handler</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">ctxt</span><span class="p">,</span> <span class="n">versions</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Link prepared (</span><span class="si">{}</span><span class="s1"> : </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Link.set_channel_manager"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.Link.set_channel_manager">[docs]</a>    <span class="k">def</span> <span class="nf">set_channel_manager</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_manager</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the channel manager to which the traffic should be send.</span>
+<span class="sd">        :param channel_manager: channel manager to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span> <span class="o">=</span> <span class="n">channel_manager</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Channel manager set.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Link.gen_cid"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.Link.gen_cid">[docs]</a>    <span class="k">def</span> <span class="nf">gen_cid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a new circuit id.</span>
+<span class="sd">        :return: new circuit id</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circuit_id</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: New circuit id generated </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">circuit_id</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">circuit_id</span></div>
+
+
+<div class="viewcode-block" id="Link.schedule_to_send"><a class="viewcode-back" href="../../../lightnion.proxy.html#lightnion.proxy.link.Link.schedule_to_send">[docs]</a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">schedule_to_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell_raw</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Coroutine</span>
+<span class="sd">        Order some data to be sent to the tor relay.</span>
+<span class="sd">        :param cell: cell to be sent.</span>
+<span class="sd">        :param channel: channel from which the cell is sent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Set correct circuit id.</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header_view</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cell_raw</span><span class="p">,</span> <span class="n">circuit_id</span><span class="o">=</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">)</span>
+        <span class="c1">#cell = lnn.utils.cell_set_cid(cell_raw, channel.cid)</span>
+
+        <span class="n">header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+        <span class="c1">#cmd = lnn.utils.cell_get_cmd(cell)</span>
+        <span class="c1">#if cmd == 3:</span>
+        <span class="c1">#    cell = lnn.utils.cell_pad_rnd(cell)</span>
+        <span class="c1">#else:</span>
+        <span class="c1">#    cell = lnn.utils.cell_pad_null(cell)</span>
+
+        <span class="c1">#if cmd == 4:</span>
+        <span class="k">if</span> <span class="n">header</span><span class="o">.</span><span class="n">cmd</span> <span class="ow">is</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">cmd</span><span class="o">.</span><span class="n">DESTROY</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: channel </span><span class="si">{}</span><span class="s1"> asks for the circuit to be destroyed.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span>
+            <span class="n">cell_validation</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">destroy</span><span class="o">.</span><span class="n">cell</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+            <span class="c1">#if not lnn.utils.cell_is_valid(cell):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">cell_validation</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Channel </span><span class="si">{}</span><span class="s1"> attempted to send an invalid cell.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span>
+                <span class="k">return</span>
+                <span class="c1">#raise InvalidDestroyCellException()</span>
+
+            <span class="c1"># Mark the channel as destroyed</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+                <span class="n">channel</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+
+        <span class="n">cell_padded</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_send</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cell_padded</span><span class="p">)</span>
+        <span class="c1">#await self.to_send.put(cell)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Scheduled data from channel </span><span class="si">{}</span><span class="s1"> to be send.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">cid</span><span class="p">))</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_handle_tor_cmd_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Handle management cell from tor relay.&#39;</span><span class="p">)</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_recv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recieve data from the tor relay and give it to the channel manager.</span>
+<span class="sd">        :param reader: asyncio StreamReader</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">reader</span><span class="o">.</span><span class="n">at_eof</span><span class="p">():</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">65536</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">+</span> <span class="n">data</span>
+
+            <span class="n">data_initial</span> <span class="o">=</span> <span class="n">data</span>
+
+            <span class="c1"># Let the channel manager do the multiplexing.</span>
+            <span class="c1">#logging.debug(&#39;Link: Received data\n{}&#39;.format(data))</span>
+
+            <span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_slice_old</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+            <span class="n">data_cells</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span>
+            <span class="n">cells</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">while</span> <span class="n">cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="n">data_cells</span> <span class="o">+=</span> <span class="n">cell</span>
+                <span class="n">cells</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Spliced a cell. </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">)))</span>
+                <span class="c1"># Analyse header to select correct channel.</span>
+                <span class="n">header</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+                <span class="n">cid</span> <span class="o">=</span> <span class="n">header</span><span class="o">.</span><span class="n">circuit_id</span>
+                <span class="c1">#cid = lnn.utils.cell_get_cid(cell)</span>
+
+                <span class="k">if</span> <span class="n">cid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_tor_cmd_cell</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Replace the real circuit id by a dummy one.</span>
+                    <span class="n">cell_mut</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">header_view</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">circuit_id</span><span class="o">=</span><span class="n">fake_circuit_id</span><span class="p">)</span>
+                    <span class="c1">#cell_mut = lnn.utils.cell_set_cid(cell, fake_circuit_id)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;cell </span><span class="si">{}</span><span class="s1"> recv by relay: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_recv</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_manager</span><span class="o">.</span><span class="n">schedule_to_send</span><span class="p">(</span><span class="n">cell_mut</span><span class="p">,</span> <span class="n">cid</span><span class="p">)</span>
+
+                <span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_slice_old</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+            <span class="n">data_cells</span> <span class="o">=</span> <span class="n">data_cells</span> <span class="o">+</span> <span class="n">data</span>
+
+            <span class="k">if</span> <span class="n">data_cells</span> <span class="o">!=</span> <span class="n">data_initial</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;CELL SLICING MANGLE THE DATA&#39;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;INITIAL:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_initial</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;CELLS:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data_cells</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;PREV BUFFER:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;NEXT BUFFER:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+
+            <span class="c1"># At the end we keep the beginning of the next cell.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">data</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Send cell to the tor relay.</span>
+<span class="sd">        :param reader: asyncio StreamWriter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">writer</span><span class="o">.</span><span class="n">is_closing</span><span class="p">():</span>
+            <span class="n">cell</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_send</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+            <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Sent cell: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">cell</span><span class="p">)))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;cell </span><span class="si">{}</span><span class="s1"> sent to relay: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_sent</span><span class="p">,</span> <span class="n">cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="o">.</span><span class="n">hex</span><span class="p">()))</span>
+            <span class="c1">#await asyncio.sleep(0.01)</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_negociate_version</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="n">versions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Negociate tor version with the relay.</span>
+<span class="sd">        :param reader: asyncio.StreamReader</span>
+<span class="sd">        :param writer: asyncio.StreamWriter</span>
+<span class="sd">        :param versions: collection of versions supported by the proxy</span>
+<span class="sd">        :return: negociated version</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Begin version negociation.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Ask the relay which versions it supports.</span>
+        <span class="c1">#payload = lnn.cell.versions.pack(versions)</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_version_build</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span>
+
+        <span class="c1">#await lnn.cell.versions.send_async(writer, payload)</span>
+        <span class="c1"># Code from this method inlined here:</span>
+
+        <span class="c1">#payload = payload.raw</span>
+
+        <span class="c1">#vercell = lnn.cell.versions.cell(payload)</span>
+        <span class="c1">#if not vercell.valid:</span>
+        <span class="c1">#    raise InvalidVersionCellException()</span>
+
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Sent version cell: </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+        <span class="c1">#vercell = await lnn.cell.versions.recv_async(reader)</span>
+        <span class="c1"># Code from this method inlined here:</span>
+        
+        <span class="c1">#answer = await reader.read(lnn.cell.header_legacy_view.width())</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1">#header = lnn.cell.header_legacy(answer)</span>
+        <span class="c1">#if not header.valid:</span>
+        <span class="c1">#    raise InvalidCellHeaderException()</span>
+        <span class="c1">#if not header.cmd == lnn.cell.cmd.VERSIONS:</span>
+        <span class="c1">#    raise InvalidVersionCellException()</span>
+
+        <span class="c1">#length = header.length</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_version_get_len</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="n">lnn</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">max_payload_len</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidVersionCellException</span><span class="p">()</span>
+
+        <span class="n">answer</span> <span class="o">+=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+        <span class="c1">#if not lnn.cell.versions.view.valid(answer):</span>
+        <span class="c1">#    raise InvalidVersionCellException()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Received version cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">answer</span><span class="p">))</span>
+
+        <span class="c1">#vercell = lnn.cell.versions.cell(answer)</span>
+        <span class="n">versions_res</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_version_get_versions</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+
+        <span class="c1">#common_versions = set(vercell.versions).intersection(versions)</span>
+        <span class="n">common_versions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">versions_res</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">versions</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">common_versions</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoSupportedVersionException</span><span class="p">()</span>
+
+        <span class="n">max_version</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">common_versions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_version</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NoSupportedVersionException</span><span class="p">()</span>
+
+        <span class="c1"># The latest version is selected.</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Select version </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">max_version</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: End version negociation.&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">max_version</span>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">ctxt</span><span class="p">,</span> <span class="n">versions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Establish a connection with the tor relay and handle all</span>
+<span class="sd">        communications between it and the proxy.</span>
+<span class="sd">        :param host: ip address of the relay</span>
+<span class="sd">        :param port: port of the relay</span>
+<span class="sd">        :param ctxt: TLS context</span>
+<span class="sd">        :param versions: collection of versions supported by the proxy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># The expected transcript is:</span>
+        <span class="c1">#</span>
+        <span class="c1">#    Onion Proxy (client)                Onion Router (server)</span>
+        <span class="c1">#</span>
+        <span class="c1">#            /   [1] :-------- VERSIONS ---------&gt; [2]</span>
+        <span class="c1">#            |   [4] &lt;-------- VERSIONS ---------: [3]</span>
+        <span class="c1">#            |</span>
+        <span class="c1">#            |           Negotiated Version</span>
+        <span class="c1">#            |</span>
+        <span class="c1">#            |   [4] &lt;--------- CERTS -----------: [3]</span>
+        <span class="c1">#            |       &lt;----- AUTH_CHALLENGE ------:</span>
+        <span class="c1">#            |       &lt;-------- NETINFO ----------:</span>
+        <span class="c1">#            |</span>
+        <span class="c1">#            |             OP don&#39;t need to</span>
+        <span class="c1">#     Link   |               authenticate</span>
+        <span class="c1">#   Protocol |</span>
+        <span class="c1">#     &gt;= 3   |   [5] :-------- NETINFO ----------&gt; [6]</span>
+        <span class="c1">#            |</span>
+        <span class="c1">#            | Alternative:</span>
+        <span class="c1">#            | (          We (OR) authenticate         )</span>
+        <span class="c1">#            | (                                       )</span>
+        <span class="c1">#            | ( [5] :--------- CERTS -----------&gt; [6] )</span>
+        <span class="c1">#            | (     :------ AUTHENTICATE -------&gt;     )</span>
+        <span class="c1">#            | (             ^                         )</span>
+        <span class="c1">#            | (            (answers AUTH_CHALLENGE)   )</span>
+        <span class="c1">#            | (                                       )</span>
+        <span class="c1">#            \</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Opening connection.&#39;</span><span class="p">)</span>
+
+        <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">ssl</span><span class="o">=</span><span class="n">ctxt</span><span class="p">)</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Connection open.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_negociate_version</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="n">versions</span><span class="p">)</span>
+
+        <span class="c1"># Tor handshake</span>
+        <span class="n">cells_raw</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">65536</span><span class="p">)</span>
+
+        <span class="c1">#logging.debug(&#39;Link: Received handshake cells:\n{}&#39;.format(cells_raw))</span>
+
+        <span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">cells_raw</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_slice</span><span class="p">(</span><span class="n">cells_raw</span><span class="p">)</span>
+        <span class="c1">#certs_cell = lnn.cell.certs.cell(cell)</span>
+        <span class="n">certs_cell</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="c1">#logging.debug(&#39;Link: Certs cell:\n{}... {} bytes.&#39;.format(certs_cell.raw[:20], len(certs_cell.raw)))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Certs cell: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">certs_cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">certs_cell</span><span class="p">)))</span>
+
+        <span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">cells_raw</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_slice</span><span class="p">(</span><span class="n">cells_raw</span><span class="p">)</span>
+        <span class="c1">#auth_cell = lnn.cell.challenge.cell(cell)</span>
+        <span class="n">auth_cell</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="c1">#logging.debug(&#39;Link: Auth cell:\n{}... {} bytes.&#39;.format(auth_cell.raw[:20], len(auth_cell.raw)))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Auth cell: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">auth_cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">auth_cell</span><span class="p">)))</span>
+
+        <span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="n">cells_raw</span><span class="p">)</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_slice</span><span class="p">(</span><span class="n">cells_raw</span><span class="p">)</span>
+        <span class="c1">#netinfo_cell = lnn.cell.netinfo.cell(cell)</span>
+        <span class="n">netinfo_cell</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="c1">#logging.debug(&#39;Link: Netinfo cell:\n{}... {} bytes.&#39;.format(netinfo_cell.raw[:20], len(netinfo_cell.raw)))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Netinfo cell: </span><span class="si">{}</span><span class="s1">... </span><span class="si">{}</span><span class="s1"> bytes.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">netinfo_cell</span><span class="p">[:</span><span class="mi">20</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">netinfo_cell</span><span class="p">)))</span>
+
+        <span class="c1"># Validation of handshake cells given by the relay.</span>
+        <span class="c1">#if not certs_cell.valid:</span>
+        <span class="c1">#    raise InvalidCertsCellException()</span>
+
+        <span class="c1">#if not auth_cell.valid:</span>
+        <span class="c1">#    raise InvalidAuthCellException()</span>
+
+        <span class="c1">#if not netinfo_cell.valid:</span>
+        <span class="c1">#    raise InvalidNetInfoCellException()</span>
+
+        <span class="c1"># Send the NETINFO without doing any further authentication.</span>
+        <span class="c1">#netinfo_cell = lnn.cell.pad(lnn.cell.netinfo.pack(host))</span>
+        <span class="n">netinfo_cell</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">cell_netinfo_build</span><span class="p">(</span><span class="n">host</span><span class="p">)</span>
+
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">netinfo_cell</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Sent netinfo cell: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">netinfo_cell</span><span class="p">))</span>
+
+        <span class="c1"># Handle all communication from now on.</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_recv</span><span class="p">(</span><span class="n">reader</span><span class="p">)),</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">writer</span><span class="p">))</span>
+        <span class="p">]</span>
+
+        <span class="n">done</span><span class="p">,</span> <span class="n">pending</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">)</span>
+
+        <span class="c1">#while not reader.at_eof():</span>
+        <span class="c1">#    done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)</span>
+        <span class="c1">#    if tasks[0].done() or tasks[0].cancelled():</span>
+        <span class="c1">#        tasks[0] = asyncio.create_task(self._recv(reader))</span>
+        <span class="c1">#        logging.debug(&#39;Link: New recv task created.&#39;)</span>
+        <span class="c1">#    if tasks[1].done() or tasks[1].cancelled():</span>
+        <span class="c1">#        tasks[1] = asyncio.create_task(self._send(writer))</span>
+        <span class="c1">#        logging.debug(&#39;Link: New send task created.&#39;)</span>
+
+        <span class="c1"># Proper termination of communications.</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Link: Connection closed.&#39;</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lightnion.tests.test_extend_chutney &mdash; Lightnion  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Lightnion
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Lightnion</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>lightnion.tests.test_extend_chutney</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for lightnion.tests.test_extend_chutney</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">lightnion</span> <span class="k">as</span> <span class="nn">lnn</span>
+
+
+<div class="viewcode-block" id="test_circuit"><a class="viewcode-back" href="../../../lightnion.tests.html#lightnion.tests.test_extend_chutney.test_circuit">[docs]</a><span class="k">def</span> <span class="nf">test_circuit</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">random</span>
+
+    <span class="n">addr</span><span class="p">,</span> <span class="n">port</span> <span class="o">=</span> <span class="s1">&#39;127.0.0.1&#39;</span><span class="p">,</span> <span class="mi">5000</span>
+
+    <span class="n">link</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">initiate</span><span class="p">(</span><span class="n">address</span><span class="o">=</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">)</span>
+    <span class="n">endpoint</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">fast</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+
+    <span class="c1"># Download our first hop&#39;s descriptor</span>
+    <span class="n">endpoint</span><span class="p">,</span> <span class="n">authority</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">download_authority</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
+
+    <span class="c1"># Download a consensus</span>
+    <span class="n">endpoint</span><span class="p">,</span> <span class="n">cons</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">consensus</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Randomly pick few nodes (!! NOT a sane behavior, only to showcase API !!)</span>
+    <span class="n">further_hops</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">circuit_length</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>  <span class="c1"># (random circuit length to showcase)</span>
+
+    <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">router</span> <span class="ow">in</span> <span class="n">cons</span><span class="p">[</span><span class="s1">&#39;routers&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">further_hops</span><span class="p">)</span> <span class="o">==</span> <span class="n">circuit_length</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Skip our first node &amp; already picked ones (no loop)</span>
+        <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">authority</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">further_hops</span><span class="p">]:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip nodes that are not &#39;Fast&#39; and &#39;Stable&#39;</span>
+        <span class="k">if</span> <span class="s1">&#39;Fast&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;Stable&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;flags&#39;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip nodes with old Tor versions</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;Tor 0.3.&#39;</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Retrieve its descriptor</span>
+        <span class="n">endpoint</span><span class="p">,</span> <span class="n">nhop</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">download</span><span class="p">(</span>
+            <span class="n">endpoint</span><span class="p">,</span> <span class="n">cons</span><span class="o">=</span><span class="n">router</span><span class="p">,</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;unflavored&#39;</span><span class="p">)</span>
+        <span class="n">nhop</span> <span class="o">=</span> <span class="n">nhop</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># (expect only one entry with a matching digest)</span>
+
+        <span class="c1"># Skip the entry if digests do not match (note: double-check here)</span>
+        <span class="k">if</span> <span class="n">router</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;digest&#39;</span><span class="p">]:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Skip if no ed25519 identity key available</span>
+        <span class="k">if</span> <span class="s1">&#39;identity&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nhop</span> <span class="ow">or</span> <span class="n">nhop</span><span class="p">[</span><span class="s1">&#39;identity&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;ed25519&#39;</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Keep the descriptor for later (to build the circuit)</span>
+        <span class="n">further_hops</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nhop</span><span class="p">)</span>
+
+    <span class="c1"># Create a brand new circuit (to have spare RELAY_EARLY to extend it)</span>
+    <span class="n">endpoint</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">create</span><span class="o">.</span><span class="n">fast</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">nhop</span> <span class="ow">in</span> <span class="n">further_hops</span><span class="p">:</span>
+        <span class="c1"># Extending to nhop[&#39;router&#39;][&#39;nickname&#39;]:</span>
+        <span class="c1"># - remaining RELAY_EARLY: endpoint.early_count</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">extend</span><span class="o">.</span><span class="n">circuit</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">nhop</span><span class="p">)</span>
+
+    <span class="n">endpoint</span><span class="p">,</span> <span class="n">authority</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">descriptors</span><span class="o">.</span><span class="n">download_authority</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
+    <span class="n">endpoint</span><span class="p">,</span> <span class="n">ncons</span> <span class="o">=</span> <span class="n">lnn</span><span class="o">.</span><span class="n">consensus</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="kc">True</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Matthieu Daumas, Ricardo Ferreira Ribeiro, Laurent Girod, Shivram N Gowtham, Wouter Lueks, Carmela Troncoso, Chia-An Yu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
