@@ -14,6 +14,7 @@ You will have to clone the repository as follows:
 git clone --recurse-submodules https://github.com/spring-epfl/lighttor lightnion
 cd lightnion
 cd js-client
+make install
 make
 ```
 
@@ -52,12 +53,6 @@ See `./demo/` for more examples.
 
 The bundle works on `firefox 61.0.2` and includes `sjcl+tweetnacl-js`.
 
-If you wish to provide dependencies by yourself, include only:
-```
-nacl-fast.min.js
-nacl-util.min.js
-sjcl.js
-lightnion.min.js
-```
-Note that you have to build few things with `sjcl.patch` to enable some
-codecs.
+## Unit testing
+
+Run `make test`.

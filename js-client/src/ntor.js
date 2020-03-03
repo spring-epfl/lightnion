@@ -1,80 +1,87 @@
+
 /**
  * Cryptographic operations related to ntor handshakes.
+ * @module ntor
  * @namespace
- * @see lnn.ntor.hand
- * @see lnn.ntor.shake
+ * @see ntor.hand
+ * @see ntor.shake
  */
-lnn.ntor = {}
+
+import { enc, dec } from "./util.js";
+import { sjcl } from "../vendor/sjcl.js";
+import nacl from "tweetnacl";
+
+let ntor = {}
 
 /**
  * Number of bytes to derive from successful ntor handshakes.
  * @readonly
  * @default
  */
-lnn.ntor.keybytes = 92
+ntor.keybytes = 92
 
 /**
  * Protocol identifier, prefix tweaks used in ntor handshakes various hashes.
  * @readonly
  * @default
  *
- * @see lnn.ntor.tweaks
+ * @see ntor.tweaks
  */
-lnn.ntor.protoid = "ntor-curve25519-sha256-1"
+ntor.protoid = "ntor-curve25519-sha256-1"
 
 /**
  * Tweaks used in ntor handshakes for various hashes and key derivation.
  * @enum
  * @readonly
  *
- * @see lnn.ntor.hash
+ * @see ntor.hash
  */
-lnn.ntor.tweaks = {
+ntor.tweaks = {
     /**
      * rfc5869 Expand {info}
      * @type kdf
      */
-    expand: lnn.ntor.protoid + ":key_expand",
+    expand: ntor.protoid + ":key_expand",
     /**
      * rfc5869 Extract {salt}
      * @type kdf
      */
-    key: lnn.ntor.protoid + ":key_extract",
+    key: ntor.protoid + ":key_extract",
     /**
      * H({secret_input}, t_verify)
      * @type ntor
      */
-    verify: lnn.ntor.protoid + ":verify",
+    verify: ntor.protoid + ":verify",
     /**
      * suffix of {auth_input}
      * @type ntor
      */
-    server: lnn.ntor.protoid + "Server",
+    server: ntor.protoid + "Server",
     /**
      * H({auth_input}, t_mac)
      * @type ntor
      */
-    mac: lnn.ntor.protoid + ":mac"}
+    mac: ntor.protoid + ":mac"
+}
 
 /**
- * Tweaked pseudo-random function factory, see {@link lnn.ntor.hash}.
+ * Tweaked pseudo-random function factory, see {@link ntor.hash}.
  *
- * @param {lnn.ntor.tweaks} tweak      tweak to use
+ * @param {ntor.tweaks} tweak      tweak to use
  * @return {hash_t}
  *
- * @see lnn.ntor.hash
+ * @see ntor.hash
  */
-lnn.ntor.hash_factory = function(tweak)
-{
-    tweak = lnn.ntor.tweaks[tweak]
+ntor.hash_factory = function (tweak) {
+    tweak = ntor.tweaks[tweak]
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
     /**
-     * Tweaked pseudo-random function used by {@link lnn.ntor}, returned
-     * by {@link lnn.ntor.hash_factory}.
+     * Tweaked pseudo-random function used by {@link ntor}, returned
+     * by {@link ntor.hash_factory}.
      *
      * @interface hash_t
-     * @see lnn.ntor.hash
+     * @see ntor.hash
      *
      * @property {Object} hmac      underlying hmac provider
      */
@@ -87,12 +94,12 @@ lnn.ntor.hash_factory = function(tweak)
          * @name hash_t#encrypt
          * @param {Uint8Array} data     input data
          */
-        encrypt: function(data)
-        {
-            data = lnn.enc.bits(data)
+        encrypt: function (data) {
+            data = enc.bits(data)
             data = hash.hmac.encrypt(data)
-            return lnn.dec.bits(data)
-        }}
+            return dec.bits(data)
+        }
+    }
     return hash
 }
 
@@ -101,22 +108,22 @@ lnn.ntor.hash_factory = function(tweak)
  * @enum
  * @type hash_t
  *
- * @see lnn.ntor.tweaks
+ * @see ntor.tweaks
  */
-lnn.ntor.hash = {
-        /**
-         * used for H({secret_input}, t_verify) during ntor handshakes
-         */
-        verify: lnn.ntor.hash_factory("verify"),
-        /**
-         * used for H({auth_input}, t_mac) during ntor handshakes
-         */
-        mac: lnn.ntor.hash_factory("mac"),
-        /**
-         * used for extraction during ntor handshakes key derivation
-         */
-        prk: lnn.ntor.hash_factory("key")
-    }
+ntor.hash = {
+    /**
+     * used for H({secret_input}, t_verify) during ntor handshakes
+     */
+    verify: ntor.hash_factory("verify"),
+    /**
+     * used for H({auth_input}, t_mac) during ntor handshakes
+     */
+    mac: ntor.hash_factory("mac"),
+    /**
+     * used for extraction during ntor handshakes key derivation
+     */
+    prk: ntor.hash_factory("key")
+}
 
 /**
  * Compute ntor key derivation from given material to n bytes.
@@ -125,20 +132,18 @@ lnn.ntor.hash = {
  * @param {int} n                   number of bytes to output
  * @return {Uint8Array}
  */
-lnn.ntor.kdf = function(material, n)
-{
-    material = lnn.ntor.hash.prk.encrypt(material)
-    var hash = new sjcl.misc.hmac(lnn.enc.bits(material))
+ntor.kdf = function (material, n) {
+    material = ntor.hash.prk.encrypt(material)
+    var hash = new sjcl.misc.hmac(enc.bits(material))
 
-    var tweak = lnn.ntor.tweaks["expand"]
+    var tweak = ntor.tweaks["expand"]
     tweak = sjcl.codec.utf8String.toBits(tweak)
 
     var idx = 1
-    var out = lnn.enc.bits([])
-    var last = lnn.enc.bits([])
-    while (sjcl.bitArray.bitLength(out) < n * 8)
-    {
-        var idxbits = lnn.enc.bits([idx])
+    var out = enc.bits([])
+    var last = enc.bits([])
+    while (sjcl.bitArray.bitLength(out) < n * 8) {
+        var idxbits = enc.bits([idx])
         var current = sjcl.bitArray.concat(tweak, idxbits)
 
         last = hash.encrypt(sjcl.bitArray.concat(last, current))
@@ -146,7 +151,7 @@ lnn.ntor.kdf = function(material, n)
         idx = idx + 1
     }
 
-    return lnn.dec.bits(sjcl.bitArray.clamp(out, n * 8))
+    return dec.bits(sjcl.bitArray.clamp(out, n * 8))
 }
 
 
@@ -159,24 +164,23 @@ lnn.ntor.kdf = function(material, n)
  * @param {Boolean} encode          if true, returns base64 (default: true)
  * @return {Uint8Array|string}
  *
- * @see lnn.ntor.shake
+ * @see ntor.shake
  */
-lnn.ntor.hand = function(endpoint, descriptor, encode)
-{
+ntor.hand = function (endpoint, descriptor, encode) {
     if (encode === undefined)
         encode = true
     if (descriptor === undefined)
         descriptor = endpoint.guard
 
-    var identity = lnn.dec.base64(descriptor.router.identity + "=")
-    var onionkey = lnn.dec.base64(descriptor["ntor-onion-key"])
+    var identity = dec.base64(descriptor.router.identity + "=")
+    var onionkey = dec.base64(descriptor["ntor-onion-key"])
 
     /**
     * Internal object, half-finished ntor handshake state in {@link
     * endpoint_t#material}, created by:
     * <ul>
-    *   <li> {@link lnn.ntor.hand}
-    *   <li> {@link lnn.ntor.fast}
+    *   <li> {@link ntor.hand}
+    *   <li> {@link ntor.fast}
     *   <li> {@link lnn.auth}
     * </ul>
     * Captures cryptographic state required to finish the handshake.
@@ -188,10 +192,10 @@ lnn.ntor.hand = function(endpoint, descriptor, encode)
     * @property {Uint8Array} onionkey node public key
     */
     endpoint.material = {
-            ntor: nacl.box.keyPair(),
-            identity: identity,
-            onionkey: onionkey
-        }
+        ntor: nacl.box.keyPair(),
+        identity: identity,
+        onionkey: onionkey
+    }
 
     var pubkey = endpoint.material.ntor.publicKey
     var length = identity.length + onionkey.length + pubkey.length
@@ -199,15 +203,15 @@ lnn.ntor.hand = function(endpoint, descriptor, encode)
     var payload = new Uint8Array(length)
     payload.set(identity, 0)
     payload.set(onionkey, identity.length)
-    payload.set(pubkey, identity.length+onionkey.length)
+    payload.set(pubkey, identity.length + onionkey.length)
 
     if (encode)
-        return lnn.enc.base64(payload)
+        return enc.base64(payload)
     return payload
 }
 
 /**
- * Just as {@link lnn.ntor.hand} but without node identity and onion key – used
+ * Just as {@link ntor.hand} but without node identity and onion key – used
  * by {@link lnn.fast}, writes a {@link half_t} in {@link endpoint_t#material}.
  *
  * <pre>Note: always returns base64-encoded handshake.</pre>
@@ -217,19 +221,18 @@ lnn.ntor.hand = function(endpoint, descriptor, encode)
  *
  * @see lnn.fast
  */
-lnn.ntor.fast = function(endpoint)
-{
+ntor.fast = function (endpoint) {
     endpoint.material = {}
     endpoint.material.ntor = nacl.box.keyPair()
     endpoint.material.identity = null
     endpoint.material.onionkey = null
-    return lnn.enc.base64(endpoint.material.ntor.publicKey)
+    return enc.base64(endpoint.material.ntor.publicKey)
 }
 
 /**
  * Compute the second part of a ntor handshake read
  * from {@link endpoint_t#material}, returns derived bytes suitable as
- * {@link lnn.ntor.slice} input.
+ * {@link ntor.slice} input.
  *
  * <pre>Note: returns null if handshake is invalid.</pre>
  *
@@ -239,14 +242,13 @@ lnn.ntor.fast = function(endpoint)
  *                                  (default: true)
  * @return {Uint8Array|null}
  *
- * @see lnn.ntor.hand
+ * @see ntor.hand
  */
-lnn.ntor.shake = function(endpoint, data, encoded)
-{
+ntor.shake = function (endpoint, data, encoded) {
     if (encoded === undefined)
         encoded = true
     if (encoded)
-        data = lnn.dec.base64(data)
+        data = dec.base64(data)
 
     var client_pubkey = endpoint.material.ntor.publicKey
     var client_secret = endpoint.material.ntor.secretKey
@@ -259,7 +261,7 @@ lnn.ntor.shake = function(endpoint, data, encoded)
     var exp_share = nacl.scalarMult(client_secret, server_pubkey)
     var exp_onion = nacl.scalarMult(client_secret, onionkey)
 
-    var protoid = lnn.dec.utf8(lnn.ntor.protoid)
+    var protoid = dec.utf8(ntor.protoid)
     var length = exp_share.length * 2 + identity.length + onionkey.length * 3
     var off = 0
 
@@ -271,9 +273,9 @@ lnn.ntor.shake = function(endpoint, data, encoded)
     secret_input.set(client_pubkey, off); off += client_pubkey.length
     secret_input.set(server_pubkey, off); off += server_pubkey.length
     secret_input.set(protoid, off)
-    var verify = lnn.ntor.hash.verify.encrypt(secret_input)
+    var verify = ntor.hash.verify.encrypt(secret_input)
 
-    var server = lnn.dec.utf8(lnn.ntor.tweaks["server"])
+    var server = dec.utf8(ntor.tweaks["server"])
     var length = verify.length + identity.length + onionkey.length * 3
     var off = 0
 
@@ -284,12 +286,11 @@ lnn.ntor.shake = function(endpoint, data, encoded)
     auth_input.set(server_pubkey, off); off += server_pubkey.length
     auth_input.set(client_pubkey, off); off += client_pubkey.length
     auth_input.set(server, off)
-    var client_auth = lnn.ntor.hash.mac.encrypt(auth_input)
+    var client_auth = ntor.hash.mac.encrypt(auth_input)
 
     var valid = true
     length = client_auth.length
-    for (var i = 0; i < length; i++)
-    {
+    for (var i = 0; i < length; i++) {
         if (client_auth[i] != server_auth[i])
             valid = false
     }
@@ -297,8 +298,7 @@ lnn.ntor.shake = function(endpoint, data, encoded)
     var zero_onion = 0
     var zero_share = 0
     length = exp_onion.length
-    for (var i = 0; i < length; i++)
-    {
+    for (var i = 0; i < length; i++) {
         if (exp_onion[i] == 0)
             zero_onion = zero_onion + 1
         if (exp_share[i] == 0)
@@ -308,36 +308,34 @@ lnn.ntor.shake = function(endpoint, data, encoded)
     if (zero_onion == exp_onion.length || zero_share == exp_share.length)
         valid = false
 
-    if (valid)
-    {
-        return lnn.ntor.kdf(secret_input, lnn.ntor.keybytes)
+    if (valid) {
+        return ntor.kdf(secret_input, ntor.keybytes)
     }
     return null
 }
 
 /**
  * Build a shared cryptographic {@link material_t} for
- * {@link endpoint_t#material} from the output of {@link lnn.ntor.shake}.
+ * {@link endpoint_t#material} from the output of {@link ntor.shake}.
  *
  * <pre>
  * Note: assume KEY_LEN == 16 (aes256) and HASH_LEN == 20 (sha1) internally.
  * </pre>
  *
- * @param {Uint8Array} material     exactly {@link lnn.ntor.keybytes}
+ * @param {Uint8Array} material     exactly {@link ntor.keybytes}
  *                                  bytes
  * @return {material_t}
  */
-lnn.ntor.slice = function(material)
-{
+ntor.slice = function (material) {
     var k = 16 // KEY_LEN
     var h = 20 // HASH_LEN
 
     /**
      * Internal object, stores shared cryptographic material
-     * as {@link endpoint_t#material}, returned by {@link lnn.ntor.slice}.
+     * as {@link endpoint_t#material}, returned by {@link ntor.slice}.
      *
      * @interface material_t
-     * @see lnn.ntor.slice
+     * @see ntor.slice
      *
      * @property {Uint8Array} key_hash          unused
      * @property {Uint8Array} forward_key       used in {@link forward_t}
@@ -369,19 +367,21 @@ lnn.ntor.slice = function(material)
  * if and only if the authentication succeeded.
  *
  */
-lnn.ntor.auth = function(endpoint, client, data)
-{
+ntor.auth = function (endpoint, client, data) {
     var pending_material = endpoint.material
     endpoint.material = endpoint.auth
 
-    var data = lnn.dec.base64(data)
-    var material = lnn.ntor.shake(endpoint, client)
+    var data = dec.base64(data)
+    var material = ntor.shake(endpoint, client)
     if (material == null)
         throw "Invalid auth."
     endpoint.material = pending_material
 
     var key = material.slice(0, 32)
-    var nonce = material.slice(32, 32+24)
+    var nonce = material.slice(32, 32 + 24)
     data = nacl.secretbox.open(data, nonce, key)
-    return JSON.parse(lnn.enc.utf8(data))
+    return JSON.parse(enc.utf8(data))
 }
+
+
+export { ntor }

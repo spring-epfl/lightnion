@@ -1,39 +1,35 @@
 /**
  * GET operations.
+ * @module get
  * @namespace
  * @see lnn.get.guard
  */
-lnn.get = {}
 
 /**
- * Perform GET /guard and update endpoint accordingly,
- * see {@link endpoint_t#guard}.
- *
- * @param {endpoint_t} endpoint     endpoint in use, stores answer
- * @param {callback} success        optional, called on success
- * @param {callback} error          optional, called on error
- * @example
- * // Note: lnn.open perform these steps for you whenever needed.
- * endpoint = lnn.endpoint('localhost', 4990)
- * lnn.get.guard(endpoint, function (endpoint)
- * {
- *     console.log('Guard identity:', endpoint.guard.router.identity)
- * })
- * // (can also have error callback: function (endpoint, xhttp_status) { })
- */
-lnn.get.guard = function(endpoint, success, error)
-{
+* Perform GET /guard and update endpoint accordingly,
+* see {@link endpoint_t#guard}.
+*
+* @param {endpoint_t} endpoint     endpoint in use, stores answer
+* @param {callback} success        optional, called on success
+* @param {callback} error          optional, called on error
+* @example
+* // Note: lnn.open perform these steps for you whenever needed.
+* endpoint = lnn.endpoint('localhost', 4990)
+* lnn.get.guard(endpoint, function (endpoint)
+* {
+*     console.log('Guard identity:', endpoint.guard.router.identity)
+* })
+* // (can also have error callback: function (endpoint, xhttp_status) { })
+*/
+export function guard(endpoint, success, error) {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function()
-    {
-        if (rq.readyState == 4 && rq.status == 200)
-        {
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
             endpoint.guard = JSON.parse(rq.responseText)
             if (success !== undefined)
                 success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined)
-        {
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }
@@ -58,19 +54,15 @@ lnn.get.guard = function(endpoint, success, error)
  *
  * @see lnn.get.guard
  */
-lnn.get.consensus = function(endpoint, success, error)
-{
+export function consensus(endpoint, success, error) {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function()
-    {
-        if (rq.readyState == 4 && rq.status == 200)
-        {
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
             endpoint.consensus = JSON.parse(rq.responseText)
             if (success !== undefined)
                 success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined)
-        {
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }
@@ -81,15 +73,15 @@ lnn.get.consensus = function(endpoint, success, error)
 /**
  * Perform GET /descriptors 
  */
-lnn.get.descriptors = function(endpoint, success, error){
+export function descriptors(endpoint, success, error) {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function(){
-        if(rq.readyState == 4 && rq.status == 200){
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
             endpoint.descriptors = JSON.parse(rq.responseText)
-            
-            if(success !== undefined) success(endpoint)
+
+            if (success !== undefined) success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined){
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }
@@ -98,55 +90,51 @@ lnn.get.descriptors = function(endpoint, success, error){
     rq.send()
 }
 
-lnn.get.consensus_raw = function(endpoint, success, error,flavor = 'microdesc')
-{
+export function consensus_raw(endpoint, success, error, flavor = 'microdesc') {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function()
-    {
-        if (rq.readyState == 4 && rq.status == 200)
-        {
-            endpoint.consensus_raw =  rq.responseText
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
+            endpoint.consensus_raw = rq.responseText
             if (success !== undefined)
                 success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined)
-        {
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }
-    rq.open("GET", endpoint.urls.consensus+ "-raw/" + flavor, true)
+    rq.open("GET", endpoint.urls.consensus + "-raw/" + flavor, true)
     rq.send()
 }
 
 /**
  * Perform GET /descriptors 
  */
-lnn.get.descriptors_raw = function(endpoint, success, error,flavor = 'microdesc'){
+export function descriptors_raw(endpoint, success, error, flavor = 'microdesc') {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function(){
-        if(rq.readyState == 4 && rq.status == 200){
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
             endpoint.descriptors_raw = rq.responseText
-            
-            if(success !== undefined) success(endpoint)
+
+            if (success !== undefined) success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined){
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }
 
-    rq.open("GET", endpoint.urls.descriptors+ "-raw/" + flavor, true)
+    rq.open("GET", endpoint.urls.descriptors + "-raw/" + flavor, true)
     rq.send()
 }
-//fetch raw signing keys(tor/keys/all)
-lnn.get.signing_keys = function(endpoint, success, error){
+
+export function signing_keys(endpoint, success, error) {
     var rq = new XMLHttpRequest()
-    rq.onreadystatechange = function(){
-        if(rq.readyState == 4 && rq.status == 200){
-            endpoint.signing_keys = rq.responseText
-            
-            if(success !== undefined) success(endpoint)
+    rq.onreadystatechange = function () {
+        if (rq.readyState == 4 && rq.status == 200) {
+            endpoint.signing_keys = JSON.parse(rq.responseText)
+
+            if (success !== undefined) success(endpoint)
         }
-        else if (rq.readyState == 4 && error !== undefined){
+        else if (rq.readyState == 4 && error !== undefined) {
             error(endpoint, rq.status)
         }
     }

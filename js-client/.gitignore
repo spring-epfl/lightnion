@@ -3,3 +3,5 @@ lightnion.bundle.js
 lightnion.min.js
 lightnion.js
 sjcl.js
+
+node_modules/
