@@ -276,10 +276,10 @@ class ChannelManager:
 
 
 class WebsocketManager:
-    prefix = base_url + '/channels/'
+    prefix = base_url + '/channel/'
     prefix_len = len(prefix)
 
-    def __init__(self, host='0.0.0.0', port=8765, timeout=60):
+    def __init__(self, host='127.0.0.1', port=8765, timeout=60):
         """
         Websocket server
         :param host: host on which the websocket need to run.

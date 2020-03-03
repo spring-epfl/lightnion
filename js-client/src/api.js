@@ -93,7 +93,7 @@ export function open(host, port, success, error, io, fast, auth, select_path, tc
         success: function (endpoint) {
             console.log('called success cb')
             endpoint.state = lnn.state.success
-            info("circuit created")
+            console.log("circuit created")
             success(endpoint)
             endpoint.io.success = function () { }
         }

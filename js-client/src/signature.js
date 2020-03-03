@@ -33,7 +33,7 @@ export function verify(raw_cons, keys, minimal, flavor = 'microdesc') {
         throw 'The minimal percentage must be between 0 (not included) and 1'
     }
 
-    keys = lnn.signature.process_raw_keys(keys)
+    //keys = process_raw_keys(keys)
 
     let nbr_verified = 0
     let total = 0
@@ -54,6 +54,7 @@ export function verify(raw_cons, keys, minimal, flavor = 'microdesc') {
         let key = keys[fingerprint]
         let e = bigInt(key["exponent"])
         let n = bigInt(key["modulus"])
+        let key_digest = sig_and_keys_digests[fingerprint]["signing-key-digest"]
 
         if (key === undefined || !verify_key(key["pem"], key_digest)) continue
 
@@ -68,7 +69,7 @@ export function verify(raw_cons, keys, minimal, flavor = 'microdesc') {
     return nbr_verified > minimal * total
 }
 
-lnn.signature.process_raw_keys = function(raw_keys) {
+export function process_raw_keys(raw_keys) {
     var keys = {}
     var real_tor = true //keep false for chutney!!
 
@@ -226,7 +227,7 @@ export function verify_key(key, key_digest) {
     return hash.toUpperCase() === key_digest.toUpperCase()
 }
 
-lnn.signature.compute_digest = function (key) {
+export function compute_digest(key) {
     let raw_key = key.split('\n')
     let b_index = raw_key.indexOf("-----BEGIN RSA PUBLIC KEY-----")
     let e_index = raw_key.indexOf("-----END RSA PUBLIC KEY-----")

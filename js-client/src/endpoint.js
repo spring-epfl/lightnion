@@ -47,7 +47,7 @@ export function endpoint(host, port) {
         ws: ws,
         http: http,
         guard: http + "/guard",
-        socket: ws + "/channels",
+        socket: ws + "/channel",
         channels: http + "/channels",
         consensus: http + "/consensus",
         descriptors: http + "/descriptors",
