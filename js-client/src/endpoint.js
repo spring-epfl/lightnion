@@ -1,4 +1,13 @@
 /**
+ * @module endpoint
+ */
+
+import { lnn } from "./header.js";
+import * as api from "./api.js";
+import * as post from "./post.js";
+
+
+/**
  * Create an empty endpoint object, consider using {@link lnn.open} first.
  *
  * @todo TODO: migrate from http+ws to https+wss
@@ -8,8 +17,7 @@
  * @param {string} port (ex: 4990, 8080, 5000, 443…)
  * @return {endpoint_t}
  */
-lnn.endpoint = function(host, port)
-{
+export function endpoint(host, port) {
     var http = "http://" + host + ":" + port.toString()
     http += lnn.api.url
 
@@ -153,7 +161,7 @@ lnn.endpoint = function(host, port)
          * @default null
          */
         consensus: null,
-        
+
         /**
          * Consensus obtained by {@link lnn.get.descriptors} upon request
          * @name endpoint_t#descriptors
@@ -168,21 +176,19 @@ lnn.endpoint = function(host, port)
         select_path: false,
 
         /*perform http get/post request*/
-        
-        http_request: function(url, method, data, data_type, success, error) 
-        {   
-            if (error === undefined)
-                error = function() { }
-            if (success === undefined)
-                success = function() { }
 
-           lnn.send_req(endpoint,url, method, data, data_type, success,error)
+        http_request: function (url, method, data, data_type, success, error) {
+            if (error === undefined)
+                error = function () { }
+            if (success === undefined)
+                success = function () { }
+
+            api.send_req(endpoint, url, method, data, data_type, success, error)
         },
 
         /*destroy the circuit*/
-        close: function(success,error)
-        {
-            lnn.post.close(endpoint,success,error)
+        close: function (success, error) {
+            post.close(endpoint, success, error)
         }
     }
 

@@ -1,0 +1,4 @@
+selenium
+aiohttp
+pytest
+psutil

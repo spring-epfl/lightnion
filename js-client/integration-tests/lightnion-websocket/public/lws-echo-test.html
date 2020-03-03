@@ -1,0 +1,78 @@
+<!--
+    This file is used for integration testing.
+    Loading it will connect to a local websocket echo server, through a local lightnion proxy.
+-->
+
+<!doctype html>
+<html>
+
+<style>
+</style>
+
+<head lang='en'>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width'>
+    <title>lightnion websocket redirect echo demo</title>
+
+    <link rel="stylesheet" type="text/css" href="echo-chat.css">
+
+    <script src="lws.bundle.js"></script>
+</head>
+
+<body>
+    <h1>lightnion websocket redirect echo demo</h1>
+
+    <ul id="messages"></ul>
+    <form id="echo-form" action="javascript:void(0);">
+        <input id="echo-input" autocomplete="off" />
+        <button type="button" id="echo-button" onclick="sendMessage()">Send</button>
+    </form>
+
+    <script>
+        // send message in input through websocket
+        function sendMessage() {
+            console.log("send message")
+            let msg = document.getElementById("echo-input").value;
+            document.getElementById("echo-input").value = "";
+            appendMessage(msg, true);
+            window.ws.send(msg);
+        }
+
+        // add a message to the frontend
+        function appendMessage(msg, client) {
+            let ul = document.getElementById("messages");
+            let li = document.createElement("li");
+            let text = document.createTextNode(msg);
+            li.appendChild(text);
+            li.setAttribute("class", client ? "client" : "server");
+            ul.appendChild(li);
+        }
+
+        // send with enter key
+        document.getElementById("echo-form").addEventListener("keyup", function (event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                document.getElementById("echo-button").click();
+            }
+        });
+
+    </script>
+
+    <script>
+
+        // create websocket as normal
+        let url = new URL("ws://localhost:8081/ws");
+        let ws = new LWS(url);
+
+        ws.onmessage = (event) => {
+            console.log(event)
+            appendMessage(event.data, false);
+        }
+
+        window.ws = ws;
+    </script>
+
+
+</body>
+
+</html>
