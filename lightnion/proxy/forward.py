@@ -302,21 +302,21 @@ async def create_channel():
     logging.info('Create new channel.')
     #ntor = payload['ntor']
 
-    auth = None
-    if 'auth' in payload:
-        auth = payload['auth']
-        if app.clerk.auth is None:
-            quart.abort(400)
-
-    select_path = False
-    if 'select_path' in payload:
-        if payload['select_path'] == "true":
-            select_path = True
-
-    if not select_path:
-        app.clerk.wait_for_consensus()
-
     try:
+        auth = None
+        if payload and 'auth' in payload:
+            auth = payload['auth']
+            if app.clerk.auth is None:
+                quart.abort(400)
+
+        select_path = False
+        if payload and 'select_path' in payload:
+            if payload['select_path'] == "true":
+                select_path = True
+
+        if not select_path:
+            app.clerk.wait_for_consensus()
+
         #data = app.clerk.create.perform(data)
         ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors, select_path)
         if auth is not None:
@@ -324,11 +324,12 @@ async def create_channel():
             ckt_info = app.clerk.auth.perform(auth,ckt_info)
 
         response = quart.jsonify(ckt_info)
-        return response, 201 # Created
 
     except Exception as e:
         logging.exception(e)
         quart.abort(503)
+
+    return response, 201 # Created
 
 
 @app.route(url + '/channels/<uid>', methods=['DELETE'])
