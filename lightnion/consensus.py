@@ -8,7 +8,7 @@ import re
 import urllib.request
 
 import lightnion as lnn
-from tools.keys import get_signing_keys_info
+import lightnion.keys
 
 
 # TODO: remove extra (useless) checks/exceptions within this file
@@ -804,8 +804,7 @@ def download_direct(hostname, port, flavor='microdesc'):
     res = urllib.request.urlopen(uri)
     cons = res.read()
 
-    ip = '%s:%d'%(hostname,port)
-    keys = get_signing_keys_info(ip)
+    keys = lnn.keys.fetch_and_parse_keys(hostname, port)
 
     if flavor != 'microdesc':
         if not lnn.signature.verify(cons.decode('utf-8'), keys):

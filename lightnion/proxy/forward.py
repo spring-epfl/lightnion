@@ -17,10 +17,8 @@ from quart_cors import cors
 import lightnion as lnn
 import lightnion.path_selection
 import lightnion.proxy
+import lightnion.keys
 
-from tools.keys import get_signing_keys_info
-
-#from tools.keys import get_raw_signing_keys
 
 debug = True
 
@@ -125,8 +123,7 @@ class clerk():
         digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
         self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
 
-        keys = get_signing_keys_info('{}:{}'.format(host, port))
-        self.signing_keys = keys
+        self.signing_keys = lnn.keys.fetch_and_parse_keys(host, port)
         #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
         self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
