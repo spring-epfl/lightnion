@@ -194,7 +194,6 @@ class clerk():
             #nickname = guard['router']['nickname']
             #fingerprint = guard['fingerprint']
             #entry = [fingerprint, nickname]
-            #guard = lnn.proxy.path.convert(entry, consensus=self.consensus, expect='list')[0]
 
             logging.info('New guard relay selected.')
             logging.debug(guard)
