@@ -791,7 +791,6 @@ def download_direct(hostname, port, flavor='microdesc'):
     :param hostname: host name of the node from which to retrieve the consensus.
     :param port: port of the node from which to retrieve the consensus.
     :param flavor: flavour of the consensus to retrieve.
-    :param cache: if the retrieved consensus should put in the cache.
     """
 
     if flavor not in ['unflavored', 'microdesc']:
@@ -836,33 +835,3 @@ def download_raw(hostname, port, flavor='unflavored'):
     cons = res.read().decode('utf-8')
 
     return cons
-
-def load(file_name, cache=True):
-    """Load the consensus from a file
-    :param file_name: the name of the file in consensus_file
-    :param cache: if we cache the newly downloaded consensus
-    :return: the parsed consensus"""
-
-    abs_path = "/vagrant/consensus_files/"+file_name
-
-    if not os.path.exists(abs_path):
-        raise FileNotFoundError()
-
-    if cache:
-        try:
-            return lnn.cache.consensus.get("unflavored")
-        except BaseException:
-            pass
-
-    with open(abs_path, "r") as file:
-        answer = file.read()
-
-    consensus, remaining = consume_routers(answer)
-
-    if consensus is None or remaining is None or not len(remaining) == 0:
-        raise RuntimeError('Unable to parse downloaded consensus!')
-
-    if cache:
-        lnn.cache.consensus.put(consensus)
-
-    return consensus
