@@ -1,6 +1,0 @@
-cryptography
-websockets
-requests
-asyncio
-quart
-Quart-CORS

@@ -1,2 +1,9 @@
-pynacl
+Quart-CORS
+asyncio
+cryptography
 pycryptodome
+pynacl
+quart
+requests
+stem
+websockets
