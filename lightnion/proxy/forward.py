@@ -10,9 +10,11 @@ import time
 from datetime import datetime, timedelta
 
 import quart
+import stem
 import websockets
 
 from quart_cors import cors
+from stem.control import EventType, Controller
 
 import lightnion as lnn
 import lightnion.path_selection
@@ -37,11 +39,12 @@ logger.setLevel(logging.WARNING)
 logger.addHandler(handler)
 
 
-class clerk():
-    def __init__(self, slave_node, control_port, dir_port, compute_path, auth_dir=None):
+class Clerk():
+    def __init__(self, slave_node, control_port, dir_port, controller, compute_path, auth_dir=None):
         #super().__init__()
         logging.info('Bootstrapping clerk.')
         self.crypto = lnn.proxy.parts.crypto()
+
         self.dead = False
 
         self.auth = None
@@ -58,7 +61,6 @@ class clerk():
         else:
             logging.debug('Auth dir is None.')
 
-        self.retrieved_consensus = False
         self.consensus = None
         self.descriptors = None
 
@@ -67,12 +69,12 @@ class clerk():
         self.mic_consensus_raw = None
         self.mic_descriptors_raw = None
 
+        self.consensus_init = False
+
         #self.consm = None
         #self.descm = None
         self.signing_keys = None
         #self.signing_keys_raw = None
-
-        self.timer_consensus = None
 
         self.guard_node = None
 
@@ -85,8 +87,13 @@ class clerk():
         self.channel_manager = None
         self.websocket_manager = None
 
+        self.controller = controller
+        self.controller.add_event_listener(self.handle_new_guard, EventType.GUARD)
+        self.controller.add_event_listener(self.retrieve_consensus, EventType.NEWCONSENSUS)
+
 
     def prepare(self):
+        self.retrieve_consensus()
         guard = self.get_guard()
 
         self.link = lnn.proxy.link.Link(guard)
@@ -98,21 +105,15 @@ class clerk():
         self.websocket_manager.set_channel_manager(self.channel_manager)
 
 
-    def retrieve_consensus(self):
-        """Retrieve relays data with direct HTTP connection and schedule its future retrival."""
-
-        # We tolerate that the system clock can be up to a few seconds too early.
-        refresh_tolerance_delay = 2.0
-        min_delay = 120.0 # 2 minutes
-        max_time_until_invalid = 900.0 # 15 minutes
+    def retrieve_consensus(self, event=None):
+        """Retrieve relays data with direct HTTP connection."""
 
         host = self.slave_node[0]
         port = self.dir_port
 
-
         # retrieve consensus and descriptors
         if self.compute_path:
-            cons,sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
+            cons, sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
             desc = lnn.descriptors.download_direct(host, port, cons)
             self.consensus = cons
             self.signing_keys = sg_keys
@@ -133,37 +134,14 @@ class clerk():
         digests = lnn.consensus.extract_nodes_digests_micro(self.mic_consensus_raw)
         self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(host, port, digests)
 
-        try:
-            # Compute delay until retrival of the next consensus.
-            fresh_until = lnn.consensus.extract_date(self.consensus_raw, 'fresh-until')
-            now = datetime.utcnow()
-            delay = (fresh_until - now).total_seconds() + refresh_tolerance_delay
-
-            if delay < min_delay:
-                valid_until = lnn.consensus.extract_date(self.consensus_raw, 'valid-until')
-                delay = (valid_until - now).total_seconds() - max_time_until_invalid
-
-            delay = max(delay, min_delay)
-
-            logging.debug('Delay until fetching next concensus: %f', delay)
-
-            self.timer_consensus = threading.Timer(delay, clerk.retrieve_consensus, [self])
-            self.timer_consensus.start()
-            self.retrieved_consensus = True
-
-        except Exception as e:
-            logging.error(e)
-            raise e
+        self.consensus_init = True
 
 
     def wait_for_consensus(self):
         """Ensure a consensus is present in the clerk, and fetch a new one if it is not.
         """
-        if not self.retrieved_consensus:
-            if self.timer_consensus is None:
-                self.retrieve_consensus()
 
-        while not self.retrieved_consensus:
+        while not self.consensus_init:
             logging.info('Wait for consensus...')
             time.sleep(1)
 
@@ -179,14 +157,16 @@ class clerk():
         return descriptor
 
 
-    def get_guard(self):
+    def handle_new_guard(self, event):
+        self.get_guard(renew=True)
+
+
+    def get_guard(self, renew=False):
         """Generate a guard
         :return: guard node
         """
 
-        self.wait_for_consensus()
-
-        if self.guard_node is None:
+        if renew or self.guard_node is None:
             # Use local node as the guard.
             #guard = lnn.path_selection.select_guard_from_consensus(self.consensus, self.descriptors)
             host = self.slave_node[0]
@@ -256,7 +236,7 @@ async def get_consensus_raw(flavor):
         app.clerk.wait_for_consensus()
         cons = app.clerk.mic_consensus_raw
         if flavor == 'unflavored':
-            cons =app.clerk.consensus_raw
+            cons = app.clerk.consensus_raw
 
         return cons, 200
     except Exception as e:
@@ -318,10 +298,10 @@ async def create_channel():
 
     try:
         #data = app.clerk.create.perform(data)
-        ckt_info = app.clerk.channel_manager.create_channel( app.clerk.consensus, app.clerk.descriptors, select_path)
+        ckt_info = app.clerk.channel_manager.create_channel(app.clerk.consensus, app.clerk.descriptors, select_path)
         if auth is not None:
             # TODO the proxy pack the ntor key in a tor cell, this can be done client side.
-            ckt_info = app.clerk.auth.perform(auth,ckt_info)
+            ckt_info = app.clerk.auth.perform(auth, ckt_info)
 
         response = quart.jsonify(ckt_info)
         return response, 201 # Created
@@ -359,7 +339,6 @@ async def loop_signal_handler(signum, loop):
     """
 
     logging.debug('Signal handler called.')
-    app.clerk.timer_consensus.cancel()
     await app.shutdown()
     await app.clerk.websocket_manager.stop()
 
@@ -382,26 +361,29 @@ def main(port, slave_node, control_port, dir_port, compute_path, auth_dir=None):
     #    from werkzeug import SharedDataMiddleware
     #    app.wsgi_app = SharedDataMiddleware(app.wsgi_app, static_files)
 
-    app.clerk = clerk(slave_node, control_port, dir_port, compute_path, auth_dir)
-    logging.info('Bootstrapping HTTP server.')
+    with Controller.from_port(port=control_port) as controller:
+        controller.authenticate()
 
-    logging.getLogger(websockets.__name__).setLevel(logging.INFO)
-    asyncio.set_event_loop(asyncio.new_event_loop())
+        app.clerk = Clerk(slave_node, control_port, dir_port, controller, compute_path, auth_dir)
+        logging.info('Bootstrapping HTTP server.')
 
-    app.clerk.prepare()
+        logging.getLogger(websockets.__name__).setLevel(logging.INFO)
+        asyncio.set_event_loop(asyncio.new_event_loop())
 
-    loop = asyncio.get_event_loop()
-    for s in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
-        loop.add_signal_handler(s, lambda s=s: asyncio.create_task(loop_signal_handler(s, loop)))
+        app.clerk.prepare()
 
-    loop.set_exception_handler(None)
+        loop = asyncio.get_event_loop()
+        for s in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+            loop.add_signal_handler(s, lambda s=s: asyncio.create_task(loop_signal_handler(s, loop)))
 
-    try:
-        loop.create_task(app.clerk.link.connection)
-        loop.create_task(app.clerk.websocket_manager.serve(loop))
+        loop.set_exception_handler(None)
 
-        app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)
-    except Exception:
-        pass
-    finally:
-        loop.close()
+        try:
+            loop.create_task(app.clerk.link.connection)
+            loop.create_task(app.clerk.websocket_manager.serve(loop))
+
+            app.run(host='0.0.0.0', port=port, debug=debug, loop=loop, use_reloader=False)
+        except Exception:
+            pass
+        finally:
+            loop.close()
