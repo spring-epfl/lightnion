@@ -15,6 +15,7 @@ import websockets
 
 from quart_cors import cors
 from stem.control import EventType, Controller
+from stem.util.log import get_logger
 
 import lightnion as lnn
 import lightnion.path_selection
@@ -36,6 +37,8 @@ logger = logging.getLogger("asyncio")
 logger.setLevel(logging.WARNING)
 logger.addHandler(handler)
 
+logger = get_logger()
+logger.propagate = False
 
 class Clerk():
     def __init__(self, slave_node, control_port, dir_port, controller, compute_path, auth_dir=None):
@@ -124,7 +127,7 @@ class Clerk():
         digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
         self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
 
-        self.signing_keys = lnn.keys.fetch_and_parse_keys(host, port)
+        self.signing_keys = lnn.keys.fetch_and_parse_keys(host, port, tls=False)
         #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
         self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
