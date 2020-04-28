@@ -17,6 +17,8 @@ import lightnion.path_selection
 import lightnion.proxy
 import lightnion.keys
 
+from lightnion.consensus import Flavor
+
 
 debug = True
 
@@ -68,7 +70,7 @@ class Clerk():
         self.consensus_init = False
 
         #self.consm = None
-        #self.descm = None
+        self.descm = None
         self.signing_keys = None
         #self.signing_keys_raw = None
 
@@ -109,23 +111,23 @@ class Clerk():
 
         # retrieve consensus and descriptors
         if self.compute_path:
-            cons, sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
-            desc = lnn.descriptors.download_direct(host, port, cons)
+            cons, sg_keys = lnn.consensus.download_direct(host, port, flavor=Flavor.UNFLAVORED)
+            desc = lnn.descriptors.download_direct(host, port, cons, flavor=Flavor.UNFLAVORED)
             self.consensus = cons
             self.signing_keys = sg_keys
             self.descriptors = desc
 
-            #self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
-            #self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+            self.consm, sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor=Flavor.MICRO)
+            self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor=Flavor.MICRO)
 
-        self.consensus_raw = lnn.consensus.download_raw(host, port, flavor='unflavored')
+        self.consensus_raw = lnn.consensus.download_raw(host, port, flavor=Flavor.UNFLAVORED)
         digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
         self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
 
         self.signing_keys = lnn.keys.fetch_and_parse_keys(host, port, tls=False)
         #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
-        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
+        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor=Flavor.MICRO)
         digests = lnn.consensus.extract_nodes_digests_micro(self.mic_consensus_raw)
         self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(host, port, digests)
 
