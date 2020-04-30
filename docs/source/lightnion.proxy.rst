@@ -44,23 +44,6 @@ lightnion.proxy.parts module
     :undoc-members:
     :show-inheritance:
 
-lightnion.proxy.path module
----------------------------
-
-.. automodule:: lightnion.proxy.path
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-lightnion.proxy.relayinfo module
---------------------------------
-
-.. automodule:: lightnion.proxy.relayinfo
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Module contents
 ---------------
 
