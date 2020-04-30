@@ -1,13 +1,8 @@
 import asyncio
-import base64
 import logging
 import signal
-import string
 import sys
-import threading
 import time
-
-from datetime import datetime, timedelta
 
 import quart
 import stem
@@ -15,14 +10,15 @@ import websockets
 
 from quart_cors import cors
 from stem.control import EventType, Controller
+from stem.util.log import get_logger
 
 import lightnion as lnn
 import lightnion.path_selection
 import lightnion.proxy
+import lightnion.keys
 
-from tools.keys import get_signing_keys_info
+from lightnion.consensus import Flavor
 
-#from tools.keys import get_raw_signing_keys
 
 debug = True
 
@@ -38,6 +34,8 @@ logger = logging.getLogger("asyncio")
 logger.setLevel(logging.WARNING)
 logger.addHandler(handler)
 
+logger = get_logger()
+logger.propagate = False
 
 class Clerk():
     def __init__(self, slave_node, control_port, dir_port, controller, compute_path, auth_dir=None):
@@ -72,7 +70,7 @@ class Clerk():
         self.consensus_init = False
 
         #self.consm = None
-        #self.descm = None
+        self.descm = None
         self.signing_keys = None
         #self.signing_keys_raw = None
 
@@ -113,24 +111,23 @@ class Clerk():
 
         # retrieve consensus and descriptors
         if self.compute_path:
-            cons, sg_keys = lnn.consensus.download_direct(host, port, flavor='unflavored')
-            desc = lnn.descriptors.download_direct(host, port, cons)
+            cons, sg_keys = lnn.consensus.download_direct(host, port, flavor=Flavor.UNFLAVORED)
+            desc = lnn.descriptors.download_direct(host, port, cons, flavor=Flavor.UNFLAVORED)
             self.consensus = cons
             self.signing_keys = sg_keys
             self.descriptors = desc
 
-            #self.consm,sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port)
-            #self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor='microdesc')
+            self.consm, sg_keysm = lnn.consensus.download_direct(self.slave_node[0], self.dir_port, flavor=Flavor.MICRO)
+            self.descm = lnn.descriptors.download_direct(self.slave_node[0], self.dir_port, self.consm, flavor=Flavor.MICRO)
 
-        self.consensus_raw = lnn.consensus.download_raw(host, port, flavor='unflavored')
+        self.consensus_raw = lnn.consensus.download_raw(host, port, flavor=Flavor.UNFLAVORED)
         digests = lnn.consensus.extract_nodes_digests_unflavored(self.consensus_raw)
         self.descriptors_raw = lnn.descriptors.download_raw_by_digests_unflavored(host, port, digests)
 
-        keys = get_signing_keys_info('{}:{}'.format(host, port))
-        self.signing_keys = keys
+        self.signing_keys = lnn.keys.fetch_and_parse_keys(host, port, tls=False)
         #self.signing_keys_raw = get_raw_signing_keys('%s:%d'%(host, port))
 
-        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor='microdesc')
+        self.mic_consensus_raw = lnn.consensus.download_raw(host, port, flavor=Flavor.MICRO)
         digests = lnn.consensus.extract_nodes_digests_micro(self.mic_consensus_raw)
         self.mic_descriptors_raw = lnn.descriptors.download_raw_by_digests_micro(host, port, digests)
 
@@ -177,7 +174,6 @@ class Clerk():
             #nickname = guard['router']['nickname']
             #fingerprint = guard['fingerprint']
             #entry = [fingerprint, nickname]
-            #guard = lnn.proxy.path.convert(entry, consensus=self.consensus, expect='list')[0]
 
             logging.info('New guard relay selected.')
             logging.debug(guard)
@@ -282,21 +278,21 @@ async def create_channel():
     logging.info('Create new channel.')
     #ntor = payload['ntor']
 
-    auth = None
-    if 'auth' in payload:
-        auth = payload['auth']
-        if app.clerk.auth is None:
-            quart.abort(400)
-
-    select_path = False
-    if 'select_path' in payload:
-        if payload['select_path'] == "true":
-            select_path = True
-
-    if not select_path:
-        app.clerk.wait_for_consensus()
-
     try:
+        auth = None
+        if payload and 'auth' in payload:
+            auth = payload['auth']
+            if app.clerk.auth is None:
+                quart.abort(400)
+
+        select_path = False
+        if payload and 'select_path' in payload:
+            if payload['select_path'] == "true":
+                select_path = True
+
+        if not select_path:
+            app.clerk.wait_for_consensus()
+
         #data = app.clerk.create.perform(data)
         ckt_info = app.clerk.channel_manager.create_channel(app.clerk.consensus, app.clerk.descriptors, select_path)
         if auth is not None:
@@ -304,11 +300,12 @@ async def create_channel():
             ckt_info = app.clerk.auth.perform(auth, ckt_info)
 
         response = quart.jsonify(ckt_info)
-        return response, 201 # Created
 
     except Exception as e:
         logging.exception(e)
         quart.abort(503)
+
+    return response, 201 # Created
 
 
 @app.route(url + '/channels/<uid>', methods=['DELETE'])

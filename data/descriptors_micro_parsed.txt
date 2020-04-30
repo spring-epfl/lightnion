@@ -1,0 +1,175 @@
+{
+    "flavor": "microdesc",
+    "descriptors": [
+        {
+            "micro-digest": "/oBdxYE6dEsNEuhT+eCKq5LbsJhz/5aE/CQlHeYQqy0",
+            "onion-key": "MIGJAoGBAMXGxwPQGH9t9pfQSnqrJd7r4ppFaalVCd+HROsS6CA/znvpf/2b9uer5qucAUYRL0Uhr0o6J0TldxSd3d8WY5Lwn/ZrJ7h4U6SDV024BxqW7R4OMT5ISFgh89DQN6p1g8mMslGktwZUrCGeEhL32WQAEB/so5wnv7Aa6yYWBDZbAgMBAAE=",
+            "ntor-onion-key": "pwiw7FWsyJXlLyAa7kOTSyKgaqG3xV+stOE+uGEvsE0=",
+            "policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "identity": {
+                "type": "ed25519",
+                "master-key": "RVD4e+ZpIO5hJFWZ1mQvPbpp8YiASSsdM3x+eUDPSGM"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "vsIfsfWipqVVIP/sPw71/GVuqFBACo8isd0QE5IHWRA",
+            "onion-key": "MIGJAoGBALS2aufFNN2vT315425F+PwmNV8WILh08q3aEVmcn2qpny12d9S2KA/tU//ZlJhguqVTV1MMY52FstR0NKETDD9pdzHUFSsFCOzLhOzSdNPRrp7+ldZCV+mrmd2i2Dob3dVcyZP8iGORSQDR0D6c70Cfv2jM9LW5FTnaOZ3Dld5LAgMBAAE=",
+            "ntor-onion-key": "aWrb8rS++QFQnEDvEnSWFQ5Wh8q7JGYY90bkx05LfCM=",
+            "policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "identity": {
+                "type": "ed25519",
+                "master-key": "3QRD2H4MaOulm41T865Ya4/xJfO6vNMSl+yfOWksCoo"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "sOncg9KObIVQCj2qbmTa166mzTNuYLq/78NnH4j9Rpg",
+            "onion-key": "MIGJAoGBAMelRVut9suHj0F4uYyAZCsmtlrjRbdmZNvSy7oYbMpdRsKrmEhckXd10UIJOU5oI9+Kf+dWyggcs6/Nx4qar7hXF9nTf18wCYm+UbFtcNzCXLeseaZtDj/MbHa0+ptykcLFb1VkI4a7cAQ5qPlWUG0qpE/yUGa3kifRd78icwWVAgMBAAE=",
+            "ntor-onion-key": "3nwr7McqePaQrbawf0Lkuj72l61AreUJ4ulxjY1grFg=",
+            "identity": {
+                "type": "ed25519",
+                "master-key": "A1Ly6Uf+PRVV+CeVAQF1FKPYLNrPsWeuXed2h/KLGX0"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "r5w5OtvIDxowqug0biGBmqR6Fm2D0lukwOdAS+3f0nI",
+            "onion-key": "MIGJAoGBANXWu7tNGp/m326Ua3ZBr78lRfPD2xPn+R5zU/SjWa32/QpkLPyloJt7XzI1JGxMdU+bVgOXuprW51nm+gtfbZ64g6DFFuBEmAEOVfqgCRfgz3yx5J0f9WchdfoXqbD2oYxleVZ5qd0VeUve+1uKsB1t6oOIhBbW5VwqhmNbGL63AgMBAAE=",
+            "ntor-onion-key": "GXljNcag/Y28zUyMWvwzoGTrY93JtUcNW+E5nx49+Wg=",
+            "policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "identity": {
+                "type": "ed25519",
+                "master-key": "Z79/Yq1oq8nT82SKCdV7f8wyofn57h2GVFNQvr2kAns"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "hXFJseLWgaqAea7Hpd5cBfEbTTISuFv92sTBLOJY6Mg",
+            "onion-key": "MIGJAoGBALudw0y5z2HX0Yq/jrqjt2lk/GgtuDAIlGaeCa+3Y6Wz/N5UkFfPFb2b6Rlbgih5IsStFbsI9byY+TuTbQVrJJoSzYxbaOJkNqBxItfWy21x0In0k23FgdjhJtb+CKU3pB3Jtr6ggQ6YiO+RDuyBOx1tpckxxVzD8gqWuOldKrRXAgMBAAE=",
+            "ntor-onion-key": "PF0gSkZSg5tg/cpO+COBy4MuOBUFy0i24UN1ANjwYBQ=",
+            "policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "identity": {
+                "type": "ed25519",
+                "master-key": "40FnzSdF/otItPbTowtcDS7+UzqAw6g9kbmppFeuN3g"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "apfWPB1RoS+VCxl84H7LPEvhTzaZPJo4pDT5ykzNcVw",
+            "onion-key": "MIGJAoGBAKo/yPehcMW+7t05pCn5afpDbjSQxlu3PfD+L0AhafCHNv0rTAQIdbj3YgQSAutk87HM8MUNPDDSgwvv0coMwfvgAe4reOvtikXoWJSsNq0c4/nZgYbofJms3mmyHAgp3wIf8BfIV9p5yfwPdrpwQMYpcB+WOeEk3zpwsZvK/xIlAgMBAAE=",
+            "ntor-onion-key": "Gfrvc+6ChY2HVlODeevwtCkYdngLpV+/Y/rUHb4qpFc=",
+            "policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "identity": {
+                "type": "ed25519",
+                "master-key": "V3yVgZOBaTl0S62HZws3zcw1WDVEEu7wx0qEbVCKaE4"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "CgFLrWqo2d17GIiSmHkos8ptM6hAXZsPpahMNsgRtuc",
+            "onion-key": "MIGJAoGBALZfNLHagu0C7pRHN8XLZJ/X6U/HVXRmnGRXPEDzjri2bvkljoo9SevPGy33KNsztJW370dqvag0ECiMQskdKbI7YTpYfgYkPXL6PhpKWkN2JA/TNKeCZ4QueJke2I/eYdDqolWaFeO/gqVFZJVNuAEjuBM8LpW5kmApRnAE2hv1AgMBAAE=",
+            "ntor-onion-key": "rHEisTL/3HGQ+BOgmG4C7hEbWCSiV1a6+0NaStxwUEM=",
+            "identity": {
+                "type": "ed25519",
+                "master-key": "4GIxWx53osRVYGGk2RzThPkCcdCNj1njcHhUl7NEu1g"
+            },
+            "flavor": "microdesc"
+        },
+        {
+            "micro-digest": "Ce65iO65lvDwWdyvlWh4St0qNniQ7RS3XzstrFSpYto",
+            "onion-key": "MIGJAoGBAOSrVSP4UbX152npOD2+DcZsHtLCEkutdMxM/8+XCjrCrK8h4lo3GkBGHrA5piJadIUwWJzzmWjx20k8vTXvFQDAnVuBTz+QTJU/QrM5DamNhHDY5kwKyt8vCyHIb7TXIeKlaBaOMGuebH/37ePZqzEvwAU31TfADT35od1FtBn7AgMBAAE=",
+            "ntor-onion-key": "tWQ0zfFeYziPs/nZ6qovq2cb9N1xnDT5tn/iZ6+kbSM=",
+            "identity": {
+                "type": "ed25519",
+                "master-key": "lDbXHVUAjECEijL+rQsmTaxkwAHpAsca81v+Hd/TjRg"
+            },
+            "flavor": "microdesc"
+        }
+    ]
+}

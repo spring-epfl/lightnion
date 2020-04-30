@@ -50,15 +50,18 @@ The proxy requires Python 3.7 or superior and the libraries listed in the files
 `pip`. The proxy was tested on Debian Buster, it likely also work on other
 Linux distributions providing Python 3.7, but was not tested on them.
 
-It is advised to use git to retrieve the sources.::
+It is advised to use git to retrieve the sources.
+::
     $ git clone  --recurse-submodules https://github.com/spring-epfl/lightnion.git
     $ cd lightnion
 
-It is strongly advised to install the Lightnion proxy in a virtual environment.::
+It is strongly advised to install the Lightnion proxy in a virtual environment.
+::
     $ virtualenv --python=python3 venv
     $ . venv/bin/activate
 
-The dependances can be installed with `pip`.::
+The dependances can be installed with `pip`.
+::
     $ pip install -r requirements.txt -r requirements-proxy.txt
 
 To work, the proxy needs to interact with a tor relay, which will be the entry
@@ -75,7 +78,8 @@ Building the JavaScript Client
 ------------------------------
 
 The minified bundle of the Javacript client needs to be build. A Makefile
-exists to simplify its building process::
+exists to simplify its building process
+::
     $ cd js-client
     $ make
 
@@ -89,11 +93,13 @@ Testing Lightnion Locally
 
 To Test Lightnion locally, it is necessary to run a local web server to
 dispatch the Lightnion Javascript client. This can be done easilly with
-Python's HTTP server.::
+Python's HTTP server
+::
     $ cd js-client/demo
     $ python -m http.server
 
-then the proxy can be started with:::
+then the proxy can be started with
+::
     $ source env/bin/activate
     (venv)$ python -m lightnion.proxy -vvv -s 127.0.0.1:9050 -c 8000 -d 9051
 

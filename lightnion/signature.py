@@ -17,8 +17,7 @@ def verify(raw_cons, keys, minimal=0.5):
 
     :param raw_cons: the consensus we want to verify
     :param keys: a dictionary of keys as retrieved by the function get_signing_keys_info of tools/keys.py
-    :param minimal: the minimal percentage of the authorities whose signatures must be verified in order to accept the
-    given consensus
+    :param minimal: the minimal percentage of the authorities whose signatures must be verified in order to accept the given consensus
     :return: true if at least the minimal number of signatures are verified
     """
     assert 0 < minimal <= 1

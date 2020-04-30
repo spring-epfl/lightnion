@@ -8,7 +8,6 @@ import asyncio
 import lightnion as lnn
 from . import parts, base_url, fake_circuit_id
 import lightnion.path_selection
-import lightnion.utils
 
 
 class InvalidTokenException(Exception):
@@ -156,13 +155,8 @@ class ChannelManager:
         if self.link is None:
             raise LinkNotInitializedException()
 
-        #ntor_bin = base64.b64decode(ntor)
-
         cid = self.link.gen_cid()
         token = self.gen_token_from_cid(cid)
-
-        #cell = lnn.create.ntor_raw2(cid, ntor_bin)
-        #cell = base64.b64encode(cell).decode('utf-8')
 
         self.channels[cid] = Channel(token, cid)
 
@@ -196,10 +190,9 @@ class ChannelManager:
 
         # Send a cell to the link to delete the circuit in the relay.
         cid = channel.cid
-        reason = lnn.cell.destroy.reason.REQUESTED
+        reason = lnn.proxy.cell.DestroyReason.REQUESTED
 
-        cell = lnn.cell.destroy.pack(cid, reason)
-        cell_padded = lnn.cell.pad(cell)
+        cell_padded = lnn.proxy.cell.CellDestroy(cid, reason).to_bytes()
 
         await self.link.to_send.put(cell_padded)
 
@@ -240,7 +233,7 @@ class ChannelManager:
         Scedule the data to be send to the correct channel.
         :param cell: cell to be send.
         """
-        logging.debug('ChanMgr: Begin adding data to sending queue of channel {}.'.format(cid))
+        logging.info('ChanMgr: Begin adding data to sending queue of channel {}.'.format(cid))
         
         if cid not in self.channels.keys():
             logging.warning('ChanMgr: Channel {} does not exists.'.format(cid))
@@ -255,19 +248,14 @@ class ChannelManager:
             #raise CircuitDoesNotExistException(cid)
 
         # If the cell command to delete the circuit,
-        header = lnn.cell.header(cell)
-        if header.cmd is lnn.cell.cmd.DESTROY:
-            cell_validation = lnn.cell.destroy.cell(cell)
-            logging.warning('ChanMgr: DESTROY cell received for channel {}, reason: {}.'.format(cid, cell_validation.reason))
-            if not cell_validation.valid:
-                logging.debug('ChanMgr: Invalid DESTROY in channel {}.'.format(cid))
-                #raise InvalidDestroyCellException()
-            else:
-                await self.destroy_circuit_from_link(channel)
+        cmd = lnn.proxy.cell.Cell.command(cell)
+
+        if cmd == lnn.proxy.cell.Command.DESTROY:
+            #await self.destroy_circuit_from_link(channel)
 
             return
 
-        cell_padded = lnn.cell.pad(cell)
+        cell_padded = lnn.proxy.cell.Cell.pad(cell)
 
         await channel.to_send.put(cell_padded)
 
@@ -367,7 +355,7 @@ class WebsocketManager:
             try:
                 cell = await channel.to_send.get()
 
-                cell = lnn.cell.pad(cell)
+                cell = lnn.proxy.cell.Cell.pad(cell)
                 await ws.send(cell)
 
                 self.cell_sent += 1

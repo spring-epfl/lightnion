@@ -1,0 +1,872 @@
+{
+    "flavor": "unflavored",
+    "descriptors": [
+        {
+            "digest": "3PwzAvlHnjBMdal83IP/VLRe/8o",
+            "router": {
+                "nickname": "test006r",
+                "address": "127.0.0.1",
+                "orport": 5006,
+                "socksport": 0,
+                "dirport": 7006,
+                "identity": "DZZkh3UlCcgcxHqUEb2HozksADc"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AW0IbAOjuA1MlGc16R5kfrmeMZqt/wWNV/qagfCLhPYrAQAgBADdBEPYfgxo66WbjVPzrlhrj/El87q80xKX7J85aSwKijmSLlwSWmn0VMyIdLVhUIzpi8T86kCAEgI3kWxVuYxfrVnpQsyeXsxK1HFGiNJ0IwumEO17D2uoUSeDUQ5aEAE=",
+                "master-key": "3QRD2H4MaOulm41T865Ya4/xJfO6vNMSl+yfOWksCoo"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "13:03:18",
+                "stamp": 1587646998.0
+            },
+            "fingerprint": "0D96 6487 7525 09C8 1CC4 7A94 11BD 87A3 392C 0037",
+            "uptime": 0,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 189440
+            },
+            "extra-info-digest": {
+                "sha1": "4D6DD8AE820EA87C2F5D92FEB45659B2EB2D8B23",
+                "sha256": "8H0dw2JR42GgubX7ukH3G1c2vdvadQwWQNsZAefr0iI"
+            },
+            "onion-key": "MIGJAoGBALS2aufFNN2vT315425F+PwmNV8WILh08q3aEVmcn2qpny12d9S2KA/tU//ZlJhguqVTV1MMY52FstR0NKETDD9pdzHUFSsFCOzLhOzSdNPRrp7+ldZCV+mrmd2i2Dob3dVcyZP8iGORSQDR0D6c70Cfv2jM9LW5FTnaOZ3Dld5LAgMBAAE=",
+            "signing-key": "MIGJAoGBAPzna9Lyc/l6oPWsS6wbMeiN29QyVFCNx7KlYc/1D8XCjoDhnRudt0l6lhfsRdKcTYRiWk2+zHx1mrLUK7iWEEdNkO3uzIMDBlGgjluyPRSmIY1j49KFV9efmHIoa1Jh4xY5J4OBfq6YiRztqEGXVw26yo+aUxkYhrQwtHdpxhXBAgMBAAE=",
+            "onion-key-crosscert": "Hkuje2pP0ApipboOWs2lSHnNm3kDOd5p7isgR/yBRYSFQsuRHrQllxMkL+bNZ19CiglZMp3cFCA7PzvIhswzQ18zHnjtW38x7GD1lK3tbbzjhCpdSfwAd0scGwAfkvV2lcnFlfS16g1szg3iBwphOkRsF+dV2FCgRO+knpZNVo8=",
+            "ntor-onion-key-crosscert": {
+                "bit": 0,
+                "cert": "AQoABr1WAd0EQ9h+DGjrpZuNU/OuWGuP8SXzurzTEpfsnzlpLAqKAKigoipXObaMLxcxf4e6NLwM7NzhrQ3pYt1sbkuywsAwVSdTJpmK7u3ZJaG5We8wkmTjYzCiN+5XV/zKn/hV2gM="
+            },
+            "hidden-service-dir": true,
+            "ntor-onion-key": "aWrb8rS++QFQnEDvEnSWFQ5Wh8q7JGYY90bkx05LfCM=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "accept",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "KjlTgXjrJyfmlCvHHTzbN7su0s209DwWkGRLOrj8P3wytuFMCMVwtVm0FUzfzRGP7cdrXU1yoTReDTkVNRS2Aw",
+                "rsa": "pMnn6YA9DlPZtqzrkCqbUUbwzOdb7v3Uotg8Q8QemAwN44TAIl4Bp7wdwAvokd2GOtbvln/M5SlsB6f8Qej8pYGQjBX4PTS2FdkWPINZRcAOnDWIkTxV7KNmgf1/esuZbO/BPXNCIJDjFwxgnDVxsTC9z1uGMvj7B1M7uu0v6B8="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "oFui9xopnP51itNGwljfo7HbT0o",
+            "router": {
+                "nickname": "test003r",
+                "address": "127.0.0.1",
+                "orport": 5003,
+                "socksport": 0,
+                "dirport": 7003,
+                "identity": "fyG+MaPfsktC+PscyWbZlnKXHJ4"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AWlxroUvsO7RQFFS+JK7m+ns3LNjMtMJy3UCS4oKipBIAQAgBABXfJWBk4FpOXRLrYdnCzfNzDVYNUQS7vDHSoRtUIpoTpzjZGXWN1htRuEsoqeqdMh1jCTw/EuZoutyIcykN3ZvVeBR68cXhFX6ZOEWAe4VUkCJQ8e7Z/pD14NgmUXqiwQ=",
+                "master-key": "V3yVgZOBaTl0S62HZws3zcw1WDVEEu7wx0qEbVCKaE4"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "13:03:17",
+                "stamp": 1587646997.0
+            },
+            "fingerprint": "7F21 BE31 A3DF B24B 42F8 FB1C C966 D996 7297 1C9E",
+            "uptime": 0,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 177152
+            },
+            "extra-info-digest": {
+                "sha1": "C25E5E4C11398A3F812874ADCC12F3950C24B594",
+                "sha256": "+sT2tuFtt+Nk7pcrZ8IwNCE1kpZttDuN1oEo1qCyCBY"
+            },
+            "onion-key": "MIGJAoGBAKo/yPehcMW+7t05pCn5afpDbjSQxlu3PfD+L0AhafCHNv0rTAQIdbj3YgQSAutk87HM8MUNPDDSgwvv0coMwfvgAe4reOvtikXoWJSsNq0c4/nZgYbofJms3mmyHAgp3wIf8BfIV9p5yfwPdrpwQMYpcB+WOeEk3zpwsZvK/xIlAgMBAAE=",
+            "signing-key": "MIGJAoGBAN7mRAhH47fns8JOFzkiNkWhdD/pc0BxamTvjJN2uKH/vaN/t9EmjD+ABmpNDCuGua1LfSxikFb2UuyH9jyiGBzOGOJwlTsz7GkqA4skw90u6vw8NrDQel3pILpv/4L8xGWDSadXJjxdvkiQILBM+i0/GVTffPIY1bAJUggTR3bPAgMBAAE=",
+            "onion-key-crosscert": "B8TGGDQ7SYSxeDQtk/bGocC2pE6JvA5yZzJ3NrTG6eYG2oGwjJMDMkzMn3CQ1Qid0HMienn/7yzOnrX+SUOICxapBV8FKtA1adgKwaV4ZNSiQCjrfhRgLXyoWZXPlbl7/bUnRgsbIg0DLiBeMBHhqyHPNBS0tQZS+2t8kLAJk6k=",
+            "ntor-onion-key-crosscert": {
+                "bit": 0,
+                "cert": "AQoABr1WAVd8lYGTgWk5dEuth2cLN83MNVg1RBLu8MdKhG1QimhOABVYWMeymwYxTzSTIG6Kb3A+d/Q9wUm4mo4PHFfB7C1gzpS3n3ZsUP2PoAwaVgXOABA0FZxu9RVZj0cuhKbp/QA="
+            },
+            "hidden-service-dir": true,
+            "ntor-onion-key": "Gfrvc+6ChY2HVlODeevwtCkYdngLpV+/Y/rUHb4qpFc=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "accept",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "TPBHM0+J5l7eGnTkszDzTiTqwQdRMNQKJ4a5HX4LTUNRdMHadDWn98xpD6TEk9PCX9JWUesckGMgCvQtQOehAA",
+                "rsa": "QtYjMswOniakAAwTrcRR+fpRj4hTIw+x9uagsKEveBL7mq3WzIBUb3AF9dHEQTbZUJ+8KZLEvU7ypmFBcyqh7jQMOhI4VCUesL1GmMLMBmAcHFw7O6Bgv0OW1bWmwErIgpay16p2vt8HVM7mBgN6cBoyzkIifoRyB3ummtM6KqA="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "nqEUOJNLYa8/uoLqj4SWRRe1IXk",
+            "router": {
+                "nickname": "test001a",
+                "address": "127.0.0.1",
+                "orport": 5001,
+                "socksport": 0,
+                "dirport": 7001,
+                "identity": "/Vd+YTRcdGVeZ7R61X23NSUf634"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8ARflhB/X8ODKSsuPbmUgm2GGTlG9GUn/aMkbMb4vEZcvAQAgBADgYjFbHneixFVgYaTZHNOE+QJx0I2PWeNweFSXs0S7WPsaUwmUpD7F3cekyDuj/6gVQhfBVLp8WVtGBCkjbdMrNhyPFqtXRW8RgLB39wu2NvngdatO1Zvt+E5sDoFWLwA=",
+                "master-key": "4GIxWx53osRVYGGk2RzThPkCcdCNj1njcHhUl7NEu1g"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "14:05:47",
+                "stamp": 1587650747.0
+            },
+            "fingerprint": "FD57 7E61 345C 7465 5E67 B47A D57D B735 251F EB7E",
+            "uptime": 1,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 159744
+            },
+            "extra-info-digest": {
+                "sha1": "D2E5DF7EC379702F299EB7488DCF9588529A4BF5",
+                "sha256": "cmFu5HDDJlreMq7tmTaGDTIrS96K9GXJAjyiBSmlYIM"
+            },
+            "caches-extra-info": true,
+            "onion-key": "MIGJAoGBALZfNLHagu0C7pRHN8XLZJ/X6U/HVXRmnGRXPEDzjri2bvkljoo9SevPGy33KNsztJW370dqvag0ECiMQskdKbI7YTpYfgYkPXL6PhpKWkN2JA/TNKeCZ4QueJke2I/eYdDqolWaFeO/gqVFZJVNuAEjuBM8LpW5kmApRnAE2hv1AgMBAAE=",
+            "signing-key": "MIGJAoGBAM2l5g/jG5MFSKyx5fUvGW8MORY8bj8hbkzYV8M4Urnp2IuO8zOUUou3KBkcM8ECnmsuAITwF3oZTxFVbJm9O0fMFmq/6WhBYeby2AYWCVWTNJIKf/h/iUsPIC8hbKLtemPjg9aw5bMaM//1X1Qw4Fj+yyEaUHA11+y9YMp9LL9jAgMBAAE=",
+            "onion-key-crosscert": "XKQM9Ifbsuw68pGTcnajaDiNJqXgNpk2t6pE4UZz7jTXPYiM87KJXWb5PNjI16wfEB2jjw44FHkC3zX+Vf7gKVptL65jPHRq4OMSmQufhudzPY5RfKOJBoMhxZ8nPbwOuTFMtZaIH50eDAtEgF6g5GTKlBrCBRVeIh0vDGlz3Yg=",
+            "ntor-onion-key-crosscert": {
+                "bit": 1,
+                "cert": "AQoABr1XAeBiMVsed6LEVWBhpNkc04T5AnHQjY9Z43B4VJezRLtYAEuC1rDzjUq7MgSfbK89i2aXoOe+RyMyMhF9LcYJht2Ny4NaS2cmKQKPuNomVf4jCF/HA+ZeZ6Uil1lwvbIsqwQ="
+            },
+            "hidden-service-dir": true,
+            "contact": "auth1@test.test",
+            "ntor-onion-key": "rHEisTL/3HGQ+BOgmG4C7hEbWCSiV1a6+0NaStxwUEM=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "reject",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "hCXu7qGmcqldIWYmTdzRPbE0hpKWXgfw5TySqUoVY/D+zTbG/hSrEg0yS4sw8DQ7nLgXVtevkw7LY1gFIXwODg",
+                "rsa": "Do+H9dvTpuMLiipNWw9wgZGovZnI5lNgSuN+38bg0KA5wiBKH5Xe+V3nvdZa3gviTTRCJ8eG690xF96oYLdeDXOx2VarRsJrK/TcOgcXmuaqBhxZgl2vmbhiRBmSNRt+3HWOL227MX5uRL9LuGWcr0qYmL7BanKqYC6jWRmTQhw="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "gnIFTS4rtcqqKOb0ZQSN6Y9A2GQ",
+            "router": {
+                "nickname": "test000a",
+                "address": "127.0.0.1",
+                "orport": 5000,
+                "socksport": 0,
+                "dirport": 7000,
+                "identity": "S7wZlq4DvwY/2ZA/WrIzydmmRoY"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8Adp+flIgMdM1u8bxfTBjyuLyzKjAZGc7BVdEGKfZvXC1AQAgBAADUvLpR/49FVX4J5UBAXUUo9gs2s+xZ65d53aH8osZfXGo6nw2oar6vrc0/xUOOIZLMRjH/EaIpCPWoCIScTTocq2igb2I505Lpux0fZtYCf9biQSxS4xsmcXv5tb+bQs=",
+                "master-key": "A1Ly6Uf+PRVV+CeVAQF1FKPYLNrPsWeuXed2h/KLGX0"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "14:05:47",
+                "stamp": 1587650747.0
+            },
+            "fingerprint": "4BBC 1996 AE03 BF06 3FD9 903F 5AB2 33C9 D9A6 4686",
+            "uptime": 1,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 224256
+            },
+            "extra-info-digest": {
+                "sha1": "6D9372261E444BF26567C9D781DFEAC9575EA00E",
+                "sha256": "8ublGY+pE+AERi/45al4GrzeJbwdeS7u3bacedxf3J8"
+            },
+            "caches-extra-info": true,
+            "onion-key": "MIGJAoGBAMelRVut9suHj0F4uYyAZCsmtlrjRbdmZNvSy7oYbMpdRsKrmEhckXd10UIJOU5oI9+Kf+dWyggcs6/Nx4qar7hXF9nTf18wCYm+UbFtcNzCXLeseaZtDj/MbHa0+ptykcLFb1VkI4a7cAQ5qPlWUG0qpE/yUGa3kifRd78icwWVAgMBAAE=",
+            "signing-key": "MIGJAoGBAL51NXLR4J1WUreKNmwYVAJG3e0K7MNC/6mM3UK8CYg04AykYFchRcXZpqFR6JnvxCL603zQ5/AXozLOVPd1ioQKCnAb1AQSMJ0wn34B0CFkJTBJ1TMZGy8/k9L493V4xzS36cRLv5XHpQHiFCEC6R/qFqJm+IA9wi99a4NE4itdAgMBAAE=",
+            "onion-key-crosscert": "sEP32JDdsB7Tt0H8ObsAXHseNcsZqT9VvghhCAyS0sIGZtENE+bAm1zvQqeT/09I7PIaivX2H4iEl2L5abgip+tGM+/o+SOyHSwLuNK4AXXE01Q8Jweg/iFxW3FyoMt3RUM9F3a9vzCETjfXb9Z57p+JRMk5zDwgjrDFoMhD/tA=",
+            "ntor-onion-key-crosscert": {
+                "bit": 1,
+                "cert": "AQoABr1XAQNS8ulH/j0VVfgnlQEBdRSj2Czaz7Fnrl3ndofyixl9AGwgu2vZXabOLBQkdCzqAPX+WPxJuz/vb7eOD8PE8p3KVUK1gZrCFjsqKVgxg5LzjtWRz6jTtTwj3aXkMbbR1w4="
+            },
+            "hidden-service-dir": true,
+            "contact": "auth0@test.test",
+            "ntor-onion-key": "3nwr7McqePaQrbawf0Lkuj72l61AreUJ4ulxjY1grFg=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "reject",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "ddERq8NwwXQqCECtbhNLLGiJDLELtasGJ8AsXGzfSAKpepO7HDpFSrLp1SIbqVwA4E+XAC1ecC0UUFsn0UttDw",
+                "rsa": "S6egsvA+DEU5J7hAPwTkGth2jCQXx2ACYIJjBTYalm6TutOgSsNRItq52SwUXyxGHcFscDarXSMpwb6Ib0TIvn9KWJVsK9RcYpPudMiFjc5vEqf0J2UmW5c4CZ0agjbDbGMsBQW+YppPf3UjvxxoAxx/GcK7C0dz+QtgNeJAr0A="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "csdBDdGdl0KWL6mMlgpqB6W5me0",
+            "router": {
+                "nickname": "test004r",
+                "address": "127.0.0.1",
+                "orport": 5004,
+                "socksport": 0,
+                "dirport": 7004,
+                "identity": "PE+93pE5LeQheWR29bZjhX3zqnQ"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AYoG/9r512Cml9ZeRg/pkYe4g9q88zoNiZaHBHpUxUaZAQAgBABnv39irWirydPzZIoJ1Xt/zDKh+fnuHYZUU1C+vaQCe43URBPKgztmDxfGlj/lbCMpw9H7RRHx/mhX+eGrcisx7tPSsyO3mOAu5T68CC2BxSncmpjjoWm/g2vwTa6L2gE=",
+                "master-key": "Z79/Yq1oq8nT82SKCdV7f8wyofn57h2GVFNQvr2kAns"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "13:03:18",
+                "stamp": 1587646998.0
+            },
+            "fingerprint": "3C4F BDDE 9139 2DE4 2179 6476 F5B6 6385 7DF3 AA74",
+            "uptime": 0,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 174080
+            },
+            "extra-info-digest": {
+                "sha1": "E5E2234DF477A870F6B11ED0887CA785B7CFCC3C",
+                "sha256": "NVVQEW9XoRTxhzZ4GaynkC8NNiptVwqxqKA+fggtjYg"
+            },
+            "onion-key": "MIGJAoGBANXWu7tNGp/m326Ua3ZBr78lRfPD2xPn+R5zU/SjWa32/QpkLPyloJt7XzI1JGxMdU+bVgOXuprW51nm+gtfbZ64g6DFFuBEmAEOVfqgCRfgz3yx5J0f9WchdfoXqbD2oYxleVZ5qd0VeUve+1uKsB1t6oOIhBbW5VwqhmNbGL63AgMBAAE=",
+            "signing-key": "MIGJAoGBAKLhsoHCOYO7izilNEnzx2K7zHF7QiGTjXYtlCE+nsa5vSDys0mjwiKoAzsSiMCmMwhHd7/DQLDRwuW9qyzc26k0sPqANe8QLb5URRrEBDIgajhzVw7gZGxM2+tgjl14sU+okyreCLRb3WorEIG4TdN6b6fYZrBbjsaaBhtAqyMBAgMBAAE=",
+            "onion-key-crosscert": "LH8XjjKXgCzdtbutJqWg/RsqrKoL2b8AtfyQC5E31nN9ZDetDKzYyY/a3lXR0nxdrUsm6bOzDNt67YQYCJ8hlw51BDC1Jue2rmvLhqm+GHTGMIWLmSTYFPjUa0KWziTA35pi3pXStr7oOgyoVt5OQ/Byidv1U1aVL87nOHHPye4=",
+            "ntor-onion-key-crosscert": {
+                "bit": 0,
+                "cert": "AQoABr1WAWe/f2KtaKvJ0/NkignVe3/MMqH5+e4dhlRTUL69pAJ7AKSkGEdPDl632LhYLVCtGT7aDzr6QRfHdkd5aWfAFbwVUj5K4K85AGyrLz97nCCEV2t940kkcmd07p/0Vx4XWA0="
+            },
+            "hidden-service-dir": true,
+            "ntor-onion-key": "GXljNcag/Y28zUyMWvwzoGTrY93JtUcNW+E5nx49+Wg=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "accept",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "KstXDyPHMNcEcL/zai9sQfwXcAdZ6VkPU76mwJX7IvKGbUaVFozIeYnDt3Oa0Hd2wSzMK4nr67XaW3uDvpNQBQ",
+                "rsa": "VVDAWwWFfA7hiSTbaTrslICU14AIO/cF0/tsBGtv2wyBmxSlW9yYARvLKkiGPfXnFYqSwH4Nd/MvadF2E+dkYSYsnPYqeFxN9mKN2csNeF3PmeL/1254bQx8RKbBy8pi4mnkeBAA6OqOa44CTkMQfP4A6iSsGpbKrarslHo9uEg="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "E2Xey5uxMfoMjewSace3TG/+Id8",
+            "router": {
+                "nickname": "test002a",
+                "address": "127.0.0.1",
+                "orport": 5002,
+                "socksport": 0,
+                "dirport": 7002,
+                "identity": "gwTBYQWI3XQvsEkcal8NUySwsVA"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AeOCME3/p+dJeC85a+wrBmqz26UzrCRo6Xe8e3SJCQ3LAQAgBACUNtcdVQCMQISKMv6tCyZNrGTAAekCxxrzW/4d39ONGBafrqeRTbGsrdq7TcIyjdxdvNTlBzPv2IRArJ9acR3e4ob/yLUKu1AkAFD1A+jkqEBl0+uMT7a4Pr6eapH8ZgI=",
+                "master-key": "lDbXHVUAjECEijL+rQsmTaxkwAHpAsca81v+Hd/TjRg"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "14:05:47",
+                "stamp": 1587650747.0
+            },
+            "fingerprint": "8304 C161 0588 DD74 2FB0 491C 6A5F 0D53 24B0 B150",
+            "uptime": 1,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 237568
+            },
+            "extra-info-digest": {
+                "sha1": "51BB38ECA5F77F18D52F460B6A00A4C411081F72",
+                "sha256": "CrUyVdL0IJHxiasJEJN09E7RZN9wc8wRYe2kOsZiFrg"
+            },
+            "caches-extra-info": true,
+            "onion-key": "MIGJAoGBAOSrVSP4UbX152npOD2+DcZsHtLCEkutdMxM/8+XCjrCrK8h4lo3GkBGHrA5piJadIUwWJzzmWjx20k8vTXvFQDAnVuBTz+QTJU/QrM5DamNhHDY5kwKyt8vCyHIb7TXIeKlaBaOMGuebH/37ePZqzEvwAU31TfADT35od1FtBn7AgMBAAE=",
+            "signing-key": "MIGJAoGBAKFkXl9LlavRpeM9Ku2Qg4Np5SRrnjkgLwDzO+8iHTV9AryCfDvHJ28kCl3FouvEe5XOY95bOyMVY94XSjMjRbcrn+srmurAedCg8RulfZf83z1Bt/CpsrZ3fUH7WJiFPBY+J/0OKjoYenZpYf1qIONoHU6x+qmtg1smMuZUa2VzAgMBAAE=",
+            "onion-key-crosscert": "4TJXl8rbc6eGJx9yDWJUiEI1jhT+HZ2FEYgTx/0KcJscR48UNzYd/koTWJgWJ8L6+M9JHqXi6WUJfqPZvpignQ7k++KWe74XCZ1n+Qncbx3hQkHMqWpAO8NYeGRG9qZzVoE/chVH3DeWPTLSEx48vUuzLarnQ3Rwm9hc1RoCT3Y=",
+            "ntor-onion-key-crosscert": {
+                "bit": 0,
+                "cert": "AQoABr1XAZQ21x1VAIxAhIoy/q0LJk2sZMAB6QLHGvNb/h3f040YAEb4mIEsNJbi1ackkJsDkPkNrn40m0ErB5Nvhu/VDb2SJ86O36CRX/Y8vOiu2AWRVIEkQ1bRBt6CR0a7wEzw/gw="
+            },
+            "hidden-service-dir": true,
+            "contact": "auth2@test.test",
+            "ntor-onion-key": "tWQ0zfFeYziPs/nZ6qovq2cb9N1xnDT5tn/iZ6+kbSM=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "reject",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "OVaWiTk3zNj3dM0SpS095xzYZN1B3BP9C//L0UbI5ter/1Yszg5df8sQtdlEdcfc3q5o2/HaAvwy44ggYDkWDA",
+                "rsa": "N5wMY7P6q9zQwKbBfqArMnnl1xE6Q5dLicXNx1cvEn+VBuJwFFlqzYV/vzM7bvBwdTHlVRxxx7MKaVpFuPJKLeezYLArWMnJYalWtfFd/IKBfH8ykhKkKAaPw16XmyF1pt9iQ91c15ogaHZeh/f9bzl9ej1YKleVhJQ8nvM46l4="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "BZBtDoo3FMkyFg5trmoZgcHWH3w",
+            "router": {
+                "nickname": "test007r",
+                "address": "127.0.0.1",
+                "orport": 5007,
+                "socksport": 0,
+                "dirport": 7007,
+                "identity": "mXQh1rmHcqj+uqptfh158WA5bfo"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AWk/NSWnFyEYyp3OyTZVWud6VJ8FuXLFzpmatS+wLmHPAQAgBADjQWfNJ0X+i0i09tOjC1wNLv5TOoDDqD2RuamkV643eNNQ7/uevaTjIY0MpDS7SwP3Oq74X1FePV8jtgI7ql8Gvr/W5zZgmsc2z7hdBn+TaETPlimjU91/3CbHTX3+1QU=",
+                "master-key": "40FnzSdF/otItPbTowtcDS7+UzqAw6g9kbmppFeuN3g"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "13:03:18",
+                "stamp": 1587646998.0
+            },
+            "fingerprint": "9974 21D6 B987 72A8 FEBA AA6D 7E1D 79F1 6039 6DFA",
+            "uptime": 0,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 189440
+            },
+            "extra-info-digest": {
+                "sha1": "56FE973CD5A174114589264751D266E281A38C48",
+                "sha256": "TzShXNTaP17YBiUr17G5yZEdLA35HiqNMMF7Y8KR7fw"
+            },
+            "onion-key": "MIGJAoGBALudw0y5z2HX0Yq/jrqjt2lk/GgtuDAIlGaeCa+3Y6Wz/N5UkFfPFb2b6Rlbgih5IsStFbsI9byY+TuTbQVrJJoSzYxbaOJkNqBxItfWy21x0In0k23FgdjhJtb+CKU3pB3Jtr6ggQ6YiO+RDuyBOx1tpckxxVzD8gqWuOldKrRXAgMBAAE=",
+            "signing-key": "MIGJAoGBAJ/xoMb6ioCY0tnjCceKn0QDothQfRO0KDvIJWae/mV5nsOTx4PNMqnb+CQ3S2fw6P6KouIe+kD2RbmB1eBWIq5hvqrRAFhgjDZl7TvVb7HmdZzDNzYZIf/4ugvOYypDejtvusV0POxkkm4+Fl+zhKt8AOXDTuEAexxmZZVBjHPJAgMBAAE=",
+            "onion-key-crosscert": "qggW8Tvd1ruGUDFYT9llbVvJ57l50JKJd9fBrhfaG9/ddLySWNVNGQ80+azoKqumZEb/PF6kmkJJfywUfsbz5dbw0Hm2VROuK5RlHzw7hjjZZYU/f+egiyIQKHOXI9lN9Vu9Y55vTpFnJLyIxNeps3n33LYsoIBktfCCZI7qmmI=",
+            "ntor-onion-key-crosscert": {
+                "bit": 1,
+                "cert": "AQoABr1WAeNBZ80nRf6LSLT206MLXA0u/lM6gMOoPZG5qaRXrjd4ADNCsVBg3PAANCoTDPbwvMrd0TlZO5QfflO6S22BBjPSCCqS/Sx/7nBT3an2cfKq0k4q+osZOhogpzFXEYf8/gY="
+            },
+            "hidden-service-dir": true,
+            "ntor-onion-key": "PF0gSkZSg5tg/cpO+COBy4MuOBUFy0i24UN1ANjwYBQ=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "accept",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "y17o7UoOY6iU8tQeAYlmfyB28QyBGHRq2eAYMNBatpBnRHqrEQOCi19T9T0OHXsth88IIN17dSde9Rz8okW0Bg",
+                "rsa": "FDz5y5IDxnBZXOV3dpPTZ5cFKcz5r5N3hwWrf5PCEIx9sL4SWgM6MxtVCDPmcAG9ZFXettHOFUPzqQ30ARgMy5wUhk5pvH7QHp7rsJmQ5rqa8ph26KR4tsNOB8pZm9W7N7KhMfC5/dcMviLEOBSfaeG1+BkPjF4ePv7TrK47zc8="
+            },
+            "flavor": "unflavored"
+        },
+        {
+            "digest": "AACG/Oo9Q3PdYwer8Amxufwv44c",
+            "router": {
+                "nickname": "test005r",
+                "address": "127.0.0.1",
+                "orport": 5005,
+                "socksport": 0,
+                "dirport": 7005,
+                "identity": "nu8OBtyhPu7L2+p0cdzQSZc5hbA"
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": "AQQABrr8AWE1SUv5e7hKhWzVlBXH98Gfab6Y9h55g631DH7y+TTHAQAgBABFUPh75mkg7mEkVZnWZC89umnxiIBJKx0zfH55QM9IYxvs7AWek+i9Ifxwz2VxTrh3eVOXq1Y/6Bdmj5lw96VTDzftYwciyZkZntYZXCdVYavT7wCt+/e7py1SX3G2fQ4=",
+                "master-key": "RVD4e+ZpIO5hJFWZ1mQvPbpp8YiASSsdM3x+eUDPSGM"
+            },
+            "platform": "Tor 0.3.5.10 on Linux",
+            "proto": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "published": {
+                "date": "2020-04-23",
+                "time": "13:03:18",
+                "stamp": 1587646998.0
+            },
+            "fingerprint": "9EEF 0E06 DCA1 3EEE CBDB EA74 71DC D049 9739 85B0",
+            "uptime": 0,
+            "bandwidth": {
+                "avg": 1073741824,
+                "burst": 1073741824,
+                "observed": 189440
+            },
+            "extra-info-digest": {
+                "sha1": "820DBEF5FC8FDD057F1FE574D0CCCF1F41EBEC8F",
+                "sha256": "dVw7XxBxmgqk5jH2q3O5rvt3hNnZSj4v+IHnP74FXkk"
+            },
+            "onion-key": "MIGJAoGBAMXGxwPQGH9t9pfQSnqrJd7r4ppFaalVCd+HROsS6CA/znvpf/2b9uer5qucAUYRL0Uhr0o6J0TldxSd3d8WY5Lwn/ZrJ7h4U6SDV024BxqW7R4OMT5ISFgh89DQN6p1g8mMslGktwZUrCGeEhL32WQAEB/so5wnv7Aa6yYWBDZbAgMBAAE=",
+            "signing-key": "MIGJAoGBALlb0Bwo4WAKyF7hHRv3bD/MSf2k77zHB1CF4a8CocSqDcbqscnQf1JwzL/UFzhTcCL24schDUE7itY50bkBTRZFo9XG2giEm5nNkAe8PuHy1GK5HZK0uRWwT3P7B+/PYgw0EQm0x7evDp2QW/I7DLnQCJwY7Ltde013VcEM1W+1AgMBAAE=",
+            "onion-key-crosscert": "MFKBENIMaIWMa9rJhlAcNMdy+SJnOJ2vCfzkqC8JezOCrJKv1yAQVGCGihM2jre6H1aLMqG7JTScpQ138q0pMJObvv6CIjRFiiy9KB43oufbjGYmVIkLpvQy/T21mgc+PW4qWhNQHng8xDG2Wb6pBhwUASK31g32p3LXRj8P1vg=",
+            "ntor-onion-key-crosscert": {
+                "bit": 0,
+                "cert": "AQoABr1WAUVQ+HvmaSDuYSRVmdZkLz26afGIgEkrHTN8fnlAz0hjACh5/LiYnwvSwy3bgnk7olcN+Wzou7TAqgKZ0Or3TNcxx/v5tLpaaUJ9i4MZAmlNg+IhKhuVKW6CICb05F54oQo="
+            },
+            "hidden-service-dir": true,
+            "ntor-onion-key": "pwiw7FWsyJXlLyAa7kOTSyKgaqG3xV+stOE+uGEvsE0=",
+            "policy": {
+                "type": "exitpattern",
+                "rules": [
+                    {
+                        "type": "accept",
+                        "pattern": "*:*"
+                    }
+                ]
+            },
+            "ipv6-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            },
+            "tunnelled-dir-server": true,
+            "router-signatures": {
+                "ed25519": "SrUQnmdUxyWERZM6KWhjEheb0A7HLQSjGAi3DbhCtuvQ6Ho4RDHbsB5NpzOL6Xu/lpW3YBORnBzkBxQOT7QPDg",
+                "rsa": "PIrLtjkjB73TqQRsxwIGfZxaUtnDedKnrvs4181L+mBL51uoN248Q81UrtJkCK8nU1qIlxGT++dO3dxVp/KbS8x65/6YXXtynb/hoQBW7L8KkV9E4kabzWT5jAlzggHvE8AVQplUEw8QUga/WmkG+FOvYGenYfKgeudUdSYQsR8="
+            },
+            "flavor": "unflavored"
+        }
+    ]
+}

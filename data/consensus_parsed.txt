@@ -1,0 +1,902 @@
+{
+    "flavor": "unflavored",
+    "headers": {
+        "network-status-version": {
+            "version": 3,
+            "flavor": "unflavored"
+        },
+        "vote-status": "consensus",
+        "consensus-method": 28,
+        "valid-after": {
+            "date": "2020-04-20",
+            "time": "07:36:50",
+            "stamp": 1587368210.0
+        },
+        "fresh-until": {
+            "date": "2020-04-20",
+            "time": "07:37:00",
+            "stamp": 1587368220.0
+        },
+        "valid-until": {
+            "date": "2020-04-20",
+            "time": "07:37:10",
+            "stamp": 1587368230.0
+        },
+        "voting-delay": {
+            "vote": 2,
+            "dist": 2
+        },
+        "client-versions": [
+            ""
+        ],
+        "server-versions": [
+            ""
+        ],
+        "known-flags": [
+            "Authority",
+            "Exit",
+            "Fast",
+            "Guard",
+            "HSDir",
+            "NoEdConsensus",
+            "Running",
+            "Stable",
+            "V2Dir",
+            "Valid"
+        ],
+        "recommended-client-protocols": {
+            "Cons": [
+                1,
+                2
+            ],
+            "Desc": [
+                1,
+                2
+            ],
+            "DirCache": [
+                1
+            ],
+            "HSDir": [
+                1
+            ],
+            "HSIntro": [
+                3
+            ],
+            "HSRend": [
+                1
+            ],
+            "Link": [
+                4
+            ],
+            "Microdesc": [
+                1,
+                2
+            ],
+            "Relay": [
+                2
+            ]
+        },
+        "recommended-relay-protocols": {
+            "Cons": [
+                1,
+                2
+            ],
+            "Desc": [
+                1,
+                2
+            ],
+            "DirCache": [
+                1
+            ],
+            "HSDir": [
+                1
+            ],
+            "HSIntro": [
+                3
+            ],
+            "HSRend": [
+                1
+            ],
+            "Link": [
+                4
+            ],
+            "Microdesc": [
+                1,
+                2
+            ],
+            "Relay": [
+                2
+            ]
+        },
+        "required-client-protocols": {
+            "Cons": [
+                1,
+                2
+            ],
+            "Desc": [
+                1,
+                2
+            ],
+            "DirCache": [
+                1
+            ],
+            "HSDir": [
+                1
+            ],
+            "HSIntro": [
+                3
+            ],
+            "HSRend": [
+                1
+            ],
+            "Link": [
+                4
+            ],
+            "Microdesc": [
+                1,
+                2
+            ],
+            "Relay": [
+                2
+            ]
+        },
+        "required-relay-protocols": {
+            "Cons": [
+                1
+            ],
+            "Desc": [
+                1
+            ],
+            "DirCache": [
+                1
+            ],
+            "HSDir": [
+                1
+            ],
+            "HSIntro": [
+                3
+            ],
+            "HSRend": [
+                1
+            ],
+            "Link": [
+                3,
+                4
+            ],
+            "Microdesc": [
+                1
+            ],
+            "Relay": [
+                1,
+                2
+            ]
+        },
+        "shared-rand-previous-value": {
+            "NumReveals": 0,
+            "Value": "zxJao+gBmFMSezvz/VXkEWEQJD5b/z+7AXNCGoLFVW0="
+        },
+        "shared-rand-current-value": {
+            "NumReveals": 3,
+            "Value": "JmISyTQqJVDEYu65+XigBGZEoYdqlimCxnCBPquIcyc="
+        }
+    },
+    "dir-sources": [
+        {
+            "nickname": "test002a",
+            "identity": "12b3f62ed02c9b54816cebb06c5e259189220513",
+            "hostname": "127.0.0.1",
+            "address": "127.0.0.1",
+            "dirport": 7002,
+            "orport": 5002,
+            "contact": "auth2@test.test",
+            "vote-digest": "c8c30c2f2462c7b5a232c4bd8e6e39df96ce6866"
+        },
+        {
+            "nickname": "test001a",
+            "identity": "7e0219bb5a355b76a8e8adb17c772827bdadcd73",
+            "hostname": "127.0.0.1",
+            "address": "127.0.0.1",
+            "dirport": 7001,
+            "orport": 5001,
+            "contact": "auth1@test.test",
+            "vote-digest": "c97ec7a96a76ed366e5a30e49b5a8dabf4832f65"
+        },
+        {
+            "nickname": "test000a",
+            "identity": "e459cc388963fe0c47b0c5c918b1166d1809a2d9",
+            "hostname": "127.0.0.1",
+            "address": "127.0.0.1",
+            "dirport": 7000,
+            "orport": 5000,
+            "contact": "auth0@test.test",
+            "vote-digest": "4eed924194cb5cc07fc7c450dfd98e30501161da"
+        }
+    ],
+    "routers": [
+        {
+            "nickname": "test006r",
+            "identity": "DZZkh3UlCcgcxHqUEb2HozksADc",
+            "digest": "GW9HZ7kDARgbH8u31orhQDSS7+Y",
+            "date": "2020-04-20",
+            "time": "07:19:59",
+            "stamp": 1587367199.0,
+            "address": "127.0.0.1",
+            "dirport": 7006,
+            "orport": 5006,
+            "flags": [
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 189,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test004r",
+            "identity": "PE+93pE5LeQheWR29bZjhX3zqnQ",
+            "digest": "EtQKag0fzSSrarsZB0ZBbxGF7HA",
+            "date": "2020-04-20",
+            "time": "07:19:59",
+            "stamp": 1587367199.0,
+            "address": "127.0.0.1",
+            "dirport": 7004,
+            "orport": 5004,
+            "flags": [
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 174,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test000a",
+            "identity": "S7wZlq4DvwY/2ZA/WrIzydmmRoY",
+            "digest": "9UyBqUF6SN3HC5/i8QiTOG9nx0s",
+            "date": "2020-04-20",
+            "time": "07:31:01",
+            "stamp": 1587367861.0,
+            "address": "127.0.0.1",
+            "dirport": 7000,
+            "orport": 5000,
+            "flags": [
+                "Authority",
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 158,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "reject",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test003r",
+            "identity": "fyG+MaPfsktC+PscyWbZlnKXHJ4",
+            "digest": "xVYLJ490kxGxfbNn2Hvl/GpZJEM",
+            "date": "2020-04-20",
+            "time": "07:20:14",
+            "stamp": 1587367214.0,
+            "address": "127.0.0.1",
+            "dirport": 7003,
+            "orport": 5003,
+            "flags": [
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 177,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test002a",
+            "identity": "gwTBYQWI3XQvsEkcal8NUySwsVA",
+            "digest": "whpdrDjr77zJ6vpAp5HS+oNqeRQ",
+            "date": "2020-04-20",
+            "time": "07:31:01",
+            "stamp": 1587367861.0,
+            "address": "127.0.0.1",
+            "dirport": 7002,
+            "orport": 5002,
+            "flags": [
+                "Authority",
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 196,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "reject",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test007r",
+            "identity": "mXQh1rmHcqj+uqptfh158WA5bfo",
+            "digest": "VktXjhSji1mCsT/W/gBU9NvbYNk",
+            "date": "2020-04-20",
+            "time": "07:19:59",
+            "stamp": 1587367199.0,
+            "address": "127.0.0.1",
+            "dirport": 7007,
+            "orport": 5007,
+            "flags": [
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 189,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test005r",
+            "identity": "nu8OBtyhPu7L2+p0cdzQSZc5hbA",
+            "digest": "WQh2419G+nKtY0p6V8hmN3rS6fg",
+            "date": "2020-04-20",
+            "time": "07:20:22",
+            "stamp": 1587367222.0,
+            "address": "127.0.0.1",
+            "dirport": 7005,
+            "orport": 5005,
+            "flags": [
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "Stable",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 189,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "accept",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        },
+        {
+            "nickname": "test001a",
+            "identity": "/Vd+YTRcdGVeZ7R61X23NSUf634",
+            "digest": "feX6QJWeiqOrPQweuMffQWuY3K8",
+            "date": "2020-04-20",
+            "time": "07:31:02",
+            "stamp": 1587367862.0,
+            "address": "127.0.0.1",
+            "dirport": 7001,
+            "orport": 5001,
+            "flags": [
+                "Authority",
+                "Exit",
+                "Fast",
+                "Guard",
+                "HSDir",
+                "Running",
+                "V2Dir",
+                "Valid"
+            ],
+            "version": "Tor 0.3.5.10",
+            "protocols": {
+                "Cons": [
+                    1,
+                    2
+                ],
+                "Desc": [
+                    1,
+                    2
+                ],
+                "DirCache": [
+                    1,
+                    2
+                ],
+                "HSDir": [
+                    1,
+                    2
+                ],
+                "HSIntro": [
+                    3,
+                    4
+                ],
+                "HSRend": [
+                    1,
+                    2
+                ],
+                "Link": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "LinkAuth": [
+                    1,
+                    3
+                ],
+                "Microdesc": [
+                    1,
+                    2
+                ],
+                "Relay": [
+                    1,
+                    2
+                ]
+            },
+            "w": {
+                "Bandwidth": 188,
+                "Unmeasured": 1
+            },
+            "exit-policy": {
+                "type": "reject",
+                "PortList": [
+                    [
+                        1,
+                        65535
+                    ]
+                ]
+            }
+        }
+    ],
+    "footer": {
+        "bandwidth-weights": {
+            "Wbd": 3333,
+            "Wbe": 0,
+            "Wbg": 0,
+            "Wbm": 10000,
+            "Wdb": 10000,
+            "Web": 10000,
+            "Wed": 3333,
+            "Wee": 10000,
+            "Weg": 3333,
+            "Wem": 10000,
+            "Wgb": 10000,
+            "Wgd": 3333,
+            "Wgg": 10000,
+            "Wgm": 10000,
+            "Wmb": 10000,
+            "Wmd": 3333,
+            "Wme": 0,
+            "Wmg": 0,
+            "Wmm": 10000
+        },
+        "directory-signatures": [
+            {
+                "Algorithm": "sha1",
+                "identity": "12B3F62ED02C9B54816CEBB06C5E259189220513",
+                "signing-key-digest": "448B8141FECA90994DCDBE11A21FDAF2AF53D082",
+                "signature": "aO5pbIg66t2w/jWgbZmhWrxuHIhv8Rae++ybBVWRtTTHZYdUUMgtfqQA9Cro/9qgeNHtZNBePapP6EWhQBKYzZxHEaRjhHJGlTYeJq1q2IxI3x6vSvabupLOnl3e++EPn0LR9IVUII1LmhsKp84ZpsbOuF8XoT1PfDsfcNhW898DmTGNuJ+R9P+rNOAvkKctAOjAYeNjiL4UH64iqOyA7MshB/oS1gmmmYhg5fBHhE8J24NNAcN32VEDoChwYYFHSj0uJiOv4vD09hHQxTimadEwNCl38hMbd/yLhBmlBi6jAKIAP71EJuaO3UkuK7DkQFj91kNmdyGYF9uIsxJ3iQ=="
+            },
+            {
+                "Algorithm": "sha1",
+                "identity": "7E0219BB5A355B76A8E8ADB17C772827BDADCD73",
+                "signing-key-digest": "2CA39E7AFCFC6422A80BF43DCD43A73872F86B87",
+                "signature": "RWntGwBx/PUCkQChhrA41rPxfio6nel3nB4+7+3uQWOSm7HT60m5DN22ryQ14Qqsz0l/RK4GCwc1pXUBZvPnJ4wzW5ORcjgNaMi6KbRS6q+z0KT7yY+zF3cacY2GlBNVTWIV3FfggQth1AFTQRkHdOIW4ifQwQpernjozE08I/O3rlP19xtxpN06DqfpteSjFQhD+5xiSIclgkURCInVHCpbBl/KdGs/4LZ2JVciABDeYr3xpAcPYJ6u9CdFf5iAWFcsMO/oZ+9zmwj0qfqkEJhdHU4RX1DnECWWnBJU7wbAkGcagATEE/4aDRLdZSOktYFEJmyjbXuSI3r0B7uGwg=="
+            },
+            {
+                "Algorithm": "sha1",
+                "identity": "E459CC388963FE0C47B0C5C918B1166D1809A2D9",
+                "signing-key-digest": "FE1C48EDCC9F526DC7C40211D409F86BFFF35F40",
+                "signature": "xUNpvtVSHnrwRMCYLUvjkN3kp0kmX3oxzEAcBXbcpYzdn757U5QefVBkq9ZC+6RsWHYE4tHsC5x2KW+GN1wnBkYyrTxSG1fG46sKpEYYSnEuCVa2nJpwMEl/EzsRT+20eZXIjj+FLKIrMrKV23k/LgbkN2fnvUpwGkWV7/RJ6a9MHGjWA/nO3hmNlF0mPLx+t3Z0Cao3PdiNOW/xVnQ6PKW1J3U4pWEe6DoQNzhSI+wYIF/kx2qv7K7fbPZ1RqUC5shNX2IZDkFcqVq1HoHpfzyLFaMY+JjWvUneQWucvMJOuLENCMLr79/elT23h2sHr3vPTIatzhTwSKXWLe92Yg=="
+            }
+        ]
+    }
+}

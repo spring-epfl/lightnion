@@ -1,356 +1,285 @@
+"""
+Descriptors handlers.
+"""
+
 import base64
-import hashlib
+import re
+from datetime import datetime, timezone
 import logging
 import urllib.request
 
+from stem.descriptor.server_descriptor import RelayDescriptor
+from stem.descriptor.microdescriptor import Microdescriptor
+
 import lightnion as lnn
-from lightnion import consensus
+from lightnion.consensus import Flavor
 
-def compute_descriptor_digest(fields, descriptors, entry, flavor):
-    """
-        (details of the parser – private API)
+RE_ROUTERS_UNF = re.compile(r"^router ", re.M)
+RE_ROUTERS_MIC = re.compile(r"^onion-key\n", re.M)
 
-        Plugs into our consumer to compute extra "digest" fields that expose
-        the (micro-)descriptor's (micro-)digest, enabling us to easily fetch
-        associated entries within a consensus.
+RE_PEM = re.compile(r"""-----BEGIN [^-]+-----
+([A-Za-z0-9+/=\n]+)
+-----END [^-]+-----""")
 
-        :param list fields: "fields" accumulator used by the consumer
-        :param bytes descriptors: remaining input to be parsed by the consumer
-        :param bytes entry: last line being parsed by the consumer
-        :param str flavor: flavor used by the consumer
+FLAVOR_STR_MIC = "microdesc"
+FLAVOR_STR_UNF = "unflavored"
 
-        :returns: updated (or not) fields accumulator
-    """
+IDENTIFIERS_TYPES = (
+    "ed25519",
+    "rsa1024"
+)
 
-    if flavor == 'unflavored':
-        digest_name = 'digest'
-        pivot_field = 'router'
-        starts_hash = b'router '
-        ends_hasher = b'router-signature'
-        base_offset = 1
-        base_legacy = 0
-        shalgorithm = hashlib.sha1
-        # https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L602
-    else:
-        digest_name = 'micro-digest'
-        pivot_field = 'onion-key'
-        starts_hash = b'onion-key'
-        ends_hasher = b'id '
-        base_offset = 7 + 1 + 43 + 1 # 'ed25519 [identity]\n'
-        base_legacy = 7 + 1 + 27 + 1 # 'rsa1024 [identity]\n'
-        shalgorithm = hashlib.sha256
-        # https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3202
 
-    # 1. check if we're starting to parse a fresh entry before computing digest
-    if digest_name not in fields[-1] or (
-        entry.startswith(starts_hash) and pivot_field in fields[-1]):
-        if pivot_field in fields[-1]:
-            fields.append(dict())
+class InvalidDescriptor(Exception):
+    pass
 
-        # 1.5 (extra sanity checks: double-check that we have what we need)
-        if not entry.startswith(starts_hash):
-            raise RuntimeError('Expecting {} to start the payload: {}'.format(
-                starts_hash, entry))
-        if not ends_hasher in descriptors:
-            raise RuntimeError(
-                'Expecting {} within: {}'.format(ends_hasher, descriptors))
 
-        try:
-            # 2. compute the offset to the ends what goes into the hash
-            sigoffset = descriptors.index(ends_hasher)
+class Descriptors:
 
-            # TODO: better support?
-            sigoffset += len(ends_hasher) + base_offset
-            if b'rsa1024' in descriptors[:sigoffset]:
-                sigoffset -= base_offset
-                sigoffset += base_legacy
+    @staticmethod
+    def _search_re(string, regex):
+        # Convenience function to search for the first instance of the pattern.
+        match = regex.search(string)
+        if not match:
+            raise InvalidDescriptor("Invalid format.")
 
-            # 3. rebuild the original (including its first line being parsed)
-            full_desc = entry + b'\n' + descriptors[:sigoffset]
+        groups = match.groups()
+        return groups
 
-            # 4. compute the base64-encoded hash with the right algorithm
-            digest = base64.b64encode(shalgorithm(full_desc).digest())
 
-            # 5. strips the trailing '=' as specified
-            fields[-1][digest_name] = str(digest.rstrip(b'='), 'utf8')
-        except ValueError:
-            pass
+    @staticmethod
+    def _findall_re(string, regex):
+        # Convenience function to search for all instances of the pattern.
+        groups = regex.findall(string)
+        if not groups:
+            raise InvalidDescriptor("Invalid format.")
 
-        if not digest_name in fields[-1]:
-            raise RuntimeError('Was unable to generate proper sum.')
+        return groups
 
-    return fields
 
-def consume_descriptors(descriptors, flavor='microdesc'):
-    if flavor not in ['microdesc', 'unflavored']:
-        raise NotImplementedError(
-            'Consensus flavor "{}" not supported.'.format(flavor))
+    @staticmethod
+    def _date_from_datetime(dt):
+        date_dict = {
+            "date": "{:04d}-{:02d}-{:02d}".format(dt.year, dt.month, dt.day),
+            "time": "{:02d}:{:02d}:{:02d}".format(dt.hour, dt.minute, dt.second),
+            "stamp": dt.replace(tzinfo=timezone.utc).timestamp()
+        }
+        return date_dict
 
-    # TODO: check if family in microdesc are appropriate
-    if flavor == 'microdesc':
-        whitelist = [b'onion-key', b'ntor-onion-key', b'p', b'p6', b'id',
-            b'family']
-    else:
-        whitelist = [b'router', b'identity-ed25519', b'master-key-ed25519',
-            b'platform', b'proto', b'published', b'fingerprint', b'uptime',
-            b'bandwidth', b'extra-info-digest', b'qkk', b'caches-extra-info',
-            b'onion-key', b'signing-key', b'onion-key-crosscert',
-            b'ntor-onion-key-crosscert', b'hidden-service-dir', b'contact',
-            b'ntor-onion-key', b'reject', b'accept', b'tunnelled-dir-server',
-            b'router-sig-ed25519', b'router-signature', b'ipv6-policy',
-            b'family', b'protocols', b'or-address', b'allow-single-hop-exits',
-            b'hibernating']
-    aliases = {'p': 'policy', 'p6': 'ipv6-policy', 'id': 'identity'}
 
-    def end_of_field(line):
-        if b' ' not in line:
-            line += b' '
-        keyword, _ = line.split(b' ', 1)
-        return keyword not in whitelist
+    @staticmethod
+    def _parse_exit_policy(policy):
+        rules = list()
+        for rule_obj in policy:
+            rule_l = str(rule_obj).split(" ")
+            rule = {
+                "type": rule_l[0],
+                "pattern": rule_l[1]
+            }
+            rules.append(rule)
 
-    fields = [dict()]
-    valid = False
-    while True:
-        descriptors, entry = consensus.scrap(descriptors, end_of_field)
-        if entry is None:
-            if not valid:
-                return descriptors, None
-            break
-        fields = compute_descriptor_digest(fields, descriptors, entry, flavor)
+        policy_dict = {
+            "type": "exitpattern",
+            "rules": rules
+        }
 
-        valid = True
-        if b' ' not in entry:
-            entry += b' '
+        return policy_dict
 
-        try:
-            entry = str(entry, 'utf8')
-        except:
-            continue
 
-        keyword, content = entry.split(' ', 1)
-        if keyword == 'router':
-            nick, address, orport, socksport, dirport = content.split(' ', 4)
-            content = dict(
-                nickname=nick,
-                address=address,
-                orport=int(orport),
-                socksport=int(socksport),
-                dirport=int(dirport))
+    @staticmethod
+    def _parse_exit_policy_mic(policy):
 
-        if keyword in ['platform', 'contact']:
-            pass # nothing to process
+        if not policy:
+            return None
 
-        if keyword in ['reject', 'accept']:
-            base = dict(type='exitpattern')
-            if 'policy' in fields[-1]:
-                base = fields[-1]['policy']
-            if not base['type'] == 'exitpattern':
-                raise RuntimeError('Unknown policy: {}'.format(base))
-            if 'rules' not in base:
-                base['rules'] = []
+        summary = policy.summary()
+        # something like 'reject 1-442, 444-1024'
 
-            base['rules'].append(dict(type=keyword, pattern=content))
-            fields[-1]['policy'] = base
-            continue
+        if summary == "reject 1-65535":
+            return None
 
-        if keyword == 'or-address':
-            base = []
-            if 'or-address' in fields[-1]:
-                base = fields[-1]['or-address']
+        rules = list()
+        rule_type = summary[0:6]
+        ports_pairs = summary[7:].split(", ")
 
-            address, port, guess = consensus.parse_address(content)
-            content = [{'ip': address, 'port': port, 'type': guess}]
-            if len(base) > 0:
-                content[0]['ignored'] = True
-
-            base += content
-            fields[-1]['or-address'] = base
-            continue
-
-        if keyword == 'family':
-            content = content.split(' ')
-
-        if keyword == 'proto':
-            content = consensus.parse_ranges(content)
-
-        # The spec says 'New code should neither […] nor parse this line'
-        if keyword == 'protocols':
-            pass
-
-        if keyword in ['allow-single-hop-exits', 'hibernating']:
-            content = True
-
-        if keyword == 'published':
-            date, time, when = consensus.parse_time(content)
-            content = dict(date=date, time=time, stamp=when.timestamp())
-
-        if keyword == 'fingerprint':
-            content = consensus.parse_fingerprint(content)
-
-            # Enrich 'router' with 'identity' fingerprint for convenience
-            if 'router' in fields[-1]:
-                identity = bytes.fromhex(content.replace(' ', ''))
-                identity = str(base64.b64encode(identity), 'utf8')
-                fields[-1]['router']['identity'] = identity.replace('=', '')
-
-        if keyword == 'uptime':
-            content = int(content)
-
-        if keyword == 'bandwidth':
-            avg, burst, observed = content.split(' ', 2)
-            content = dict(
-                avg=int(avg), burst=int(burst), observed=int(observed))
-
-        if keyword == 'extra-info-digest':
-            if ' ' in content:
-                sha1, sha256 = content.split(' ', 1)
-                sha256 = consensus.parse_base64(sha256)
-                content = dict(sha1=sha1, sha256=sha256)
+        for ports_pair in ports_pairs:
+            if "-" in ports_pair:
+                port_min, port_max = ports_pair.split("-")
             else:
-                content = dict(sha1=content)
+                port_min = port_max = ports_pairs
 
-        if keyword in ['caches-extra-info', 'hidden-service-dir',
-            'tunnelled-dir-server']:
-            content = True
+            rules.append([int(port_min), int(port_max)])
 
-        if keyword in ['onion-key', 'signing-key']:
-            if not content == '':
-                raise RuntimeError('Trailing content with {}: {}'.format(
-                    keyword, content))
+        policy_dict = {
+            "type": rule_type,
+            "PortList": rules
+        }
 
-            descriptors, pubkey = consensus.scrap_signature(descriptors,
-                fix=b'RSA PUBLIC KEY')
-            if pubkey is not None:
-                content = consensus.parse_base64(str(pubkey, 'utf8'))
-
-        if keyword == 'onion-key-crosscert':
-            if not content == '':
-                raise RuntimeError('Trailing content with {}: {}'.format(
-                    keyword, content))
-
-            descriptors, crosscrt = consensus.scrap_signature(descriptors,
-                fix=b'CROSSCERT')
-            if crosscrt is not None:
-                content = consensus.parse_base64(str(crosscrt, 'utf8'))
-
-        if keyword == 'ntor-onion-key-crosscert':
-            bit = int(content)
-
-            descriptors, edcert = consensus.scrap_signature(descriptors,
-                fix=b'ED25519 CERT')
-            if edcert is not None:
-                content = consensus.parse_base64(str(edcert, 'utf8'))
-            content = dict(bit=bit, cert=content)
-
-        if keyword == 'ntor-onion-key':
-            content = consensus.parse_base64(content)
-
-        if keyword in ['p', 'p6', 'ipv6-policy']:
-            policy_type, portlist = content.split(' ')
-            if not policy_type in ['accept', 'reject']:
-                raise RuntimeError('Unknown policy: {}'.format(policy_type))
-
-            portlist = consensus.parse_range_once(portlist, expand=False)
-            content = {'type': policy_type, 'PortList': portlist}
-
-        if keyword == 'id':
-            id_type, data = content.split(' ')
-            if not id_type in ['rsa1024', 'ed25519']:
-                raise RuntimeError('Unknown id key type: {}'.format(id_type))
-
-            content = {'type': id_type,
-                'master-key': consensus.parse_base64(data)}
-
-        if keyword in ['router-sig-ed25519', 'router-signature']:
-            base = dict()
-            if 'router-signatures' in fields[-1]:
-                base = fields[-1]['router-signatures']
-
-            if keyword == 'router-sig-ed25519':
-                if 'router-signatures' in fields[-1]:
-                    raise RuntimeError('Ed25519 must be first!')
-                if not 'identity' in fields[-1]:
-                    raise RuntimeError('Need identity with {} here: {}'.format(
-                        keyword, fields[-1]))
-                if not 'cert' in fields[-1]['identity']:
-                    raise RuntimeError('Need cert. in identity: {}'.format(
-                        fields[-1]))
-                base['ed25519'] = consensus.parse_base64(content)
-
-            if keyword == 'router-signature':
-                descriptors, sig = consensus.scrap_signature(descriptors,
-                    fix=b'SIGNATURE')
-                if sig is not None:
-                    content = consensus.parse_base64(str(sig, 'utf8'))
-                base['rsa'] = content
-
-            fields[-1]['router-signatures'] = base
-            continue
-
-        if keyword in ['identity-ed25519', 'master-key-ed25519']:
-            base = dict()
-            if 'identity' in fields[-1]:
-                base = fields[-1]['identity']
-
-            if 'type' not in base:
-                base['type'] = 'ed25519'
-            if not base['type'] == 'ed25519':
-                raise RuntimeError('Invalid key type {} here:'.format(base))
-
-            if keyword == 'identity-ed25519':
-                if 'cert' in base:
-                    raise RuntimeError('Extra cert. here: {}'.format(base))
-
-                descriptors, edcert = consensus.scrap_signature(descriptors,
-                    fix=b'ED25519 CERT')
-                if edcert is not None:
-                    base['cert'] = consensus.parse_base64(str(edcert, 'utf8'))
-
-            if keyword == 'master-key-ed25519':
-                if 'master-key' in base:
-                    raise RuntimeError('Extra master key: {}'.format(base))
-
-                base['master-key'] = consensus.parse_base64(content)
-
-            # TODO: validation if both master-key & identity are present
-            fields[-1]['identity'] = base
-            continue
-
-        if keyword in aliases:
-            keyword = aliases[keyword]
-
-        if keyword in fields[-1]:
-            fields.append(dict())
-
-        fields[-1][keyword] = content
-    return descriptors, fields
+        return policy_dict
 
 
-def parse_descriptors(descriptors, flavor='microdesc'):
-    fields = dict(flavor=flavor)
-    nbdesc = descriptors.count(b'onion-key\n-----BEGIN')
+    @staticmethod
+    def _parse_router_mic(string):
+        desc = Microdescriptor(string)
 
-    descriptors, http = consensus.consume_http(descriptors)
-    if http is not None:
-        fields['http'] = http
+        identity = None
+        for identifier_type in IDENTIFIERS_TYPES:
+            if identifier_type in desc.identifiers:
+                identity = {
+                    "type": identifier_type,
+                    "master-key": desc.identifiers[identifier_type]
+                }
+                break
 
-    descriptors, entries = consume_descriptors(descriptors, flavor)
-    if entries is None or len(entries) == 0:
-        entries = []
-    fields['descriptors'] = entries
+        if not identity:
+            raise InvalidDescriptor
 
-    if not len(fields['descriptors']) == nbdesc:
-        raise RuntimeError(
-            'Unexpected or corrupted descriptor? ({}/{} found)'.format(
-                len(fields['descriptors']), nbdesc))
+        onion_key = Descriptors._search_re(desc.onion_key, RE_PEM)[0]
 
-    # Add flavor for convenience
-    for idx in range(len(fields['descriptors'])):
-        fields['descriptors'][idx]['flavor'] = flavor
+        microdescriptor = {
+            "micro-digest": desc.digest(),
+            "onion-key": onion_key.replace("\n", ""),
+            "ntor-onion-key": desc.ntor_onion_key,
+            "identity": identity,
+            "flavor": FLAVOR_STR_MIC
+        }
 
-    if descriptors == b'\n':
-        descriptors = b''
-    return fields, descriptors
+        policy = Descriptors._parse_exit_policy_mic(desc.exit_policy)
+        if policy:
+            microdescriptor["policy"] = policy
+
+        policy = Descriptors._parse_exit_policy_mic(desc.exit_policy_v6)
+        if policy:
+            microdescriptor["ipv6-policy"] = policy
+
+        return microdescriptor
+
+
+    @staticmethod
+    def _parse_router_unf(string):
+        desc = RelayDescriptor(string)
+
+        router_id = base64.b64encode(bytes.fromhex(desc.fingerprint.replace(" ", ""))).replace(b"=", b"").replace(b"\n", b"")
+
+        identity_cert = Descriptors._search_re(desc.ed25519_certificate, RE_PEM)[0].replace("\n", "")
+
+        fingerprint = desc.fingerprint
+        fingerprint = " ".join([fingerprint[i:i+4] for i in range(0,len(fingerprint),4)])
+
+        onion_key = Descriptors._search_re(desc.onion_key, RE_PEM)[0].replace("\n", "")
+        signing_key = Descriptors._search_re(desc.signing_key, RE_PEM)[0].replace("\n", "")
+        onion_key_crosscert = Descriptors._search_re(desc.onion_key_crosscert, RE_PEM)[0].replace("\n", "")
+        ntor_onion_key_crosscert = Descriptors._search_re(desc.ntor_onion_key_crosscert, RE_PEM)[0].replace("\n", "")
+        rsa_signature = Descriptors._search_re(desc.signature, RE_PEM)[0].replace("\n", "")
+
+        descriptor = {
+            "digest": desc.digest(hash_type='SHA1',encoding='BASE64'),
+            "router": {
+                "nickname": desc.nickname,
+                "address": desc.address,
+                "orport": desc.or_port,
+                "socksport": 0,
+                "dirport": desc.dir_port,
+                "identity": router_id.decode("ASCII")
+            },
+            "identity": {
+                "type": "ed25519",
+                "cert": identity_cert,
+                "master-key": desc.ed25519_master_key
+            },
+            "platform": desc.platform.decode("ASCII"),
+            "proto": desc.protocols,
+            "published": Descriptors._date_from_datetime(desc.published),
+            "fingerprint": fingerprint,
+            "uptime": desc.uptime,
+            "bandwidth": {
+                "avg": desc.average_bandwidth,
+                "burst": desc.burst_bandwidth,
+                "observed": desc.observed_bandwidth
+            },
+            "extra-info-digest": {
+                "sha1": desc.extra_info_digest,
+                "sha256": desc.extra_info_sha256_digest
+            },
+            "onion-key": onion_key,
+            "signing-key": signing_key,
+            "onion-key-crosscert": onion_key_crosscert,
+            "ntor-onion-key-crosscert": {
+                "bit": int(desc.ntor_onion_key_crosscert_sign),
+                "cert": ntor_onion_key_crosscert
+            },
+            "hidden-service-dir": desc.is_hidden_service_dir,
+            "ntor-onion-key": desc.ntor_onion_key,
+            "tunnelled-dir-server": desc.allow_tunneled_dir_requests,
+            "router-signatures": {
+                "ed25519": desc.ed25519_signature,
+                "rsa": rsa_signature
+            },
+            "flavor": FLAVOR_STR_UNF
+        }
+
+        if desc.extra_info_cache:
+            descriptor["caches-extra-info"] = True
+
+        if desc.exit_policy:
+            policy = Descriptors._parse_exit_policy(desc.exit_policy)
+            descriptor["policy"] = policy
+
+        policy = Descriptors._parse_exit_policy_mic(desc.exit_policy_v6)
+        if policy:
+            descriptor["ipv6-policy"] = policy
+
+
+        if desc.contact:
+            contact = desc.contact.decode("ASCII")
+
+            descriptor["contact"] = contact
+
+        return descriptor
+
+
+    @staticmethod
+    def parse(descriptors_raw, flavor=Flavor.MICRO):
+
+        # alias
+        raw = descriptors_raw
+
+        if flavor == Flavor.MICRO:
+            flavor_str = FLAVOR_STR_MIC
+            router_func = Descriptors._parse_router_mic
+            routers_regex = RE_ROUTERS_MIC
+        elif flavor == Flavor.UNFLAVORED:
+            flavor_str = FLAVOR_STR_UNF
+            router_func = Descriptors._parse_router_unf
+            routers_regex = RE_ROUTERS_UNF
+
+        routers = list()
+
+        matches = routers_regex.finditer(descriptors_raw)
+        if not matches:
+            raise InvalidDescriptor("Invalid format.")
+
+        match = next(matches)
+
+        idx_0 = match.start()
+
+        for match in matches:
+            idx_1 = match.start()
+
+            router = router_func(raw[idx_0:idx_1])
+            routers.append(router)
+
+            idx_0 = idx_1
+
+        router = router_func(raw[idx_0:-1])
+        routers.append(router)
+
+        descriptors = {
+            "flavor": flavor_str,
+            "descriptors": routers
+        }
+
+        return descriptors
 
 
 def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
@@ -358,21 +287,29 @@ def batch_query(items, prefix, separator='-', fixed_max_length=4096-128):
     #    https://github.com/plcp/tor-scripts/blob/master/torspec/dir-spec-4d0d42f.txt#L3392
 
     query = ''
+    query_len = 0
+    prefix_len = len(prefix)
+    sep_len = len(separator)
+
     for item in items:
-        if len(item) + len(query) >= fixed_max_length:
+        item_len = len(item)
+        if query_len + item_len >= fixed_max_length:
             yield query
             query = ''
+            query_len = 0
 
-        if len(query) == 0:
-            query += prefix + item
-        else:
+        if query:
             query += separator + item
+            query_len += item_len + sep_len
+        else:
+            query += prefix + item
+            query_len += item_len + prefix_len
 
-    if len(query) != 0:
+    if query:
         yield query
 
 
-def filter_descriptors(descriptors, digests, flavor='unflavored'):
+def filter_descriptors(descriptors, digests, flavor=Flavor.UNFLAVORED):
     """Filter out the invalid descriptors.
     :param descriptors: Descriptors to be filtered.
     :param digests: Digests from the consensus.
@@ -383,7 +320,7 @@ def filter_descriptors(descriptors, digests, flavor='unflavored'):
     descriptors_d = dict()
 
     # Content depends on descriptor flavour.
-    if flavor == 'microdesc':
+    if flavor == Flavor.MICRO:
         for descriptor in descriptors:
             fingerprint = descriptor['micro-digest']
             descriptor_digests.add(fingerprint)
@@ -407,26 +344,19 @@ def filter_descriptors(descriptors, digests, flavor='unflavored'):
     return descriptors_valid
 
 
-def download_direct(host, port, cons, flavor='unflavored'):
-    """Retrieve  descriptor via a direct HTTP connection.
-    :param host: host from which to retrieve the descriptors.
-    :param port: port from which to retrieve the descriptors.
-    :param cons: consensus for which nodes a descriptor need to be retrieved.
-    """
+def download_direct(host, port, cons, flavor=Flavor.MICRO):
 
-    if flavor == 'microdesc':
+    if flavor == Flavor.MICRO:
         endpoint = '/tor/micro/d/'
         separator = '-'
         digests = [router['micro-digest'] for router in cons['routers']]
-
     else:
         endpoint = '/tor/server/d/'
         separator = '+'
         digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
 
-    descriptors = []
+    descriptors = list()
 
-    # Retrieve descriptors not in the cache
     for query in batch_query(digests, endpoint, separator):
         uri = 'http://%s:%d%s' % (host, port, query)
         res = urllib.request.urlopen(uri)
@@ -435,96 +365,20 @@ def download_direct(host, port, cons, flavor='unflavored'):
             raise RuntimeError('Unable to fetch descriptors.')
 
         # Rename parse to something sensible
-        new_batch, remaining = parse_descriptors(res.read(), flavor=flavor)
-        if new_batch is None or remaining is None or len(remaining) > 0:
-            raise RuntimeError('Unable to parse descriptors.')
+        new_batch = Descriptors.parse(res.read().decode("ASCII"), flavor=flavor)
 
-        if (len(new_batch['descriptors']) == 0):
-            raise RuntimeError('No descriptor listed. http={}.'.format(new_batch['http']))
+        if not new_batch['descriptors']:
+            raise RuntimeError('No descriptors listed on {}:{}.'.format(host, port))
 
         if new_batch is not None:
             descriptors += new_batch['descriptors']
 
     descriptors = filter_descriptors(descriptors, digests, flavor=flavor)
 
-    if flavor == 'microdesc':
+    if flavor == Flavor.MICRO:
         return {d['micro-digest']: d for d in descriptors}
     else:
         return {d['digest']: d for d in descriptors}
-
-
-def download_relay_descriptor(host='127.0.0.1', port=9051):
-    """Retrieve a relay's own descriptor.
-    """
-
-    uri = 'http://{}:{}/tor/server/authority'.format(host, port)
-    res = urllib.request.urlopen(uri)
-
-    if res is None or res.getcode() != 200:
-        raise RuntimeError('Unable to fetch descriptors.')
-
-    descriptors, _ = parse_descriptors(res.read(), flavor='unflavored')
-
-    return descriptors['descriptors'][0]
-
-
-def download_raw(host, port, cons, flavor='unflavored'):
-    """Retrieve  descriptor via a direct HTTP connection.
-    :param host: host from which to retrieve the descriptors.
-    :param port: port from which to retrieve the descriptors.
-    :param cons: consensus for which nodes a descriptor need to be retrieved.
-    """
-
-    if flavor == 'microdesc':
-        endpoint = '/tor/micro/d/'
-        separator = '-'
-        digests = [router['micro-digest'] for router in cons['routers']]
-
-    else:
-        endpoint = '/tor/server/d/'
-        separator = '+'
-        digests = [base64.b64decode(router['digest'] + '====').hex() for router in cons['routers']]
-
-
-    # Retrieve descriptors not in the cache
-    desc = b""
-    for query in batch_query(digests, endpoint, separator):
-        uri = 'http://%s:%d%s' % (host, port, query)
-        res = urllib.request.urlopen(uri)
-
-        if res is None or res.getcode() != 200:
-            raise RuntimeError('Unable to fetch descriptors.')
-
-        desc += res.read()
-
-    return desc
-
-
-def download_raw_by_digests_unflavored(host, port, digests_bytes):
-    """Retrieve  descriptor via a direct HTTP connection.
-    :param host: host from which to retrieve the descriptors.
-    :param port: port from which to retrieve the descriptors.
-    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
-    """
-
-    digests = [digest.hex() for digest in digests_bytes]
-    endpoint = '/tor/server/d/'
-    separator = '+'
-
-    return _download_raw_by_digests(host, port, digests, endpoint, separator)
-
-
-def download_raw_by_digests_micro(host, port, digests_bytes):
-    """Retrieve  descriptor via a direct HTTP connection.
-    :param host: host from which to retrieve the descriptors.
-    :param port: port from which to retrieve the descriptors.
-    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
-    """
-
-    endpoint = '/tor/micro/d/'
-    separator = '-'
-    digests = digests_bytes
-    return _download_raw_by_digests(host, port, digests, endpoint, separator)
 
 
 def _download_raw_by_digests(host, port, digests, endpoint, separator):
@@ -543,126 +397,44 @@ def _download_raw_by_digests(host, port, digests, endpoint, separator):
     return desc
 
 
-def download(state, cons=None, flavor='microdesc', cache=True, fail_on_missing=False):
-    logging.warning('Use DEPRECATED method descriptor.download()!')
-
-    if cons is None:
-        state, cons = consensus.download(state, flavor=flavor, cache=cache)
-        if cons is None:
-            return state, None
-    elif isinstance(cons, list):
-        cons = dict(routers=cons)
-    elif isinstance(cons, str):
-        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
-        cons = dict(routers={digest_name: cons})
-    elif 'routers' not in cons and 'identity' in cons:
-        cons = dict(routers=[cons])
-
-    if not isinstance(cons, dict):
-        raise RuntimeError('Expecting a dict for cons, got: {}'.format(cons))
-
-    digests = []
-    if flavor == 'microdesc':
-        digests = [router['micro-digest'] for router in cons['routers']]
-        endpoint = '/tor/micro/d/'
-        separator = '-'
-    else:
-        digests = [router['digest'] for router in cons['routers']]
-        digests = [base64.b64decode(d + '====').hex() for d in digests]
-        endpoint = '/tor/server/d/'
-        separator = '+'
-
-    # retrieve descriptors from cache
-    descriptors = []
-    partial_digests = digests
-    if cache:
-        digest_name = 'micro-digest' if flavor == 'microdesc' else 'digest'
-        cached_digests = []
-        for digest in digests:
-            try:
-                descriptor = lnn.cache.descriptors.get(flavor, digest)
-                descriptors.append(descriptor)
-                cached_digests.append(digest)
-            except BaseException:
-                pass
-        partial_digests = [d for d in digests if d not in cached_digests]
-
-    for query in batch_query(partial_digests, endpoint, separator):
-        state, answer = lnn.hop.directory_query(state, query)
-
-        if answer is None or len(answer) == 0:
-            continue
-
-        new_batch, remaining = parse_descriptors(answer, flavor=flavor)
-        if new_batch is None or remaining is None or len(remaining) > 0:
-            raise RuntimeError('Unable to parse descriptors.')
-
-        if (len(new_batch['descriptors']) == 0
-            and not new_batch['http']['code'] == '404'):
-            raise RuntimeError(
-                'No descriptor listed. http={}.'.format(new_batch['http']))
-
-        if new_batch is not None:
-            descriptors += new_batch['descriptors']
-
-    if flavor == 'microdesc':
-        obtained = [d['micro-digest'] for d in descriptors]
-    else:
-        obtained = [d['digest'] for d in descriptors]
-        obtained = [base64.b64decode(d + '====').hex() for d in obtained]
-
-    invalid = []
-    for digest in digests:
-        if digest in obtained:
-            obtained.remove(digest)
-        else:
-            invalid.append(digest)
-
-    if not len(obtained) == 0:
-        raise RuntimeError('Mismatched digest afterward! {} vs {}'.format(
-            sorted(invalid), sorted(obtained)))
-
-    if fail_on_missing and len(invalid) > 0:
-        raise RuntimeError('Missing {} digests in answer: {}'.format(
-            len(invalid), invalid))
-
-    if cache:
-        for descriptor in descriptors:
-            lnn.cache.descriptors.put(descriptor)
-
-    return state, descriptors
-
-
-def download_authority(state):
-    state, answer = lnn.hop.directory_query(state, '/tor/server/authority')
-    if answer is None or len(answer) == 0:
-        return state, None
-
-    result, remain = parse_descriptors(answer, flavor='unflavored')
-    if not (len(remain) == 0
-        and result is not None
-        and len(result['descriptors']) == 1):
-        raise RuntimeError('Unable to parse authority descriptor.')
-
-    return state, result['descriptors'][0]
-
-
-def download_authority_direct(host, port):
-    """Retrieve authority.
-    :param host: host from which to retrieve the authority.
-    :param port: port from which to retrieve the authority.
-    :return: Authority.
+def download_raw_by_digests_micro(host, port, digests_bytes):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
     """
-    uri = 'http://%s:%d/tor/server/authority' % (host, port)
 
+    endpoint = '/tor/micro/d/'
+    separator = '-'
+    digests = digests_bytes
+    return _download_raw_by_digests(host, port, digests, endpoint, separator)
+
+
+def download_raw_by_digests_unflavored(host, port, digests_bytes):
+    """Retrieve  descriptor via a direct HTTP connection.
+    :param host: host from which to retrieve the descriptors.
+    :param port: port from which to retrieve the descriptors.
+    :param digests: Digests (in a binary form) of the nodes for which a descriptor need to be retrieved.
+    """
+
+    digests = [digest.hex() for digest in digests_bytes]
+    endpoint = '/tor/server/d/'
+    separator = '+'
+
+    return _download_raw_by_digests(host, port, digests, endpoint, separator)
+
+
+def download_relay_descriptor(host='127.0.0.1', port=9051):
+    """Retrieve a relay's own descriptor.
+    """
+
+    uri = 'http://{}:{}/tor/server/authority'.format(host, port)
     res = urllib.request.urlopen(uri)
 
     if res is None or res.getcode() != 200:
-        return None
+        raise RuntimeError('Unable to fetch descriptors.')
 
-    result, remain = parse_descriptors(res.read(), flavor='unflavored')
+    descriptors = Descriptors.parse(res.read().decode("ASCII"), flavor=Flavor.UNFLAVORED)
 
-    if not (len(remain) == 0 and result is not None and len(result['descriptors']) == 1):
-        raise RuntimeError('Unable to parse authority descriptor.')
+    return descriptors['descriptors'][0]
 
-    return result['descriptors'][0]
