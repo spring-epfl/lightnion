@@ -91,26 +91,6 @@ lnn.state = {
      * ready to use
      * @type channel
      */
-    success: 6,
-    /**
-     * operation started
-     * @type stream
-     */
-    started: 1,
-    /**
-     * ready to use
-     * @type stream
-     */
-    created: 3,
-    /**
-     * incoming data
-     * @type stream
-     */
-    pending: 4,
-    /**
-     * completed or closed
-     * @type stream
-     */
     success: 6
 }
 
