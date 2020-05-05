@@ -48,7 +48,6 @@ lint:
 
 # clean built files
 clean:
-	$(RM) $(LIGHTNION-BUNDLE)
 	$(RM) $(DIST)/*
 	$(RM) $(LIGHTNION-BUNDLE-INTEGRATION-TESTS)
 	$(RM) -r $(JSDOC-DIST)
@@ -62,7 +61,6 @@ help:
 	@awk '/^#/{c=substr($$0,3);next}c&&/^[[:alpha:]][[:alnum:]_-]+:/{print substr($$1,1,index($$1,":")),c}1{c=0}' $(MAKEFILE_LIST) | column -s: -t
 
 $(LIGHTNION-BUNDLE): $(LIGHTNION-BUNDLE-DIST)
-	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
 
 $(LIGHTNION-BUNDLE-INTEGRATION-TESTS): $(LIGHTNION-BUNDLE-DIST)
 	$(CP) $(LIGHTNION-BUNDLE-DIST) $@
