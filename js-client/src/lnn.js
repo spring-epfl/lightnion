@@ -33,7 +33,6 @@ import LightnionWebSocket from "./lightnion-websocket/lightnion-websocket.js";
 let lnn = header.lnn;
 
 // api
-lnn.fast = api.fast
 lnn.auth = api.auth
 lnn.open = api.open
 lnn.agents = api.agents

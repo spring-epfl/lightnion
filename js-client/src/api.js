@@ -10,11 +10,6 @@ import * as get from "./get.js";
 import * as signature from "./signature.js";
 import { stream } from "./stream.js";
 
-export function fast(host, port, success, error, io, select_path) {
-    if (select_path === undefined)
-        select_path = true
-    return open(host, port, success, error, io, true, null, select_path)
-}
 
 export function auth(host, port, suffix, success, error, io, select_path) {
     if (select_path === undefined)
@@ -45,18 +40,15 @@ export function auth(host, port, suffix, success, error, io, select_path) {
  * @param {Function} success callback in case of success
  * @param {Function} error callback in case of error
  * @param {io.io_t} io io adapter in use
- * @param {Boolean} fast deprecated, always set to false 
- * @param {half_t} auth {@link lnn.auth} material
+ * @param {half_t} auth lnn.auth material
  * @param {Boolean} select_path Compute the circuit path in the client*
  * @param {List} tcp_ports list of ports which need to be accepted by the exit node
  * @returns connection handler
  */
-export function open(host, port, success, error, io, fast, auth, select_path, tcp_ports) {
+export function open(host, port, success, error, io, auth, select_path, tcp_ports) {
     let endpoint = lnnEndpoint.endpoint(host, port)
     if (io === undefined)
         io = lnnIO.socket
-    if (fast === undefined)
-        fast = false
     if (error === undefined)
         error = function () { }
     if (success === undefined)
@@ -67,7 +59,6 @@ export function open(host, port, success, error, io, fast, auth, select_path, tc
     if (tcp_ports === undefined)
         tcp_ports = [80, 443]
 
-    endpoint.fast = fast
     endpoint.auth = auth
     endpoint.select_path = select_path
 
@@ -124,10 +115,7 @@ export function open(host, port, success, error, io, fast, auth, select_path, tc
                 }
                 console.log("signature verification success")
                 get.descriptors_raw(endpoint, function () {
-                    if (endpoint.fast)
-                        post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
-                    else
-                        get.guard(endpoint, cb.guard, error)
+                    get.guard(endpoint, cb.guard, error)
 
                 }, function () {
                     throw "Failed to fetch raw descriptors"
@@ -140,11 +128,7 @@ export function open(host, port, success, error, io, fast, auth, select_path, tc
         })
     }
     else {
-        // fast channel: one-request channel creation (no guard pinning)
-        if (endpoint.fast)
-            post.circuit_info(endpoint, cb.startWebSocket, error, select_path, tcp_ports)
-        else
-            get.guard(endpoint, cb.guard, error)
+        get.guard(endpoint, cb.guard, error)
     }
 
     return endpoint

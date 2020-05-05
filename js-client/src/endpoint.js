@@ -69,8 +69,6 @@ export function endpoint(host, port) {
      * @property {material_t|half_t} material   shared cryptographic material
      * @property {null|half_t} auth             stores {@link lnn.auth}
      *                                          material
-     * @property {Boolean} fast                 is {@link lnn.fast}
-     *                                          in use?
      */
     var endpoint = {
         /**
@@ -87,7 +85,6 @@ export function endpoint(host, port) {
          * @readonly
          */
         port: port,
-        fast: null,
         auth: null,
         urls: urls,
         io: null,
@@ -98,7 +95,6 @@ export function endpoint(host, port) {
          *  <li> {@link lnn.post.create}
          *  <li> {@link lnn.post.extend}
          *  <li> {@link lnn.ntor.hand}
-         *  <li> {@link lnn.ntor.fast}
          *  <li> {@link lnn.ntor.auth}
          * </ul>
          *

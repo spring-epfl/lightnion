@@ -25,14 +25,6 @@ export function create(endpoint, success, error) {
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
             endpoint.path = info["path"]
 
-            if (endpoint.fast) {
-                endpoint.guard = info["guard"]
-                endpoint.material.identity = dec.base64(
-                    info["guard"].router.identity + "=")
-                endpoint.material.onionkey = dec.base64(
-                    info["guard"]["ntor-onion-key"])
-            }
-
             var material = ntor.shake(endpoint, info["ntor"])
             if (material == null)
                 throw "Invalid guard handshake."
@@ -51,10 +43,7 @@ export function create(endpoint, success, error) {
     }
 
     var payload = null
-    if (endpoint.fast)
-        payload = ntor.fast(endpoint)
-    else
-        payload = ntor.hand(endpoint)
+    payload = ntor.hand(endpoint)
 
     payload = { ntor: payload }
     if (endpoint.auth != null) {
@@ -84,11 +73,6 @@ export function circuit_info(endpoint, success, error, select_path, tcp_ports) {
             endpoint.id = info["id"]
             endpoint.url = endpoint.urls.channels + "/" + info["id"]
 
-
-            if (endpoint.fast) {
-                endpoint.guard = info["guard"]
-            }
-
             if (!select_path)
                 endpoint.path = info["path"]
             else {
@@ -111,10 +95,7 @@ export function circuit_info(endpoint, success, error, select_path, tcp_ports) {
 
     var payload = {}
     /**
-    if (endpoint.fast)
-        payload = ntor.fast(endpoint)
-    else
-        payload = ntor.hand(endpoint)
+    payload = ntor.hand(endpoint)
 
     payload = {ntor: payload}*/
     if (endpoint.auth != null) {

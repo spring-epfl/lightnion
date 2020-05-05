@@ -302,7 +302,6 @@ class TCP {
                         this.success_on_open,
                         this.error_on_open,
                         undefined,
-                        this.endpoint.fast,
                         this.endpoint.auth,
                         this.endpoint.select_path,
                         ports

@@ -180,7 +180,6 @@ ntor.hand = function (endpoint, descriptor, encode) {
     * endpoint_t#material}, created by:
     * <ul>
     *   <li> {@link ntor.hand}
-    *   <li> {@link ntor.fast}
     *   <li> {@link lnn.auth}
     * </ul>
     * Captures cryptographic state required to finish the handshake.
@@ -208,25 +207,6 @@ ntor.hand = function (endpoint, descriptor, encode) {
     if (encode)
         return enc.base64(payload)
     return payload
-}
-
-/**
- * Just as {@link ntor.hand} but without node identity and onion key – used
- * by {@link lnn.fast}, writes a {@link half_t} in {@link endpoint_t#material}.
- *
- * <pre>Note: always returns base64-encoded handshake.</pre>
- *
- * @param {endpoint_t} endpoint     state where to store half-finished material
- * @return {string}
- *
- * @see lnn.fast
- */
-ntor.fast = function (endpoint) {
-    endpoint.material = {}
-    endpoint.material.ntor = nacl.box.keyPair()
-    endpoint.material.identity = null
-    endpoint.material.onionkey = null
-    return enc.base64(endpoint.material.ntor.publicKey)
 }
 
 /**
