@@ -21,6 +21,7 @@ Contents
 
 .. toctree::
     deploy
+    tutorial
 
 Indices and tables
 ==================

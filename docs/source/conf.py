@@ -44,7 +44,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx_js'
 ]
+
+# JS sources
+js_source_path = '../js-client/src'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
