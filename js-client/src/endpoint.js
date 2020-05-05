@@ -175,14 +175,16 @@ export function endpoint(host, port) {
 
         select_path: false,
 
-        /*perform http get/post request*/
-
+        /**
+         * Perform the HTTP request.
+         * @param {String} url URL where the request is send
+         * @param {String} method method of the HTTP request
+         * @param {String} data payload of the request
+         * @param {String} data_type data type of the payload of the request
+         * @param {Function} success callback in case of success
+         * @param {Function} error callback in case of error
+         */
         http_request: function (url, method, data, data_type, success, error) {
-            if (error === undefined)
-                error = function () { }
-            if (success === undefined)
-                success = function () { }
-
             api.send_req(endpoint, url, method, data, data_type, success, error)
         },
 

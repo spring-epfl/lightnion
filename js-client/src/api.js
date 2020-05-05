@@ -37,6 +37,20 @@ export function auth(host, port, suffix, success, error, io, select_path) {
     }, select_path)
 }
 
+/**
+ * Create a circuit on the Tor network, return a handler to send request on
+ * this circuit, or close it.
+ * @param {String} host host of the Lightnion proxy
+ * @param {Number} port port where the Lightnion proxy is reachable
+ * @param {Function} success callback in case of success
+ * @param {Function} error callback in case of error
+ * @param {io.io_t} io io adapter in use
+ * @param {Boolean} fast deprecated, always set to false 
+ * @param {half_t} auth {@link lnn.auth} material
+ * @param {Boolean} select_path Compute the circuit path in the client*
+ * @param {List} tcp_ports list of ports which need to be accepted by the exit node
+ * @returns connection handler
+ */
 export function open(host, port, success, error, io, fast, auth, select_path, tcp_ports) {
     let endpoint = lnnEndpoint.endpoint(host, port)
     if (io === undefined)
@@ -178,7 +192,22 @@ export let agents = [
     "curl/7.38.0"
 ]
 
+/**
+ * Send an HTTP request by using an handler.
+ * @param {lnn.endpoint} endpoint handler created by {@link lnn.open}
+ * @param {String} url URL where the request is send
+ * @param {String} method method of the HTTP request
+ * @param {String} data payload of the request
+ * @param {string} data_type data type of the payload of the request
+ * @param {Function} success callback in case of success
+ * @param {Function} error callback in case of error
+ */
 export function send_req(endpoint, url, method, data, data_type, success, error) {
+    if (success === undefined)
+        success = function () { }
+    if (error === undefined)
+        error = function () { }
+
     var agent = agents[Math.floor(Math.random() * agents.length)]
 
     var data_recv = ''
@@ -284,6 +313,18 @@ export function send_req(endpoint, url, method, data, data_type, success, error)
     stream.tcp(endpoint, host, port, handler).send(payload)
 }
 
+
+/**
+ * Build a circuit to do a single HTTP request over the Tor network.
+ * @param {String} url URL where the request is send
+ * @param {String} method method of the HTTP request
+ * @param {String} data payload of the request
+ * @param {string} data_type data type of the payload of the request
+ * @param {Function} success callback in case of success
+ * @param {Function} error callback in case of error
+ * @param {String} tor_host host of the Lightnion proxy
+ * @param {Number} tor_port port where the Lightnion proxy is reachable
+ */
 export function http_request(url, method, data, data_type, success, error, tor_host, tor_port) {
     if (tor_host === undefined)
         tor_host = 'localhost'
