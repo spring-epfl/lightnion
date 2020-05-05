@@ -35,7 +35,6 @@ let lnn = header.lnn;
 // api
 lnn.auth = api.auth
 lnn.open = api.open
-lnn.agents = api.agents
 lnn.send_req = api.send_req
 lnn.http_request = api.http_request
 
@@ -44,6 +43,7 @@ lnn.consensusParser = consensusParser.consensusParser;
 
 // endpoint
 lnn.endpoint = endpoint.endpoint;
+lnn.agents = endpoint.agents
 
 // get
 lnn.get = {};

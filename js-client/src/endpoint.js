@@ -2,10 +2,50 @@
  * @module endpoint
  */
 
+import * as utils from "./util.js";
 import { lnn } from "./header.js";
-import * as api from "./api.js";
 import * as post from "./post.js";
+import { stream } from "./stream.js";
 
+
+export let agents = [
+    "curl/7.61.0",
+    "curl/7.60.0",
+    "curl/7.59.0",
+    "curl/7.58.0",
+    "curl/7.57.0",
+    "curl/7.56.1",
+    "curl/7.56.0",
+    "curl/7.55.1",
+    "curl/7.55.0",
+    "curl/7.54.1",
+    "curl/7.54.0",
+    "curl/7.53.1",
+    "curl/7.53.0",
+    "curl/7.52.1",
+    "curl/7.52.0",
+    "curl/7.51.0",
+    "curl/7.50.3",
+    "curl/7.50.2",
+    "curl/7.50.1",
+    "curl/7.50.0",
+    "curl/7.50.0",
+    "curl/7.49.1",
+    "curl/7.49.0",
+    "curl/7.48.0",
+    "curl/7.47.1",
+    "curl/7.47.0",
+    "curl/7.46.0",
+    "curl/7.45.0",
+    "curl/7.44.0",
+    "curl/7.43.0",
+    "curl/7.42.1",
+    "curl/7.42.0",
+    "curl/7.41.0",
+    "curl/7.40.0",
+    "curl/7.39.0",
+    "curl/7.38.0"
+]
 
 /**
  * Create an empty endpoint object, consider using {@link lnn.open} first.
@@ -181,7 +221,116 @@ export function endpoint(host, port) {
          * @param {Function} error callback in case of error
          */
         http_request: function (url, method, data, data_type, success, error) {
-            api.send_req(endpoint, url, method, data, data_type, success, error)
+            //api.send_req(endpoint, url, method, data, data_type, success, error)
+            if (success === undefined)
+                success = function () { }
+            if (error === undefined)
+                error = function () { }
+
+            var agent = agents[Math.floor(Math.random() * agents.length)]
+
+            var data_recv = ''
+            var length = null
+            var rawlen = 0
+            var headers = null
+            var handler = function (request) {
+                if (request.state == lnn.state.success) {
+                    error('Connection closed')
+                    return
+                }
+
+                if (request.state != lnn.state.pending)
+                    return
+
+                var payload = request.recv()
+                rawlen += payload.length
+                data_recv += utils.enc.utf8(payload)
+
+
+                if (length == null) {
+                    if (data_recv.match('\r\n\r\n')) {
+                        headers = data_recv.split('\r\n\r\n')[0]
+                        var len = headers.match('Content-Length: ([^\r]*)')
+                        length = parseInt(len[1])
+                    }
+                }
+
+                if (headers == null || length == null || rawlen < headers.length + length)
+                    return
+
+                request.close()
+                console.log("Stream closed")
+
+                success({
+                    headers: headers,
+                    data: data_recv.slice(headers.length + 4)
+                })
+                success = function (request) { }
+            }
+
+            if (url.slice(0, 7) == "http://")
+                url = url.slice(7)
+            else {
+                error('Urls must start with http://')
+                return
+            }
+
+            var path = "/" + url.split("/").slice(1).join("/")
+            var host = null
+            if (url.match("/") == null)
+                host = url
+            else
+                host = url.split("/", 1)[0]
+
+            var port = "80"
+            if (host.match(":") != null)
+                port = host.split(":", 2)[1]
+
+            if (method != "GET" && method != "POST") {
+                error('Unsupported method')
+                return
+            }
+
+            if (data_type != "json" && data_type != "form") {
+                error('Unsupported content type')
+                return
+            }
+
+            if (data_type == "json")
+                data_type = "application/json"
+            else
+                data_type = "application/x-www-form-urlencoded"
+
+            if (method == "GET" && data.length > 0) {
+                data = "?" + data
+                path += data
+                path = encodeURI(path)
+            }
+            else if (data_type == "application/x-www-form-urlencoded") {
+                data = encodeURI(data)
+            }
+
+            var payload = [
+                [method, path, "HTTP/1.1"].join(" "),
+                ["Host:", host].join(" "),
+                ["User-Agent:", agent].join(" "),
+                ["Accept:", "*/*"].join(" ")]
+
+            if (method == "POST") {
+                payload.push(["Content-Length:", data.length].join(" "))
+                payload.push(["Content-Type:", data_type].join(" "))
+                payload = payload.join("\r\n") + "\r\n\r\n" + data + "\r\n"
+            }
+            else {
+                payload = payload.join("\r\n") + "\r\n\r\n"
+            }
+
+
+            console.log(payload)
+
+            host = host.split(':')[0]
+            stream.tcp(endpoint, host, port, handler).send(payload)
+
         },
 
         /*destroy the circuit*/
